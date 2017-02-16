@@ -45,7 +45,7 @@ tokens :-
   default 			  { lex' TokenDefault }
   defer				  { lex' TokenDefer }
   else                            { lex' TokenElse }
-  fallthrough			  { lex' TokenFallThrough }
+  fallthrough			  { lex' TokenFallthrough }
   for				  { lex' TokenFor }
   func				  { lex' TokenFunc }
   go				  { lex' TokenGo }
@@ -77,7 +77,7 @@ tokens :-
 
   &				  { lex' TokenBitAnd } 
   \|				  { lex' TokenBitOr }
-  \^				  { lex' TokenBitXOr }
+  \^				  { lex' TokenBitXor }
   <<				  { lex' TokenBitLShift }
   >>				  { lex' TokenBitRShift }
   &\^				  { lex' TokenBitClear }
@@ -90,7 +90,7 @@ tokens :-
   
   &=				  { lex' TokenBitAndEq }
   \|=				  { lex' TokenBitOrEq }
-  \^=				  { lex' TokenBitXOrEq }
+  \^=				  { lex' TokenBitXorEq }
   <<=				  { lex' TokenBitLShiftEq }
   >>=				  { lex' TokenBitRShiftEq }
   &\^=				  { lex' TokenBitClearEq }
@@ -102,36 +102,40 @@ tokens :-
   --				  { lex' TokenDec }
   
   ==				  { lex' TokenBoolEq }
-  <				  { lex' TokenBoolLThan }
-  >				  { lex' TokenBoolGThan }
+  <				  { lex' TokenBoolLT }
+  >				  { lex' TokenBoolGT }
   =                               { lex' TokenEq }
   !				  { lex' TokenBoolNot }
 
   !=				  { lex' TokenBoolNotEq }
   <=				  { lex' TokenBoolLTE }
-  >=				  { lex' Token }
-  :=				  { lex' Token }
-  \.\.\.			  { lex' Token }
+  >=				  { lex' TokenBoolGTE }
+  :=				  { lex' TokenShortDec }
+  \.\.\.			  { lex' TokenVariadic }
   
   \(                              { lex' TokenLParen }
   \)                              { lex' TokenRParen }
-  \[				  { lex' Token }
-  \]				  { lex' Token }
-  \.				  { lex' Token }
-  ,				  { lex' Token }
+  \[				  { lex' TokenLSquare }
+  \]				  { lex' TokenRSquare }
+  \.				  { lex' TokenPeriod }
+  ,				  { lex' TokenComma }
   \:                              { lex' TokenColon }
   \;                              { lex' TokenSemicolon }
 
+-- Integers
 
-  -- Comments
-  \/\/				  { lex' Token }
-  \/\*				  { lex' Token }
-  \*\/				  { lex' Token }
-  
-  0|[1-9][0-9]*                   { lex (TokenIntVal . read) }
+-- Decimal
+  0|[1-9][0-9]*                   { lex (TokenIntVal Decimal . read) }
 
-  (0|([1-9][0-9]*))\.[0-9]+       { lex (TokenFloatVal . read) }
+-- Octal
 
+-- Hex
+
+-- Float 
+  ((0|([1-9][0-9]*))\.[0-9]+)|
+    (\.[0-9]+)|([1-9][0-9]*\.)    { lex (TokenFloatVal . read) }
+
+-- String Values
   \"($string_val|
 	\\$escaped|
 	\/$comment_tail)*\"       { lex TokenStringVal }
@@ -139,11 +143,12 @@ tokens :-
   [$alpha \_]
     [$alpha $digit \_ \’]*        { lex TokenId }
 
-{
 
+{
 -- To improve error messages, We keep the path of the file we are
 -- lexing in our own state.
-data AlexUserState = AlexUserState { filePath :: FilePath }
+data AlexUserState
+  = AlexUserState { filePath :: FilePath }
 
 
 alexInitUserState :: AlexUserState
@@ -165,29 +170,94 @@ data Token = Token AlexPosn TokenClass
 
 -- Each action has type :: String -> TokenClass -> Token
 data TokenClass
-  = TokenVar
-  | TokenId String
-  | TokenFloatType
-  | TokenFloatVal Float
-  | TokenIntType
-  | TokenIntVal Int
-  | TokenStringType
-  | TokenStringVal String
+  = TokenBreak
+  | TokenCase
+  | TokenChan
+  | TokenConst
+  | TokenContinue
+  | TokenDefault
+  | TokenDefer
+  | TokenElse
+  | TokenFallthrough
+  | TokenFor
+  | TokenFunc
+  | TokenGo
+  | TokenGoto
   | TokenIf
-  | TokenEq
-  | TokenPlus
-  | TokenMinus
+  | TokenImport
+  | TokenInterface
+  | TokenMap
+  | TokenPackage
+  | TokenRange
+  | TokenReturn
+  | TokenSelect
+  | TokenStruct
+  | TokenSwitch
+  | TokenType
+  | TokenVar
+  | TokenPrint
+  | TokenPrintln
+  | TokenAppend
+  | TokenAdd
+  | TokenSub
   | TokenMult
   | TokenDiv
+  | TokenMod
+  | TokenBitAnd
+  | TokenBitOr
+  | TokenBitXor
+  | TokenBitLShift
+  | TokenBitRShift
+  | TokenBitClear
+  | TokenAddEq
+  | TokenSubEq
+  | TokenMultEq
+  | TokenDivEq
+  | TokenModEq
+  | TokenBitAndEq
+  | TokenBitOrEq
+  | TokenBitXorEq
+  | TokenBitLShiftEq
+  | TokenBitRShiftEq
+  | TokenBitClearEq
+  | TokenLogAnd
+  | TokenLogOr
+  | TokenChannel
+  | TokenInc
+  | TokenDec
+  | TokenBoolEq
+  | TokenBoolLT
+  | TokenBoolGT
+  | TokenEq
+  | TokenBoolNot
+  | TokenBoolNotEq
+  | TokenBoolLTE
+  | TokenBoolGTE
+  | TokenShortDec
+  | TokenVariadic
   | TokenLParen
   | TokenRParen
-  | TokenSemicolon
+  | TokenLSquare
+  | TokenRSquare
+  | TokenPeriod
+  | TokenComma
   | TokenColon
-  | TokenRead
-  | TokenPrint
+  | TokenSemicolon
+  | TokenId String
+  | TokenFloat
+  | TokenFloatVal Float
+  | TokenInt 
+  | TokenIntVal IntType Int
+  | TokenStringType
+  | TokenStringVal String
   | TokenEOF
   deriving (Eq,Show)
 
+data IntType
+  = Decimal
+  | Octal
+  | Hex
+  deriving (Eq, Show)
 
 -- Required by Alex spec
 alexEOF :: Alex Token
