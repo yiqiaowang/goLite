@@ -2,6 +2,7 @@
 module Scanner
   ( Token(..)
   , TokenClass(..)
+  , IntType(..)
   , Alex(..)
   , runAlex'
   , alexMonadScan'
@@ -110,11 +111,13 @@ tokens :-
   >=				  { lex' TokenBoolGTE }
   :=				  { lex' TokenShortDec }
   \.\.\.			  { lex' TokenVariadic }
-  
+
   \(                              { lex' TokenLParen }
   \)                              { lex' TokenRParen }
   \[				  { lex' TokenLSquare }
   \]				  { lex' TokenRSquare }
+  \{				  { lex' TokenLCurly }
+  \}				  { lex' TokenRCurly }
   \.				  { lex' TokenPeriod }
   \,				  { lex' TokenComma }
   \:                              { lex' TokenColon }
@@ -252,6 +255,8 @@ data TokenClass
   | TokenRParen
   | TokenLSquare
   | TokenRSquare
+  | TokenLCurly
+  | TokenRCurly
   | TokenPeriod
   | TokenComma
   | TokenColon
