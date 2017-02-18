@@ -16,23 +16,35 @@ import Numeric (readOct, readHex)
 
 $digit = [0-9] -- digits
 $alpha = [a-zA-Z] -- alphabetic characters
-$white = [\ \t\r]
+$white = [\ \t \r]
 @newline = \n
-$string_val = [^"\\\/]
-$escaped = [\" a b f n r t v \\]
-$comment_tail = [^\/\*]
-@b_comment_val = \/\*(.|@newline)*\*\/
+
+$string_val = [^"\\\/\n]
+$string_escape = [\" a b f n r t v \\]
+
+-- runes can be anything but ' or \
+$rune_val = [^'\\\n]
+$rune_escape = [\' a b f n r t v \\] 
+
+-- raw strings
+$raw_val = [^`]
+
 
 -- Comment  \\\\[^\n]*
 @comment_start = \/{2}
 $comment_content = [~\n]
 @comment = @comment_start$comment_content*
 
+$comment_tail = [^\/\*]
+
+-- Block Comment
+@b_comment = \/\*([^\*]|\n|\*[^\/])*\*\/
+
 -- All token actions have type ( AlexPosn -> String -> Token )
 tokens :-
   $white+                         ;
   @comment 			  ;
-  @b_comment_val		  ;
+  @b_comment			  ;
 
 -- goLang keywords, reserved
   break				  { lex' TokenBreak }	
@@ -121,12 +133,11 @@ tokens :-
   \;                              { lex' TokenSemicolon }
 
 -- Integers
-
 -- Decimal
- 0|[1-9][0-9]*                   { lex (genIntLex Decimal) }
+ 0|[1-9][0-9]*                    { lex (genIntLex Decimal) }
 
 -- Octal
- 0[0-7]+			 { lex (genIntLex Octal) }
+ 0[0-7]+	       	          { lex (genIntLex Octal) }
 
 -- Hex
  0[xX][0-9a-fA-F]+		 { lex (genIntLex Hex) }
@@ -137,11 +148,19 @@ tokens :-
 
 -- String Values
   \"($string_val|
-	\\$escaped|
+	\\$string_escape|
 	\/$comment_tail)*\"       { lex TokenStringVal }
+-- Runes
+  \'($rune_val|\\$rune_escape)\'  { lex (TokenRuneVal . read) }
 
+-- Raw strings
+  \`$raw_val*\`			  { lex TokenRawVal}
+
+-- Identifiers
   [$alpha \_]
     [$alpha $digit \_ \’]*        { lex TokenId }
+
+
 
 
 {
@@ -263,6 +282,8 @@ data TokenClass
   | TokenIntVal IntType Integer
   | TokenStringType
   | TokenStringVal String
+  | TokenRuneVal Integer
+  | TokenRawVal String
   | TokenEOF
   deriving (Eq,Show)
 
