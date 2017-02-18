@@ -2,9 +2,10 @@ module Language where
 
 -- The layout of the entire program
 data Program
-      = Program Package [Stmt]
+      = Program Package [All]
       deriving Show
 
+-- Packages, Identifiers, and Types are all strings
 type Package = String
 type Identifier = String
 type Type = String
@@ -23,13 +24,21 @@ data Parameter
       = Parameter [Identifier] Type
       deriving Show
 
--- Statements
+-- All Statements
+data All
+      = Stmt Stmt
+      | Function Identifier [Parameter] (Maybe Type) [Stmt]
+      deriving Show
+
+-- Statements that can be declared inside blocks
 data Stmt
       = VarDec Identifier (Maybe Type) Expression
       | TypeDec Identifier Type
       | StructDec Identifier [[Identifer] Type]
       | ArrayDec Identifier Int Type
       | SliceDec Identifier Type
-      | Function Identifier [Parameter] (Maybe Type) [Stmt]
+      | ExpStmt Expression
+      | Assign [Identifier] [Expression]
+      | EmptyStmt
       deriving Show
 
