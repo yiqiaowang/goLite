@@ -143,11 +143,12 @@ tokens :-
  0[0-7]+	       	          { lex (genIntLex Octal) }
 
 -- Hex
- 0[xX][0-9a-fA-F]+		 { lex (genIntLex Hex) }
+ 0[xX][0-9a-fA-F]+		 { lex ((genIntLex Hex) . extractHexNumeric) }
 
 -- Float 
-  ((0|([1-9][0-9]*))\.[0-9]+)|
-    (\.[0-9]+)|([1-9][0-9]*\.)    { lex (TokenFloatVal . read) }
+((0|([1-9][0-9]*))\.[0-9]+)      { lex (TokenFloatVal . read) }
+(\.[0-9]+)			 { lex (TokenFloatVal . read . prependZero) }
+([1-9][0-9]*\.)			 { lex (TokenFloatVal . read . appendZero) }
 
 -- String Values
   \"($string_val|
@@ -167,6 +168,14 @@ tokens :-
 
 
 {
+-- Append 0 to the end of a string
+appendZero :: String -> String
+appendZero s = s ++ "0"
+
+-- Append 0 to the front of a string
+prependZero :: String -> String
+prependZero s = "0" ++ s
+
 -- Extract the integer value result of readOct
 extractOct2Int :: [(Integer, String)] -> Integer
 extractOct2Int ((i,s):xs) = i 
@@ -174,6 +183,10 @@ extractOct2Int ((i,s):xs) = i
 -- Extract the integer value result of readHex
 extractHex2Int :: [(Integer, String)] -> Integer
 extractHex2Int ((i,s):xs) = i 
+
+-- Extract the numeric value from a hex number
+extractHexNumeric :: String -> String
+extractHexNumeric s = drop 2 s
 
 -- Return a function that can be consumed by lex
 genIntLex :: IntType -> (String -> TokenClass)
