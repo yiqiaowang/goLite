@@ -1,17 +1,16 @@
 {
-module Compiler.Lexer
+module Scanner
   ( Token(..)
   , TokenClass(..)
+  , IntType(..)
   , Alex(..)
   , runAlex'
   , alexMonadScan'
   , alexError'
   ) where
-
-
-import Prelude hiding (lex)
+import Prelude hiding ( lex )
 import Control.Monad ( liftM )
-
+import Numeric (readOct, readHex)
 }
 
 %wrapper "monadUserState"
@@ -23,10 +22,10 @@ $white = [\ \t\r]
 $string_val = [^"\\\/]
 $escaped = [\" a b f n r t v \\]
 $comment_tail = [^\/\*]
-@b_comment_val = \/\*(.|$newline)*?\*\/
+@b_comment_val = \/\*(.|@newline)*\*\/
 
 -- Comment  \\\\[^\n]*
-@comment_start = @forward_slash{2}
+@comment_start = \/{2}
 $comment_content = [~\n]
 @comment = @comment_start$comment_content*
 
@@ -45,7 +44,7 @@ tokens :-
   default 			  { lex' TokenDefault }
   defer				  { lex' TokenDefer }
   else                            { lex' TokenElse }
-  fallthrough			  { lex' TokenFallThrough }
+  fallthrough			  { lex' TokenFallthrough }
   for				  { lex' TokenFor }
   func				  { lex' TokenFunc }
   go				  { lex' TokenGo }
@@ -73,65 +72,73 @@ tokens :-
   \-                              { lex' TokenSub }
   \*                              { lex' TokenMult }
   \/                              { lex' TokenDiv }
-  %				  { lex' TokenMod }
+  \%				  { lex' TokenMod }
 
   &				  { lex' TokenBitAnd } 
   \|				  { lex' TokenBitOr }
-  \^				  { lex' TokenBitXOr }
-  <<				  { lex' TokenBitLShift }
+  \^				  { lex' TokenBitXor }
+  \<\<				  { lex' TokenBitLShift }
   >>				  { lex' TokenBitRShift }
   &\^				  { lex' TokenBitClear }
   
   \+=				  { lex' TokenAddEq }
-  -=				  { lex' TokenSubEq }
+  \-=				  { lex' TokenSubEq }
   \*=				  { lex' TokenMultEq }
   \/=				  { lex' TokenDivEq }
   \%=				  { lex' TokenModEq }
   
   &=				  { lex' TokenBitAndEq }
   \|=				  { lex' TokenBitOrEq }
-  \^=				  { lex' TokenBitXOrEq }
-  <<=				  { lex' TokenBitLShiftEq }
+  \^=				  { lex' TokenBitXorEq }
+  \<\<=				  { lex' TokenBitLShiftEq }
   >>=				  { lex' TokenBitRShiftEq }
   &\^=				  { lex' TokenBitClearEq }
 
   &&				  { lex' TokenLogAnd }
   \|\|				  { lex' TokenLogOr }
-  <-				  { lex' TokenChannel }
+  \<\-				  { lex' TokenChannel }
   \+\+				  { lex' TokenInc }
-  --				  { lex' TokenDec }
+  \-\-				  { lex' TokenDec }
   
   ==				  { lex' TokenBoolEq }
-  <				  { lex' TokenBoolLThan }
-  >				  { lex' TokenBoolGThan }
+  \<				  { lex' TokenBoolLT }
+  >				  { lex' TokenBoolGT }
   =                               { lex' TokenEq }
   !				  { lex' TokenBoolNot }
 
   !=				  { lex' TokenBoolNotEq }
-  <=				  { lex' TokenBoolLTE }
-  >=				  { lex' Token }
-  :=				  { lex' Token }
-  \.\.\.			  { lex' Token }
-  
+  \<=				  { lex' TokenBoolLTE }
+  >=				  { lex' TokenBoolGTE }
+  :=				  { lex' TokenShortDec }
+  \.\.\.			  { lex' TokenVariadic }
+
   \(                              { lex' TokenLParen }
   \)                              { lex' TokenRParen }
-  \[				  { lex' Token }
-  \]				  { lex' Token }
-  \.				  { lex' Token }
-  ,				  { lex' Token }
+  \[				  { lex' TokenLSquare }
+  \]				  { lex' TokenRSquare }
+  \{				  { lex' TokenLCurly }
+  \}				  { lex' TokenRCurly }
+  \.				  { lex' TokenPeriod }
+  \,				  { lex' TokenComma }
   \:                              { lex' TokenColon }
   \;                              { lex' TokenSemicolon }
 
+-- Integers
 
-  -- Comments
-  \/\/				  { lex' Token }
-  \/\*				  { lex' Token }
-  \*\/				  { lex' Token }
-  
-  0|[1-9][0-9]*                   { lex (TokenIntVal . read) }
+-- Decimal
+ 0|[1-9][0-9]*                   { lex (genIntLex Decimal) }
 
-  (0|([1-9][0-9]*))\.[0-9]+       { lex (TokenFloatVal . read) }
+-- Octal
+ 0[0-7]+			 { lex (genIntLex Octal) }
 
+-- Hex
+ 0[xX][0-9a-fA-F]+		 { lex (genIntLex Hex) }
+
+-- Float 
+  ((0|([1-9][0-9]*))\.[0-9]+)|
+    (\.[0-9]+)|([1-9][0-9]*\.)    { lex (TokenFloatVal . read) }
+
+-- String Values
   \"($string_val|
 	\\$escaped|
 	\/$comment_tail)*\"       { lex TokenStringVal }
@@ -139,12 +146,26 @@ tokens :-
   [$alpha \_]
     [$alpha $digit \_ \’]*        { lex TokenId }
 
+
 {
+-- Extract the integer value result of readOct
+extractOct2Int :: [(Integer, String)] -> Integer
+extractOct2Int ((i,s):xs) = i 
+
+-- Extract the integer value result of readHex
+extractHex2Int :: [(Integer, String)] -> Integer
+extractHex2Int ((i,s):xs) = i 
+
+-- Return a function that can be consumed by lex
+genIntLex :: IntType -> (String -> TokenClass)
+genIntLex Decimal = (TokenIntVal Decimal . read)
+genIntLex Octal = (TokenIntVal Octal . extractOct2Int . readOct)
+genIntLex Hex = (TokenIntVal Hex . extractHex2Int . readHex)
 
 -- To improve error messages, We keep the path of the file we are
 -- lexing in our own state.
-data AlexUserState = AlexUserState { filePath :: FilePath }
-
+data AlexUserState
+  = AlexUserState { filePath :: FilePath }
 
 alexInitUserState :: AlexUserState
 alexInitUserState = AlexUserState "<unknown>"
@@ -165,29 +186,96 @@ data Token = Token AlexPosn TokenClass
 
 -- Each action has type :: String -> TokenClass -> Token
 data TokenClass
-  = TokenVar
-  | TokenId String
-  | TokenFloatType
-  | TokenFloatVal Float
-  | TokenIntType
-  | TokenIntVal Int
-  | TokenStringType
-  | TokenStringVal String
+  = TokenBreak
+  | TokenCase
+  | TokenChan
+  | TokenConst
+  | TokenContinue
+  | TokenDefault
+  | TokenDefer
+  | TokenElse
+  | TokenFallthrough
+  | TokenFor
+  | TokenFunc
+  | TokenGo
+  | TokenGoto
   | TokenIf
-  | TokenEq
-  | TokenPlus
-  | TokenMinus
+  | TokenImport
+  | TokenInterface
+  | TokenMap
+  | TokenPackage
+  | TokenRange
+  | TokenReturn
+  | TokenSelect
+  | TokenStruct
+  | TokenSwitch
+  | TokenType
+  | TokenVar
+  | TokenPrint
+  | TokenPrintln
+  | TokenAppend
+  | TokenAdd
+  | TokenSub
   | TokenMult
   | TokenDiv
+  | TokenMod
+  | TokenBitAnd
+  | TokenBitOr
+  | TokenBitXor
+  | TokenBitLShift
+  | TokenBitRShift
+  | TokenBitClear
+  | TokenAddEq
+  | TokenSubEq
+  | TokenMultEq
+  | TokenDivEq
+  | TokenModEq
+  | TokenBitAndEq
+  | TokenBitOrEq
+  | TokenBitXorEq
+  | TokenBitLShiftEq
+  | TokenBitRShiftEq
+  | TokenBitClearEq
+  | TokenLogAnd
+  | TokenLogOr
+  | TokenChannel
+  | TokenInc
+  | TokenDec
+  | TokenBoolEq
+  | TokenBoolLT
+  | TokenBoolGT
+  | TokenEq
+  | TokenBoolNot
+  | TokenBoolNotEq
+  | TokenBoolLTE
+  | TokenBoolGTE
+  | TokenShortDec
+  | TokenVariadic
   | TokenLParen
   | TokenRParen
-  | TokenSemicolon
+  | TokenLSquare
+  | TokenRSquare
+  | TokenLCurly
+  | TokenRCurly
+  | TokenPeriod
+  | TokenComma
   | TokenColon
-  | TokenRead
-  | TokenPrint
+  | TokenSemicolon
+  | TokenId String
+  | TokenFloat
+  | TokenFloatVal Float
+  | TokenInt 
+  | TokenIntVal IntType Integer
+  | TokenStringType
+  | TokenStringVal String
   | TokenEOF
   deriving (Eq,Show)
 
+data IntType
+  = Decimal
+  | Octal
+  | Hex
+  deriving (Eq, Show)
 
 -- Required by Alex spec
 alexEOF :: Alex Token
@@ -204,7 +292,6 @@ lex cons = \(p, _, _, s) i -> return $ Token p (cons (take i s))
 -- For constructing tokens that do not depend on the input
 lex' :: TokenClass -> AlexAction Token
 lex' = lex . const
-
 
 -- We rewrite alexMonadScan' to delegate to alexError' when lexing fails
 -- (the default implementation just returns an error message).
