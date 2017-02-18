@@ -2,14 +2,15 @@ module Main where
 
 
 import Test.Hspec
-import Test.Hspec.Core.Runner(hspecResult)
+import Test.Hspec.Core.Runner(hspecResult, summaryFailures, Summary)
 import System.FilePath(takeExtension)
 import System.Directory(getDirectoryContents)
+import System.Exit(exitSuccess, exitFailure)
 
 import qualified Parser
 import qualified Spec.Scanner
 import qualified Spec.Parser
-
+import qualified Spec.Pretty
 
 
 --
@@ -31,18 +32,12 @@ main = do
 
   scannerSummary <- hspecResult Spec.Scanner.spec
   parserSummary <- hspecResult $ Spec.Parser.spec validSyntax invalidSyntax
+  prettySummary <- hspecResult $ Spec.Pretty.spec validSyntax
 
-  putStrLn "hello"
+  if (any (not . isSuccess) [scannerSummary, parserSummary, prettySummary])
+    then exitFailure
+    else exitSuccess
 
-  -- -- Parser
-  -- validSyntax <- loadPrograms "programs/syntax/valid"
-  -- invalidSyntax <- loadPrograms "programs/syntax/valid"
-  -- parserSummary <- hspec $ describe "Parser" $
-  --
-  --   forM_ validSyntax $ \(file, text) ->
-  --     it ("correctly parses : " ++ file) $
-  --       Parser.parse file text `shouldSatisfy` isRight
-  --
-  --   forM_ invalidSyntax $ \(file, text) ->
-  --     it ("fails to parse : " ++ file) $
-  --       Parser.parse file text `shouldSatisfy` isLeft
+    where
+      isSuccess :: Summary -> Bool
+      isSuccess summary = summaryFailures summary == 0
