@@ -1,115 +1,127 @@
 module Spec.Scanner where
 
 
+import Control.Monad(forM_)
 import Test.Hspec
 import Scanner
 
 
 spec :: Spec
 spec =
-  describe "Scanner" $
-    it "corrextly scans:" $ do
-      let scansAs string cls = tokenClass string `shouldBe` Right cls
+  describe "Scanner" $ do
+    forM_ tests $ \(text, cls) ->
+      it ("correctly scans \"" ++ text ++ "\" as token class \"" ++ show cls ++ "\":") $
+        tokenClass text `shouldBe` Right cls
 
-      -- Go keywords
-      "break" `scansAs` TokenBreak
-      "case" `scansAs` TokenCase
-      "chan" `scansAs` TokenChan
-      "const" `scansAs` TokenConst
-      "continue" `scansAs` TokenContinue
-      "default" `scansAs` TokenDefault
-      "defer" `scansAs` TokenDefer
-      "else" `scansAs` TokenElse
-      "fallthrough" `scansAs` TokenFallthrough
-      "for" `scansAs` TokenFor
-      "func" `scansAs` TokenFunc
-      "go" `scansAs` TokenGo
-      "goto" `scansAs` TokenGoto
-      "if" `scansAs` TokenIf
-      "import" `scansAs` TokenImport
-      "interface" `scansAs` TokenInterface
-      "map" `scansAs` TokenMap
-      "package" `scansAs` TokenPackage
-      "range" `scansAs` TokenRange
-      "return" `scansAs` TokenReturn
-      "select" `scansAs` TokenSelect
-      "struct" `scansAs` TokenStruct
-      "switch" `scansAs` TokenSwitch
-      "type" `scansAs` TokenType
-      "var" `scansAs` TokenVar
 
-      -- goLite keywords
-      "print" `scansAs` TokenPrint
-      "println" `scansAs` TokenPrintln
-      "append" `scansAs` TokenAppend
+tests :: [(String, TokenClass)]
+tests =
+    -- Go keywords
+  [ ("break", TokenBreak)
+  , ("case", TokenCase)
+  , ("chan", TokenChan)
+  , ("const", TokenConst)
+  , ("continue", TokenContinue)
+  , ("default", TokenDefault)
+  , ("defer", TokenDefer)
+  , ("else", TokenElse)
+  , ("fallthrough", TokenFallthrough)
+  , ("for", TokenFor)
+  , ("func", TokenFunc)
+  , ("go", TokenGo)
+  , ("goto", TokenGoto)
+  , ("if", TokenIf)
+  , ("import", TokenImport)
+  , ("interface", TokenInterface)
+  , ("map", TokenMap)
+  , ("package", TokenPackage)
+  , ("range", TokenRange)
+  , ("return", TokenReturn)
+  , ("select", TokenSelect)
+  , ("struct", TokenStruct)
+  , ("switch", TokenSwitch)
+  , ("type", TokenType)
+  , ("var", TokenVar)
 
-      -- operators
-      "+" `scansAs` TokenAdd
-      "-" `scansAs` TokenSub
-      "*" `scansAs` TokenMult
-      "/" `scansAs` TokenDiv
-      "%" `scansAs` TokenMod
+  -- goLite keywords
+  , ("print", TokenPrint)
+  , ("println", TokenPrintln)
+  , ("append", TokenAppend)
 
-      "&" `scansAs` TokenBitAnd
-      "|" `scansAs` TokenBitOr
-      "^" `scansAs` TokenBitXor
-      "<<" `scansAs` TokenBitLShift
-      ">>" `scansAs` TokenBitRShift
-      "&^" `scansAs` TokenBitClear
+  -- operators
+  , ("+", TokenAdd)
+  , ("-", TokenSub)
+  , ("*", TokenMult)
+  , ("/", TokenDiv)
+  , ("%", TokenMod)
 
-      "+=" `scansAs` TokenAddEq
-      "-=" `scansAs` TokenSubEq
-      "*=" `scansAs` TokenMultEq
-      "/=" `scansAs` TokenDivEq
-      "%=" `scansAs` TokenModEq
+  , ("&", TokenBitAnd)
+  , ("|", TokenBitOr)
+  , ("^", TokenBitXor)
+  , ("<<", TokenBitLShift)
+  , (">>", TokenBitRShift)
+  , ("&^", TokenBitClear)
 
-      "&=" `scansAs` TokenBitAndEq
-      "|=" `scansAs` TokenBitOrEq
-      "^=" `scansAs` TokenBitXorEq
-      "<<=" `scansAs` TokenBitLShiftEq
-      ">>=" `scansAs` TokenBitRShiftEq
-      "&^=" `scansAs` TokenBitClearEq
+  , ("+=", TokenAddEq)
+  , ("-=", TokenSubEq)
+  , ("*=", TokenMultEq)
+  , ("/=", TokenDivEq)
+  , ("%=", TokenModEq)
 
-      "&&" `scansAs` TokenLogAnd
-      "||" `scansAs` TokenLogOr
-      "<-" `scansAs` TokenChannel
-      "++" `scansAs` TokenInc
-      "--" `scansAs` TokenDec
+  , ("&=", TokenBitAndEq)
+  , ("|=", TokenBitOrEq)
+  , ("^=", TokenBitXorEq)
+  , ("<<=", TokenBitLShiftEq)
+  , (">>=", TokenBitRShiftEq)
+  , ("&^=", TokenBitClearEq)
 
-      "==" `scansAs` TokenBoolEq
-      "<" `scansAs` TokenBoolLT
-      ">" `scansAs` TokenBoolGT
-      "=" `scansAs` TokenEq
-      "!" `scansAs` TokenBoolNot
+  , ("&&", TokenLogAnd)
+  , ("||", TokenLogOr)
+  , ("<-", TokenChannel)
+  , ("++", TokenInc)
+  , ("--", TokenDec)
 
-      "!=" `scansAs` TokenBoolNotEq
-      "<=" `scansAs` TokenBoolLTE
-      ">=" `scansAs` TokenBoolGTE
-      ":=" `scansAs` TokenShortDec
-      "..." `scansAs` TokenVariadic
+  , ("==", TokenBoolEq)
+  , ("<", TokenBoolLT)
+  , (">", TokenBoolGT)
+  , ("=", TokenEq)
+  , ("!", TokenBoolNot)
 
-      "(" `scansAs` TokenLParen
-      ")" `scansAs` TokenRParen
-      "[" `scansAs` TokenLSquare
-      "]" `scansAs` TokenRSquare
-      "{" `scansAs` TokenLCurly
-      "}" `scansAs` TokenRCurly
-      "." `scansAs` TokenPeriod
-      "," `scansAs` TokenComma
-      ";" `scansAs` TokenSemicolon
-      ":" `scansAs` TokenColon
+  , ("!=", TokenBoolNotEq)
+  , ("<=", TokenBoolLTE)
+  , (">=", TokenBoolGTE)
+  , (":=", TokenShortDec)
+  , ("...", TokenVariadic)
 
-      "0" `scansAs` TokenIntVal Decimal 0
-      "100" `scansAs` TokenIntVal Decimal 100
+  , (", (", TokenLParen)
+  , (")", TokenRParen)
+  , ("[", TokenLSquare)
+  , ("]", TokenRSquare)
+  , ("{", TokenLCurly)
+  , ("}", TokenRCurly)
+  , (".", TokenPeriod)
+  , (",", TokenComma)
+  , (";", TokenSemicolon)
+  , (":", TokenColon)
 
-      "01" `scansAs` TokenIntVal Octal 1
-      "0377" `scansAs` TokenIntVal Octal 255
-      "032457" `scansAs` TokenIntVal Octal 13615
+  -- Ints
+  , ("0", TokenIntVal Decimal 0)
+  , ("100", TokenIntVal Decimal 100)
 
-      "0x0" `scansAs` TokenIntVal Hex 0
-      "0x1" `scansAs` TokenIntVal Hex 1
-      "0xFF" `scansAs` TokenIntVal Hex 255
-      "0xFFFFFFFFFFFFFFFF" `scansAs` TokenIntVal Hex (-1)
+  , ("01", TokenIntVal Octal 1)
+  , ("0377", TokenIntVal Octal 255)
+  , ("032457", TokenIntVal Octal 13615)
+
+  , ("0x0", TokenIntVal Hex 0)
+  , ("0x1", TokenIntVal Hex 1)
+  , ("0xFF", TokenIntVal Hex 255)
+  , ("0xFFFFFFFFFFFFFFFF", TokenIntVal Hex (-1))
+
+  --Floats
+  , ("0.12", TokenFloatVal 0.12)
+  , (".12", TokenFloatVal 0.12)
+  , ("12.", TokenFloatVal 12.0)
+  ]
 
 
 tokenClass :: String -> Either String TokenClass
