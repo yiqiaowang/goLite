@@ -1,6 +1,7 @@
 module Spec.Scanner where
 
 
+import Data.Char(digitToInt)
 import Control.Monad(forM_)
 import Test.Hspec
 import Scanner
@@ -16,6 +17,7 @@ spec =
 
 runes :: [Char]
 runes =
+  ['0'..'9'] ++
   ['a'..'z'] ++
   ['A'..'Z'] ++
   ['\a', '\b', '\f', '\n', '\r', '\t', '\v', '\\', '\'']
@@ -147,6 +149,7 @@ tests =
 
 tokenClass :: String -> Either String TokenClass
 tokenClass s = case lexWrap s of
+  -- Don't care about character positions for testing
   Right (Token _ cls) -> Right cls
   Left msg -> Left msg
 
