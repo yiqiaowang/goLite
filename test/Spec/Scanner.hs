@@ -93,7 +93,7 @@ tests =
   , (":=", TokenShortDec)
   , ("...", TokenVariadic)
 
-  , (", (", TokenLParen)
+  , ("(", TokenLParen)
   , (")", TokenRParen)
   , ("[", TokenLSquare)
   , ("]", TokenRSquare)
