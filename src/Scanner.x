@@ -294,11 +294,8 @@ data TokenClass
   | TokenColon
   | TokenSemicolon
   | TokenId String
-  | TokenFloat
   | TokenFloatVal Float
-  | TokenInt 
   | TokenIntVal IntType Integer
-  | TokenStringType
   | TokenStringVal String
   | TokenRuneVal Integer
   | TokenRawVal String
