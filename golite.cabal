@@ -1,7 +1,6 @@
 name:                golite
 version:             0.1.0.0
-author:              Charlie Bloomfield <charlielbloomfield@gmail.com>
-maintainer:          (none)
+author:              Steven Wang, Thomas Jansen, Charlie Bloomfield
 build-type:          Simple
 cabal-version:       >=1.10
 

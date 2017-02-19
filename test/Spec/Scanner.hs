@@ -114,26 +114,26 @@ tests =
   , (":", TokenColon)
 
   -- Ints
-  , ("0", TokenIntVal Decimal 0)
-  , ("100", TokenIntVal Decimal 100)
+  , ("0", TokenInt Decimal 0)
+  , ("100", TokenInt Decimal 100)
 
-  , ("01", TokenIntVal Octal 1)
-  , ("0377", TokenIntVal Octal 255)
-  , ("032457", TokenIntVal Octal 13615)
+  , ("01", TokenInt Octal 1)
+  , ("0377", TokenInt Octal 255)
+  , ("032457", TokenInt Octal 13615)
 
-  , ("0x0", TokenIntVal Hex 0)
-  , ("0x1", TokenIntVal Hex 1)
-  , ("0xFF", TokenIntVal Hex 255)
-  , ("0xFFFFFFFFFFFFFFFF", TokenIntVal Hex (-1))
+  , ("0x0", TokenInt Hex 0)
+  , ("0x1", TokenInt Hex 1)
+  , ("0xFF", TokenInt Hex 255)
+  , ("0xFFFFFFFFFFFFFFFF", TokenInt Hex (-1))
 
   --Floats
-  , ("0.12", TokenFloatVal 0.12)
-  , (".12", TokenFloatVal 0.12)
-  , ("12.", TokenFloatVal 12.0)
+  , ("0.12", TokenFloat 0.12)
+  , (".12", TokenFloat 0.12)
+  , ("12.", TokenFloat 12.0)
 
   --Strings
-  , ("\"hello\"", TokenStringVal "\"hello\"")
-  , (show runes, TokenStringVal $ show runes)
+  , ("\"hello\"", TokenString "\"hello\"")
+  , (show runes, TokenString $ show runes)
 
   --Identifiers
   , ("_", TokenId "_")

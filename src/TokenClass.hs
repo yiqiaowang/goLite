@@ -82,11 +82,11 @@ data TokenClass
   | TokenColon
   | TokenSemicolon
   | TokenId String
-  | TokenFloatVal Float
-  | TokenIntVal IntType Integer
-  | TokenStringVal String
-  | TokenRuneVal Integer
-  | TokenRawVal String
+  | TokenFloat Float
+  | TokenInt IntType Integer
+  | TokenString String
+  | TokenRune Integer
+  | TokenRaw String
   | TokenEOF
   deriving (Eq,Show)
 

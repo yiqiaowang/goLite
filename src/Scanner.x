@@ -150,19 +150,19 @@ tokens :-
  0[xX][0-9a-fA-F]+		 { lex ((genIntLex Hex) . extractHexNumeric) }
 
 -- Float
-((0|([1-9][0-9]*))\.[0-9]+)      { lex (TokenFloatVal . read) }
-(\.[0-9]+)			 { lex (TokenFloatVal . read . prependZero) }
-([1-9][0-9]*\.)			 { lex (TokenFloatVal . read . appendZero) }
+((0|([1-9][0-9]*))\.[0-9]+)      { lex (TokenFloat . read) }
+(\.[0-9]+)			 { lex (TokenFloat . read . prependZero) }
+([1-9][0-9]*\.)			 { lex (TokenFloat . read . appendZero) }
 
 -- String Values
   \"($string_val|
 	\\$string_escape|
-	\/$comment_tail)*\"       { lex TokenStringVal }
+	\/$comment_tail)*\"       { lex TokenString }
 -- Runes
-  \'($rune_val|\\$rune_escape)\'  { lex (TokenRuneVal . read) }
+  \'($rune_val|\\$rune_escape)\'  { lex (TokenRune . read) }
 
 -- Raw strings
-  \`$raw_val*\`			  { lex TokenRawVal}
+  \`$raw_val*\`			  { lex TokenRaw}
 
 -- Identifiers
   [$alpha \_]
@@ -194,9 +194,9 @@ extractHexNumeric s = drop 2 s
 
 -- Return a function that can be consumed by lex
 genIntLex :: IntType -> (String -> TokenClass)
-genIntLex Decimal = (TokenIntVal Decimal . read)
-genIntLex Octal = (TokenIntVal Octal . extractOct2Int . readOct)
-genIntLex Hex = (TokenIntVal Hex . extractHex2Int . readHex)
+genIntLex Decimal = (TokenInt Decimal . read)
+genIntLex Octal = (TokenInt Octal . extractOct2Int . readOct)
+genIntLex Hex = (TokenInt Hex . extractHex2Int . readHex)
 
 -- To improve error messages, We keep the path of the file we are
 -- lexing in our own state.
