@@ -45,9 +45,9 @@ data All
 data Stmt
       = VarDec [Identifier] (Maybe Type) [Expression]
       | TypeDec Identifier Type
-      | StructDec Identifier [([Identifier], Type)]
-      | ArrayDec Identifier Int Type
-      | SliceDec Identifier Type
+      | Struct Identifier [([Identifier], Type)]
+      | Array Identifier Int Type
+      | Slice Identifier Type
       | SimpleStmt SimpleStmt
       | Print Expression
       | Println Expression
@@ -71,6 +71,7 @@ data SimpleStmt
       | ShortVarDec [Identifier] [Expression]
       deriving (Eq, Show)
 
+-- Expressions
 data Expression
       = Brack Expression
       | Id Identifier
@@ -91,14 +92,15 @@ data Expression
       | Minus Expression Expression      
       | Mul Expression Expression
       | Div Expression Expression
+      | Mod Expression Expression
       | BitAnd Expression Expression
       | BitOr Expression Expression
       | BitXOr Expression Expression
-      | Mod Expression Expression
       | BitAndNot Expression Expression
       | LShift Expression Expression
       | RShift Expression Expression
-      | Func Identifier [Expression]
+      | Call Identifier [Expression]
       | Append Identifier Expression
       | Index Identifier Expression
+      | Field Identifier Identifier
       deriving (Eq, Show)
