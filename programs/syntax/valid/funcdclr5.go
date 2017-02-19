@@ -1,4 +1,6 @@
 // variadic
 package tests;
 
-func(prefix string, values ...int) {}
+func variadic(prefix string, values ...int) {
+  return;
+}

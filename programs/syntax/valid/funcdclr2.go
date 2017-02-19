@@ -2,5 +2,5 @@
 package tests;
 
 func id(x int) int {
-  x;
+  return x;
 }

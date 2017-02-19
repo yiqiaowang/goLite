@@ -1,4 +1,6 @@
 //no params
 package tests;
 
-func void() {}
+func void() {
+  return;
+}

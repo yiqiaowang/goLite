@@ -2,5 +2,5 @@
 package tests;
 
 func(a, _ int, z float32) bool {
-  true;
+  return true;
 }
