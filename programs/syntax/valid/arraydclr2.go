@@ -1,7 +1,4 @@
-//distributed
+//size as expression
 package tests;
 
-var (
-  x [3]int;
-  y [4]string;
-)
+var x [3*4]int;
