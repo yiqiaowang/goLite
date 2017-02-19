@@ -1,6 +1,7 @@
 module Spec.Scanner where
 
 
+import Data.Char(digitToInt)
 import Control.Monad(forM_)
 import Test.Hspec
 import Scanner
@@ -10,8 +11,16 @@ spec :: Spec
 spec =
   describe "Scanner" $ do
     forM_ tests $ \(text, cls) ->
-      it ("correctly scans \"" ++ text ++ "\" as token class \"" ++ show cls ++ "\":") $
+      it ("correctly scans \"" ++ text ++ "\" as token class " ++ show cls ++ ":") $
         tokenClass text `shouldBe` Right cls
+
+
+runes :: [Char]
+runes =
+  ['0'..'9'] ++
+  ['a'..'z'] ++
+  ['A'..'Z'] ++
+  ['\a', '\b', '\f', '\n', '\r', '\t', '\v', '\\', '\'']
 
 
 tests :: [(String, TokenClass)]
@@ -93,7 +102,7 @@ tests =
   , (":=", TokenShortDec)
   , ("...", TokenVariadic)
 
-  , (", (", TokenLParen)
+  , ("(", TokenLParen)
   , (")", TokenRParen)
   , ("[", TokenLSquare)
   , ("]", TokenRSquare)
@@ -121,11 +130,26 @@ tests =
   , ("0.12", TokenFloatVal 0.12)
   , (".12", TokenFloatVal 0.12)
   , ("12.", TokenFloatVal 12.0)
+
+  --Strings
+  , ("\"hello\"", TokenStringVal "\"hello\"")
+  , (show runes, TokenStringVal $ show runes)
+
+  --Identifiers
+  , ("_", TokenId "_")
+  , ("__", TokenId "__")
+  , ("a", TokenId "a")
+  , ("a_z", TokenId "a_z")
+  , ("aZ", TokenId "aZ")
+  , ("a0", TokenId "a0")
+  , ("_123456789", TokenId "_123456789")
+  , ("theQuickFoxJumpsOverTheLazyBrownDog", TokenId "theQuickFoxJumpsOverTheLazyBrownDog")
   ]
 
 
 tokenClass :: String -> Either String TokenClass
 tokenClass s = case lexWrap s of
+  -- Don't care about character positions for testing
   Right (Token _ cls) -> Right cls
   Left msg -> Left msg
 

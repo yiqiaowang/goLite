@@ -3,7 +3,7 @@ module Language where
 -- The layout of the entire program
 data Program
       = Program Package [All]
-      deriving Show
+      deriving (Eq, Show)
 
 -- Packages, Identifiers, and Types are all strings
 type Package = String
@@ -17,35 +17,35 @@ data Literal
       | Bool Bool
       | Rune Char
       | String String
-      deriving Show
+      deriving (Eq, Show)
 
 -- Parameter data type (List of identifiers with an associated type)
 data Parameter
       = Parameter [Identifier] Type
-      deriving Show
+      deriving (Eq, Show)
 
 -- Clauses in Switch statment
 data Clause
       = Case [Expression] [Stmt]
       | Default [Stmt]
-      deriving Show
+      deriving (Eq, Show)
 
 -- Recursive If Statement
 data IfStmt
       = IfStmt (Maybe SimpleStmt) Expression [Stmt] (Maybe (Either IfStmt [Stmt]))
-      deriving Show
+      deriving (Eq, Show)
 
 -- All Statements
 data All
       = Stmt Stmt
       | Function Identifier [Parameter] (Maybe Type) [Stmt]
-      deriving Show
+      deriving (Eq, Show)
 
 -- Statements that can be declared inside blocks
 data Stmt
       = VarDec [Identifier] (Maybe Type) [Expression]
       | TypeDec Identifier Type
-      | StructDec Identifier [[Identifer] Type]
+      | StructDec Identifier [([Identifier], Type)]
       | ArrayDec Identifier Int Type
       | SliceDec Identifier Type
       | SimpleStmt SimpleStmt
@@ -59,7 +59,7 @@ data Stmt
       | For SimpleStmt Expression SimpleStmt [Stmt]
       | Break
       | Continue
-      deriving Show
+      deriving (Eq, Show)
 
 -- Simple statements
 data SimpleStmt
@@ -69,7 +69,7 @@ data SimpleStmt
       | Decr Identifier
       | Assign [Identifier] [Expression]
       | ShortVarDec [Identifier] [Expression]
-      deriving Show
+      deriving (Eq, Show)
 
 data Expression
       = Brack Expression
@@ -81,9 +81,11 @@ data Expression
       | BitComplement Expression
       | Or Expression Expression
       | And Expression Expression
-      | Equals Expression Expresssion
+      | Equals Expression Expression
       | NotEquals Expression Expression
       | LThan Expression Expression
       | LEThan Expression Expression
       | GThan Expression Expression
       | GEThan Expression Expression
+      | Plus Expression Expression
+      deriving (Eq, Show)

@@ -1,13 +1,16 @@
 module Main where
 
 
-import Control.Monad(forM_)
+import Test.Hspec
+import Test.Hspec.Core.Runner(hspecResult, summaryFailures, Summary)
 import System.FilePath(takeExtension)
 import System.Directory(getDirectoryContents)
-import Test.Hspec
+import System.Exit(exitSuccess, exitFailure)
 
-
+import qualified Parser
 import qualified Spec.Scanner
+import qualified Spec.Parser
+import qualified Spec.Pretty
 
 
 --
@@ -19,21 +22,22 @@ loadPrograms directory = do
       mapM (\file -> readFile file >>= \text -> return (file, text)) minFiles
 
 
+
 -- `main` is here so that this module can be run from GHCi on its own.  It is
 -- not needed for automatic spec discovery.
 main :: IO ()
 main = do
-  hspec Spec.Scanner.spec
+  validSyntax <- loadPrograms "programs/syntax/valid"
+  invalidSyntax <- loadPrograms "programs/syntax/invalid"
 
-  -- validSyntax <- loadPrograms "programs/syntax/valid"
-  -- invalidSyntax <- loadPrograms "programs/syntax/valid"
-  --
-  --
-  -- hspec $ describe "Parser" $ do
-  --   forM_ validSyntax $ \(file, text) ->
-  --     it ("correctly parses : " ++ file) $
-  --       pendingWith "need to write parser"
-  --
-  --   forM_ invalidSyntax $ \(file, text) ->
-  --     it ("fails to parse : " ++ file) $
-  --       pendingWith "need to write parser"
+  scannerSummary <- hspecResult Spec.Scanner.spec
+  parserSummary <- hspecResult $ Spec.Parser.spec validSyntax invalidSyntax
+  prettySummary <- hspecResult $ Spec.Pretty.spec validSyntax
+
+  if (any (not . isSuccess) [scannerSummary, parserSummary, prettySummary])
+    then exitFailure
+    else exitSuccess
+
+    where
+      isSuccess :: Summary -> Bool
+      isSuccess summary = summaryFailures summary == 0
