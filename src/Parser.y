@@ -21,10 +21,14 @@ import Scanner
         package                     { Token _ TokenPackage }
         ';'                         { Token _ TokenSemicolon }
         var                         { Token _ TokenVar}
+        type                        { Token _ TokenType}
+        struct                      { Token _ TokenStruct}
         '('                         { Token _ TokenLParen}
         ')'                         { Token _ TokenRParen}
         '='                         { Token _ TokenEq }
         ','                         { Token _ TokenComma}
+        '{'                         { Token _ TokenLCurly}
+        '}'                         { Token _ TokenRCurly}
 
         id                          { Token _ (TokenId $$) }
         int                         { Token _ (TokenInt Decimal $$) }
@@ -53,21 +57,19 @@ Alls  : Alls All                    { $2 : $1 }
 All   : Stmt                        { Stmt $1 }
 
 
-Stmt  : VarDec                      { $1 }
-
-
-VarDec
-      : var VarDec1                       { VarDec $2 }
+Stmt  : var VarDec ';'                    { VarDec $2 }
       | var '(' VarDecList ')'            { VarDecList $3 }
-
-VarDec1
-      : VarList Type ';'              { Variable $1 (Just $2) [] }
-      | VarList '=' ExpList ';'       { Variable $1 Nothing $3 }
-      | VarList Type '=' ExpList ';'  { Variable $1 (Just $2) $4 }
+      | type TypeDec                      { TypeDec $2 }
+      | type '(' TypeDecList ')'          { TypeDecList $3 }
+ 
+VarDec
+      : VarList Type                  { Variable $1 (Just $2) [] }
+      | VarList '=' ExpList           { Variable $1 Nothing $3 }
+      | VarList Type '=' ExpList      { Variable $1 (Just $2) $4 }
 
 VarDecList
-      : VarDec1 VarDecList                 { $1 : $2 }
-      | VarDec1                            { [$1] }
+      : VarDec VarDecList                 { $1 : $2 }
+      | VarDec                            { [$1] }
 
 ExpList
       : Exp ',' ExpList               { $1 : $3 }
@@ -77,9 +79,19 @@ VarList
       : id ',' VarList              { $1 : $3 }
       | id                          { [$1] }
 
+TypeDec
+      : id Type ';'                    { TypeName $1 $2 }
+      | id struct '{' StructList '}'   { Struct $1 $4 }
+
+TypeDecList
+      : TypeDec TypeDecList         { $1 : $2 }
+      | TypeDec                     { [$1] }
+
+StructList
+      : VarList Type ';' StructList    { ($1, $2) : $4 }
+      | VarList Type ';'               { [($1, $2)] }
 
 Exp   : Lit                         { Literal $1 }
-
 
 Lit   : int                         { Int $1 }
       | oct                         { Int $1 }

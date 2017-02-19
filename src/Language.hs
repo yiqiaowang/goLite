@@ -48,6 +48,7 @@ data Variable
 
 data TypeName
       = TypeName Identifier Type
+      | Struct Identifier [([Identifier], Type)]
       deriving (Eq, Show)
 
 -- Statements that can be declared inside blocks
@@ -56,7 +57,6 @@ data Stmt
       | VarDecList [Variable]
       | TypeDec TypeName
       | TypeDecList [TypeName]
-      | Struct Identifier [([Identifier], Type)]
       | Array Identifier Int Type
       | Slice Identifier Type
       | SimpleStmt SimpleStmt
