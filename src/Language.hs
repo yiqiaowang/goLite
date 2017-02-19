@@ -12,11 +12,12 @@ type Type = String
 
 -- Literal values
 data Literal
-      = Int Int
+      = Int Integer
       | Float64 Float
-      | Bool Bool
-      | Rune Char
+      -- | Bool Bool
+      | Rune Integer
       | String String
+      | Raw String
       deriving (Eq, Show)
 
 -- Parameter data type (List of identifiers with an associated type)
