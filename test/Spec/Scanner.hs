@@ -10,9 +10,21 @@ import Scanner
 spec :: Spec
 spec =
   describe "Scanner" $ do
-    forM_ tests $ \(text, cls) ->
+    forM_ tokenTests $ \(text, cls) ->
       it ("correctly scans \"" ++ text ++ "\" as token class " ++ show cls ++ ":") $
         tokenClass text `shouldBe` Right cls
+    forM_ whiteTests $ \white ->
+      it ("correctly scans '" ++ show white ++ "' by ignoring it") $
+        tokenClass white `shouldBe` Right TokenEOF
+
+
+whiteTests :: [String]
+whiteTests =
+  [ " "
+  , "\n"
+  , "\r"
+  , "\t"
+  ]
 
 
 runes :: [Char]
@@ -23,8 +35,8 @@ runes =
   ['\a', '\b', '\f', '\n', '\r', '\t', '\v', '\\', '\'']
 
 
-tests :: [(String, TokenClass)]
-tests =
+tokenTests :: [(String, TokenClass)]
+tokenTests =
     -- Go keywords
   [ ("break", TokenBreak)
   , ("case", TokenCase)

@@ -47,6 +47,7 @@ $comment_tail = [^\/\*]
 
 -- All token actions have type ( AlexPosn -> String -> Token )
 tokens :-
+  @newline                        ;
   $white+                         ;
   @comment 			  ;
   @b_comment			  ;
