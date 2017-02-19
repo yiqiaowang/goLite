@@ -24,6 +24,7 @@ import Scanner
         '('                         { Token _ TokenLParen}
         ')'                         { Token _ TokenRParen}
         '='                         { Token _ TokenEq }
+        ','                         { Token _ TokenComma}
 
         id                          { Token _ (TokenId $$) }
         int                         { Token _ (TokenInt Decimal $$) }
@@ -56,9 +57,25 @@ Stmt  : VarDec                      { $1 }
 
 
 VarDec
-      : var id Type ';'             { VarDec [] Nothing [] }
-      | var id '=' Exp ';'          { VarDec [] Nothing [] }
-      | var id Type '=' Exp ';'     { VarDec [] Nothing [] }
+      : var VarDec1                       { VarDec $2 }
+      | var '(' VarDecList ')'            { VarDecList $3 }
+
+VarDec1
+      : VarList Type ';'              { Variable $1 (Just $2) [] }
+      | VarList '=' ExpList ';'       { Variable $1 Nothing $3 }
+      | VarList Type '=' ExpList ';'  { Variable $1 (Just $2) $4 }
+
+VarDecList
+      : VarDec1 VarDecList                 { $1 : $2 }
+      | VarDec1                            { [$1] }
+
+ExpList
+      : Exp ',' ExpList               { $1 : $3 }
+      | Exp                           { [$1] }
+
+VarList
+      : id ',' VarList              { $1 : $3 }
+      | id                          { [$1] }
 
 
 Exp   : Lit                         { Literal $1 }

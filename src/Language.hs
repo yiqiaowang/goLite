@@ -42,10 +42,20 @@ data All
       | Function Identifier [Parameter] (Maybe Type) [Stmt]
       deriving (Eq, Show)
 
+data Variable
+      = Variable [Identifier] (Maybe Type) [Expression]
+      deriving (Eq, Show)
+
+data TypeName
+      = TypeName Identifier Type
+      deriving (Eq, Show)
+
 -- Statements that can be declared inside blocks
 data Stmt
-      = VarDec [Identifier] (Maybe Type) [Expression]
-      | TypeDec Identifier Type
+      = VarDec Variable
+      | VarDecList [Variable]
+      | TypeDec TypeName
+      | TypeDecList [TypeName]
       | Struct Identifier [([Identifier], Type)]
       | Array Identifier Int Type
       | Slice Identifier Type
