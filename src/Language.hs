@@ -88,4 +88,17 @@ data Expression
       | GThan Expression Expression
       | GEThan Expression Expression
       | Plus Expression Expression
+      | Minus Expression Expression      
+      | Mul Expression Expression
+      | Div Expression Expression
+      | BitAnd Expression Expression
+      | BitOr Expression Expression
+      | BitXOr Expression Expression
+      | Mod Expression Expression
+      | BitAndNot Expression Expression
+      | LShift Expression Expression
+      | RShift Expression Expression
+      | Func Identifier [Expression]
+      | Append Identifier Expression
+      | Index Identifier Expression
       deriving (Eq, Show)
