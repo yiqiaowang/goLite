@@ -88,6 +88,7 @@ data TokenClass
   | TokenRune Integer
   | TokenRaw String
   | TokenEOF
+  | TokenNewLine
   deriving (Eq,Show)
 
 
