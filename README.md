@@ -1,3 +1,6 @@
+### Status
+[![Build Status](https://api.travis-ci.com/yiqiaowang/comp520-2017-01.svg?token=hr7c7sHjqwUBhqrhRBYy&branch=master)](https://travis-ci.org/yiqiaowang/comp520-2017-01)
+
 # goLite
 
 Team Members:
