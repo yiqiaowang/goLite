@@ -23,12 +23,20 @@ import Scanner
         var                         { Token _ TokenVar}
         type                        { Token _ TokenType}
         struct                      { Token _ TokenStruct}
+        func                        { Token _ TokenFunc}
+        return                      { Token _ TokenReturn}
+        print                       { Token _ TokenPrint }
         '('                         { Token _ TokenLParen}
         ')'                         { Token _ TokenRParen}
         '='                         { Token _ TokenEq }
         ','                         { Token _ TokenComma}
         '{'                         { Token _ TokenLCurly}
         '}'                         { Token _ TokenRCurly}
+        '['                         { Token _ TokenLSquare}
+        ']'                         { Token _ TokenRSquare}
+        '++'                        { Token _ TokenInc}
+        '--'                        { Token _ TokenDec}
+        '+='                        { Token _ TokenAddEq}
 
         id                          { Token _ (TokenId $$) }
         int                         { Token _ (TokenInt Decimal $$) }
@@ -54,14 +62,40 @@ Alls  : Alls All                    { $2 : $1 }
       | {- Empty -}                 { [] }
 
 
-All   : Stmt                        { Stmt $1 }
+All   : Stmt                                            { Stmt $1 }
+      | func id '(' ParamList ')' '{' Stmts '}'         { Function $2 $4 Nothing $7 }
+      | func id '(' ParamList ')' Type '{' Stmts '}'    { Function $2 $4 (Just $6) $8 }
+      | func id '(' ')' '{' Stmts '}'                   { Function $2 [] Nothing $6 }
+      | func id '(' ')' Type '{' Stmts '}'              { Function $2 [] (Just $5) $7 }
 
+ParamList
+      : Param ',' ParamList               { $1 : $3 }
+      | Param                             { [$1] }
+
+Param : VarList Type                      { Parameter $1 $2 }
+
+Stmts : Stmt Stmts                        { $1 : $2 }
+      | {- Empty -}                       { [] }
 
 Stmt  : var VarDec ';'                    { VarDec $2 }
       | var '(' VarDecList ')'            { VarDecList $3 }
-      | type TypeDec                      { TypeDec $2 }
+      | type TypeDec ';'                  { TypeDec $2 }
       | type '(' TypeDecList ')'          { TypeDecList $3 }
- 
+      | var id '[' Exp ']' Type ';'       { Array $2 $4 $6 }
+      | var id '[' ']' Type ';'           { Slice $2 $5 }
+      | return ';'                        { Return Nothing}
+      | return Exp ';'                    { Return (Just $2)}
+      | SimpleStmt ';'                    { SimpleStmt $1 }
+      | print '(' ExpList ')' ';'         { Print $3 }
+
+  
+SimpleStmt
+      : Exp                       { ExpStmt $1 }
+      | id '++'                   { Incr $1 }
+      | id '--'                   { Decr $1 }
+      | VarList '=' ExpList       { Assign $1 $3 }
+      | id '+=' Exp               { PlusEq $1 $3 }
+
 VarDec
       : VarList Type                  { Variable $1 (Just $2) [] }
       | VarList '=' ExpList           { Variable $1 Nothing $3 }
@@ -69,7 +103,7 @@ VarDec
 
 VarDecList
       : VarDec VarDecList                 { $1 : $2 }
-      | VarDec                            { [$1] }
+      | {- Empty -}                       { [] }
 
 ExpList
       : Exp ',' ExpList               { $1 : $3 }
@@ -85,17 +119,20 @@ TypeDec
 
 TypeDecList
       : TypeDec TypeDecList         { $1 : $2 }
-      | TypeDec                     { [$1] }
+      | {- Empty -}                       { [] }
 
 StructList
       : VarList Type ';' StructList    { ($1, $2) : $4 }
-      | VarList Type ';'               { [($1, $2)] }
+      | {- Empty -}                       { [] }
 
 Exp   : Lit                         { Literal $1 }
+      | id                          { Id $1 }
 
-Lit   : int                         { Int $1 }
-      | oct                         { Int $1 }
-      | hex                         { Int $1 }
+Num : int                         { Int $1 }
+    | oct                         { Int $1 }
+    | hex                         { Int $1 }
+
+Lit   : Num                         {$1}
       | float                       { Float64 $1 }
       | rune                        { Rune $1 }
       | string                      { String $1 }

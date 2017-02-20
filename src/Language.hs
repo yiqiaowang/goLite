@@ -57,11 +57,11 @@ data Stmt
       | VarDecList [Variable]
       | TypeDec TypeName
       | TypeDecList [TypeName]
-      | Array Identifier Int Type
+      | Array Identifier Expression Type
       | Slice Identifier Type
       | SimpleStmt SimpleStmt
-      | Print Expression
-      | Println Expression
+      | Print [Expression]
+      | Println [Expression]
       | Return (Maybe Expression)
       | If IfStmt
       | Switch (Maybe SimpleStmt) (Maybe Expression) [Clause]
@@ -74,11 +74,21 @@ data Stmt
 
 -- Simple statements
 data SimpleStmt
-      = EmptyStmt
-      | ExpStmt Expression
+      = ExpStmt Expression
       | Incr Identifier
       | Decr Identifier
       | Assign [Identifier] [Expression]
+      | PlusEq Identifier Expression
+      | MinusEq Identifier Expression
+      | MulEq Identifier Expression
+      | DivEq Identifier Expression
+      | ModEq Identifier Expression
+      | BitAndEq Identifier Expression
+      | BitOrEq Identifier Expression
+      | BitXOrEq Identifier Expression
+      | BitLShiftEq Identifier Expression
+      | BitRShiftEq Identifier Expression
+      | BitClearEq Identifier Expression
       | ShortVarDec [Identifier] [Expression]
       deriving (Eq, Show)
 
