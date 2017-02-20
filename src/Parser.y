@@ -26,6 +26,8 @@ import Scanner
         func                        { Token _ TokenFunc}
         return                      { Token _ TokenReturn}
         print                       { Token _ TokenPrint }
+        println                     { Token _ TokenPrintln }
+
         '('                         { Token _ TokenLParen}
         ')'                         { Token _ TokenRParen}
         '='                         { Token _ TokenEq }
@@ -68,14 +70,18 @@ All   : Stmt                                            { Stmt $1 }
       | func id '(' ')' '{' Stmts '}'                   { Function $2 [] Nothing $6 }
       | func id '(' ')' Type '{' Stmts '}'              { Function $2 [] (Just $5) $7 }
 
+
 ParamList
       : Param ',' ParamList               { $1 : $3 }
       | Param                             { [$1] }
 
+
 Param : VarList Type                      { Parameter $1 $2 }
+
 
 Stmts : Stmt Stmts                        { $1 : $2 }
       | {- Empty -}                       { [] }
+
 
 Stmt  : var VarDec ';'                    { VarDec $2 }
       | var '(' VarDecList ')'            { VarDecList $3 }
@@ -86,9 +92,10 @@ Stmt  : var VarDec ';'                    { VarDec $2 }
       | return ';'                        { Return Nothing}
       | return Exp ';'                    { Return (Just $2)}
       | SimpleStmt ';'                    { SimpleStmt $1 }
-      | print '(' ExpList ')' ';'         { Print $3 }
+      | print '(' ExpListEmpty ')' ';'    { Print $3 }
+      | println '(' ExpListEmpty ')' ';'  { Println $3 }
 
-  
+
 SimpleStmt
       : Exp                       { ExpStmt $1 }
       | id '++'                   { Incr $1 }
@@ -96,43 +103,61 @@ SimpleStmt
       | VarList '=' ExpList       { Assign $1 $3 }
       | id '+=' Exp               { PlusEq $1 $3 }
 
+
 VarDec
       : VarList Type                  { Variable $1 (Just $2) [] }
       | VarList '=' ExpList           { Variable $1 Nothing $3 }
       | VarList Type '=' ExpList      { Variable $1 (Just $2) $4 }
 
+
 VarDecList
       : VarDec VarDecList                 { $1 : $2 }
       | {- Empty -}                       { [] }
 
+
 ExpList
+      :: { [Expression] }
       : Exp ',' ExpList               { $1 : $3 }
       | Exp                           { [$1] }
+
+
+ExpListEmpty
+      :: { [Expression] }
+      : Exp ',' ExpList                 { $1 : $3 }
+      | Exp                             { [$1] }
+      | {- Empty -}                     { [] }
+
 
 VarList
       : id ',' VarList              { $1 : $3 }
       | id                          { [$1] }
 
+
 TypeDec
       : id Type ';'                    { TypeName $1 $2 }
       | id struct '{' StructList '}'   { Struct $1 $4 }
+
 
 TypeDecList
       : TypeDec TypeDecList         { $1 : $2 }
       | {- Empty -}                       { [] }
 
+
 StructList
-      : VarList Type ';' StructList    { ($1, $2) : $4 }
-      | {- Empty -}                       { [] }
+      : VarList Type ';' StructList { ($1, $2) : $4 }
+      | {- Empty -}                 { [] }
+
 
 Exp   : Lit                         { Literal $1 }
       | id                          { Id $1 }
 
-Num : int                         { Int $1 }
-    | oct                         { Int $1 }
-    | hex                         { Int $1 }
 
-Lit   : Num                         {$1}
+Num   : int                         { Int $1 }
+      | oct                         { Int $1 }
+      | hex                         { Int $1 }
+
+
+Lit   : Num                         { $1 }
       | float                       { Float64 $1 }
       | rune                        { Rune $1 }
       | string                      { String $1 }
