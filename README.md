@@ -11,5 +11,13 @@ Team Members:
 ### Installation
 ---
 
+### Build
+`stack build`
+
+
 ### Test
----
+`stack test`
+
+
+### Execute
+`stack exec golite-exe -- relative/path/filename.go`
