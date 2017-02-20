@@ -14,7 +14,6 @@ import Prelude hiding ( lex )
 import Control.Monad ( liftM )
 import Numeric (readOct, readHex)
 import TokenClass
-
 }
 
 %wrapper "monadUserState"
@@ -47,7 +46,7 @@ $comment_tail = [^\/\*]
 
 -- All token actions have type ( AlexPosn -> String -> Token )
 tokens :-
-  @newline                        { lex' TokenNewLine } 
+  @newline                        ;
   $white+                         ;
   @comment 			  ;
   @b_comment			  ;
@@ -70,7 +69,9 @@ tokens :-
   import			  { lex' TokenImport }
   interface			  { lex' TokenInterface }
   map				  { lex' TokenMap }
-  package			  { lex' TokenPackage } range				  { lex' TokenRange } return			  { lex' TokenReturn }
+  package			  { lex' TokenPackage }
+  range				  { lex' TokenRange }
+  return			  { lex' TokenReturn }
   select			  { lex' TokenSelect }
   struct			  { lex' TokenStruct }
   switch			  { lex' TokenSwitch }
