@@ -21,7 +21,6 @@ spec =
 whiteTests :: [String]
 whiteTests =
   [ " "
-  , "\n"
   , "\r"
   , "\t"
   ]
@@ -156,6 +155,10 @@ tokenTests =
   , ("a0", TokenId "a0")
   , ("_123456789", TokenId "_123456789")
   , ("theQuickFoxJumpsOverTheLazyBrownDog", TokenId "theQuickFoxJumpsOverTheLazyBrownDog")
+
+
+  -- Newline
+  , ("\\n" , TokenNewLine)
   ]
 
 
