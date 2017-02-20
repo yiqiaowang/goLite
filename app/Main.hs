@@ -1,6 +1,7 @@
 module Main where
 
 
+import System.IO(hPutStrLn, stderr)
 import System.FilePath
 import System.Console.ArgParser
 import qualified Parser
@@ -28,7 +29,7 @@ compile options = do
   text <- readFile goLiteFile
   case Parser.parse goLiteFile text of
     Right program -> writeFile prettyFile $ Pretty.pretty program
-    Left errorMsg -> putStrLn errorMsg
+    Left errorMsg -> hPutStrLn stderr errorMsg
 
   where
     goLiteFile = filename options

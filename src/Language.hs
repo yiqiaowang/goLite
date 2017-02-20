@@ -110,7 +110,7 @@ data Expression
       | GThan Expression Expression
       | GEThan Expression Expression
       | Plus Expression Expression
-      | Minus Expression Expression      
+      | Minus Expression Expression
       | Mul Expression Expression
       | Div Expression Expression
       | Mod Expression Expression
