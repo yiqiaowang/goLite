@@ -47,7 +47,7 @@ $comment_tail = [^\/\*]
 
 -- All token actions have type ( AlexPosn -> String -> Token )
 tokens :-
-  @newline                        ;
+  @newline                        { lex' TokenNewLine } 
   $white+                         ;
   @comment 			  ;
   @b_comment			  ;
@@ -70,9 +70,7 @@ tokens :-
   import			  { lex' TokenImport }
   interface			  { lex' TokenInterface }
   map				  { lex' TokenMap }
-  package			  { lex' TokenPackage }
-  range				  { lex' TokenRange }
-  return			  { lex' TokenReturn }
+  package			  { lex' TokenPackage } range				  { lex' TokenRange } return			  { lex' TokenReturn }
   select			  { lex' TokenSelect }
   struct			  { lex' TokenStruct }
   switch			  { lex' TokenSwitch }
