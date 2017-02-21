@@ -158,7 +158,7 @@ tokenTests =
 
 
   -- Newline
-  , ("\\n" , TokenNewLine)
+  -- , ("\\n" , TokenNewLine)
   ]
 
 
