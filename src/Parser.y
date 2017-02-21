@@ -182,7 +182,6 @@ SimpleStmt
       | VarList ':=' ExpList      { ShortVarDec $1 $3 }
 
 
-
 VarDec
       : VarList Type                  { Variable $1 (Just $2) [] }
       | VarList '=' ExprList           { Variable $1 Nothing $3 }
