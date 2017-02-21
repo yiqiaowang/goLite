@@ -18,37 +18,65 @@ import Scanner
 
 
 %token
-        package                     { Token _ TokenPackage }
-        ';'                         { Token _ TokenSemicolon }
-        var                         { Token _ TokenVar}
-        type                        { Token _ TokenType}
-        struct                      { Token _ TokenStruct}
-        func                        { Token _ TokenFunc}
-        return                      { Token _ TokenReturn}
-        print                       { Token _ TokenPrint }
-        println                     { Token _ TokenPrintln }
+	package                     { Token _ TokenPackage }
+	';'                         { Token _ TokenSemicolon }
+	var                         { Token _ TokenVar}
+	type                        { Token _ TokenType}
+	struct                      { Token _ TokenStruct}
+	func                        { Token _ TokenFunc}
+	return                      { Token _ TokenReturn}
+	print                       { Token _ TokenPrint }
+	println                     { Token _ TokenPrintln }
+	append			    { Token _ TokenAppend }
 
-        '('                         { Token _ TokenLParen}
-        ')'                         { Token _ TokenRParen}
-        '='                         { Token _ TokenEq }
-        ','                         { Token _ TokenComma}
-        '{'                         { Token _ TokenLCurly}
-        '}'                         { Token _ TokenRCurly}
-        '['                         { Token _ TokenLSquare}
-        ']'                         { Token _ TokenRSquare}
-        '++'                        { Token _ TokenInc}
-        '--'                        { Token _ TokenDec}
-        '+='                        { Token _ TokenAddEq}
+	'('                         { Token _ TokenLParen }
+	')'                         { Token _ TokenRParen }
+	'='                         { Token _ TokenEq }
+	','                         { Token _ TokenComma}
+	'{'                         { Token _ TokenLCurly }
+	'}'                         { Token _ TokenRCurly }
+	'['                         { Token _ TokenLSquare }
+	']'                         { Token _ TokenRSquare }
+	'++'                        { Token _ TokenInc }
+	'--'                        { Token _ TokenDec }
+	'+='                        { Token _ TokenAddEq }
 
-        id                          { Token _ (TokenId $$) }
-        int                         { Token _ (TokenInt Decimal $$) }
-        oct                         { Token _ (TokenInt Octal $$) }
-        hex                         { Token _ (TokenInt Hex $$) }
-        float                       { Token _ (TokenFloat $$) }
-        string                      { Token _ (TokenString $$) }
-        rune                        { Token _ (TokenRune $$) }
-        raw                         { Token _ (TokenRaw $$) }
+-- Binary Operations
+	'||'			    { Token _ TokenLogOr }
+	'&&'			    { Token _ TokenLogAnd }
+	'=='			    { Token _ TokenBoolEq }
+	'!='			    { Token _ TokenBoolNotEq }
+	'<'			    { Token _ TokenBoolLT }
+	'<='			    { Token _ TokenBoolLTE }
+	'>'			    { Token _ TokenBoolGT }
+	'>='			    { Token _ TokenBoolGTE }
+	'+'			    { Token _ TokenAdd }
+	'-'			    { Token _ TokenSub }
+	'|'			    { Token _ TokenBitOr }
+	'^'			    { Token _ TokenBitXor }
+	'*'			    { Token _ TokenMult }
+	'/'			    { Token _ TokenDiv }
+	'%'			    { Token _ TokenMod }
+	'<<'			    { Token _ TokenBitLShift }
+	'>>'			    { Token _ TokenBitRShift }
+	'&'			    { Token _ TokenBitAnd }
+	'&^'			    { Token _ TokenBitClear }
 
+-- Unary Operations
+	'!'			    { Token _ TokenBoolNot }
+	'<-'			    { Token _ TokenChannel }
+
+	id                          { Token _ (TokenId $$) }
+	int                         { Token _ (TokenInt Decimal $$) }
+	oct                         { Token _ (TokenInt Octal $$) }
+	hex                         { Token _ (TokenInt Hex $$) }
+	float                       { Token _ (TokenFloat $$) }
+	string                      { Token _ (TokenString $$) }
+	rune                        { Token _ (TokenRune $$) }
+	raw                         { Token _ (TokenRaw $$) }
+
+	if			    { Token _ TokenIf }
+	else			    { Token _ TokenElse }
 
 %%
 
@@ -64,15 +92,13 @@ Alls  : Alls All                    { $2 : $1 }
       | {- Empty -}                 { [] }
 
 
-All   : Stmt                                            { Stmt $1 }
+All   : Stmt                        { Stmt $1 }
       | func id '(' ParamList ')' '{' Stmts '}'         { Function $2 $4 Nothing $7 }
       | func id '(' ParamList ')' Type '{' Stmts '}'    { Function $2 $4 (Just $6) $8 }
       | func id '(' ')' '{' Stmts '}'                   { Function $2 [] Nothing $6 }
       | func id '(' ')' Type '{' Stmts '}'              { Function $2 [] (Just $5) $7 }
 
-
-ParamList
-      : Param ',' ParamList               { $1 : $3 }
+ParamList : Param ',' ParamList               { $1 : $3 }
       | Param                             { [$1] }
 
 
@@ -87,27 +113,27 @@ Stmt  : var VarDec ';'                    { VarDec $2 }
       | var '(' VarDecList ')'            { VarDecList $3 }
       | type TypeDec ';'                  { TypeDec $2 }
       | type '(' TypeDecList ')'          { TypeDecList $3 }
-      | var id '[' Exp ']' Type ';'       { Array $2 $4 $6 }
+      | var id '[' Expr ']' Type ';'       { Array $2 $4 $6 }
       | var id '[' ']' Type ';'           { Slice $2 $5 }
       | return ';'                        { Return Nothing}
-      | return Exp ';'                    { Return (Just $2)}
+      | return Expr ';'                    { Return (Just $2)}
       | SimpleStmt ';'                    { SimpleStmt $1 }
-      | print '(' ExpListEmpty ')' ';'    { Print $3 }
-      | println '(' ExpListEmpty ')' ';'  { Println $3 }
+      | print '(' ExprListEmpty ')' ';'    { Print $3 }
+      | println '(' ExprListEmpty ')' ';'  { Println $3 }
 
 
 SimpleStmt
-      : Exp                       { ExpStmt $1 }
+      : Expr                       { ExprStmt $1 }
       | id '++'                   { Incr $1 }
       | id '--'                   { Decr $1 }
-      | VarList '=' ExpList       { Assign $1 $3 }
-      | id '+=' Exp               { PlusEq $1 $3 }
+      | VarList '=' ExprList       { Assign $1 $3 }
+      | id '+=' Expr               { PlusEq $1 $3 }
 
 
 VarDec
       : VarList Type                  { Variable $1 (Just $2) [] }
-      | VarList '=' ExpList           { Variable $1 Nothing $3 }
-      | VarList Type '=' ExpList      { Variable $1 (Just $2) $4 }
+      | VarList '=' ExprList           { Variable $1 Nothing $3 }
+      | VarList Type '=' ExprList      { Variable $1 (Just $2) $4 }
 
 
 VarDecList
@@ -115,16 +141,15 @@ VarDecList
       | {- Empty -}                       { [] }
 
 
-ExpList
+ExprList
       :: { [Expression] }
-      : Exp ',' ExpList               { $1 : $3 }
-      | Exp                           { [$1] }
+      : Expr ',' ExprList               { $1 : $3 }
+      | Expr                           { [$1] }
 
-
-ExpListEmpty
+ExprListEmpty
       :: { [Expression] }
-      : Exp ',' ExpList                 { $1 : $3 }
-      | Exp                             { [$1] }
+      : Expr ',' ExprList                 { $1 : $3 }
+      | Expr                             { [$1] }
       | {- Empty -}                     { [] }
 
 
@@ -148,8 +173,55 @@ StructList
       | {- Empty -}                 { [] }
 
 
-Exp   : Lit                         { Literal $1 }
-      | id                          { Id $1 }
+Expr
+       :: { Expression }
+       : UnaryExpr      { $1 }
+       | Expr BinaryOp Expr { $2 $1 $3 }
+
+UnaryExpr : PrimaryExpr { $1 }
+	  | UnaryOp UnaryExpr { $1 $2 }
+
+PrimaryExpr : '(' Expr ')' { $2 }
+	    | id	   { Id $1 }
+	    | Lit	   { Literal $1 }
+	    | FuncCall	   { $1 }
+	    | Append	   { $1 }
+-- TODO	    | TypeCast	   { $1 }
+
+BinaryOp : '||'         { Or }
+	 | '&&'		{ And }
+	 | RelOp	{ $1 }
+	 | AddOp	{ $1 }
+	 | MulOp	{ $1 }
+
+RelOp	 : '=='		{ Equals }
+	 | '!='		{ NotEquals }
+	 | '<'		{ LThan }
+	 | '<='		{ LEThan }
+	 | '>'		{ GThan }
+	 | '>='		{ GEThan }
+
+AddOp	 : '+'		{ Add }
+	 | '-'		{ Sub }
+	 | '|'		{ BitOr }
+	 | '^'		{ BitXor }
+
+MulOp	 : '*'		{ Mult }
+	 | '/'		{ Div }
+	 | '%'		{ Mod }
+	 | '<<'		{ BitLShift }
+	 | '>>'		{ BitRShift }
+	 | '&'		{ BitAnd }
+	 | '&^'		{ BitClear }
+
+
+UnaryOp	 : '+'		{ UnaryPos }
+	 | '-'		{ UnaryNeg }
+	 | '!'		{ BoolNot }
+	 | '^'		{ BitComplement }
+	 | '*'		{ Pointer }
+	 | '&'		{ Address }
+	 | '<-'		{ Channel }
 
 
 Num   : int                         { Int $1 }
@@ -165,6 +237,18 @@ Lit   : Num                         { $1 }
 
 
 Type  : id                          { $1 }
+
+Append : append '(' Expr ',' Expr ')' { Append $3 $5 }
+
+-- Issue: FuncCall doesn't work if we need to support things like
+-- math.pow(x,y). This is due to the constructor taking arguments
+-- Identifier Expression, instead of Expression Expression.
+
+FuncCall : id '(' ExprListEmpty ')' ';' { FuncCall $1 $3}
+
+-- Block : '{' Stmts '}'
+
+-- If    : if SimpleStmt ';'
 
 
 {
