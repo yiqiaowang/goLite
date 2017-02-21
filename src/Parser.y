@@ -130,21 +130,21 @@ Stmt  : var VarDec ';'                            { VarDec $2 }
       | var '(' VarDecList ')'                    { VarDecList $3 }
       | type TypeDec ';'                          { TypeDec $2 }
       | type '(' TypeDecList ')'                  { TypeDecList $3 }
-      | var id '[' Exp ']' Type ';'               { Array $2 $4 $6 }
+      | var id '[' Expr ']' Type ';'               { Array $2 $4 $6 }
       | var id '[' ']' Type ';'                   { Slice $2 $5 }
       | return ';'                                { Return Nothing }
-      | return Exp ';'                            { Return (Just $2) }
+      | return Expr ';'                            { Return (Just $2) }
       | SimpleStmt ';'                            { SimpleStmt $1 }
-      | print '(' ExpListEmpty ')' ';'            { Print $3 }
-      | println '(' ExpListEmpty ')' ';'          { Println $3 }
+      | print '(' ExprListEmpty ')' ';'            { Print $3 }
+      | println '(' ExprListEmpty ')' ';'          { Println $3 }
       | If                                        { If $1 }
       | switch '{' ClauseList '}'                 { Switch Nothing Nothing $3 }
       | switch SimpleStmt ';' '{' ClauseList '}'  { Switch (Just $2) Nothing $5 } 
-      | switch Exp '{' ClauseList '}'             { Switch Nothing (Just $2) $4 }
-      | switch SimpleStmt ';' Exp'{' ClauseList '}'   { Switch (Just $2) (Just $4) $6 }
+      | switch Expr '{' ClauseList '}'             { Switch Nothing (Just $2) $4 }
+      | switch SimpleStmt ';' Expr'{' ClauseList '}'   { Switch (Just $2) (Just $4) $6 }
       | for '{' Stmts '}'                         { Infinite $3 }
-      | for Exp '{' Stmts '}'                     { While $2 $4 }
-      | for SimpleStmt ';' Exp ';' SimpleStmt '{' Stmts '}'         { For $2 $4 $6 $8 }
+      | for Expr '{' Stmts '}'                     { While $2 $4 }
+      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}'         { For $2 $4 $6 $8 }
       | break ';'                                 { Break }
       | continue ';'                              { Continue }
 
@@ -153,33 +153,33 @@ ClauseList
       | {- Empty -}                       { [] }
 
 Clause
-      : case ExpList ':' Stmts          { Case $2 $4 }
+      : case ExprList ':' Stmts          { Case $2 $4 }
       | default ':' Stmts               { Default $3 }
 
-If    : if SimpleStmt ';' Exp '{' Stmts '}'                            { IfStmt (Just $2) $4 $6 Nothing }
-      | if SimpleStmt ';' Exp '{' Stmts '}' else '{' Stmts '}'       { IfStmt (Just $2) $4 $6 (Just (Right $10)) }
-      | if SimpleStmt ';' Exp '{' Stmts '}' else If                  { IfStmt (Just $2) $4 $6 (Just (Left $9)) }
-      | if Exp '{' Stmts '}'                                       { IfStmt Nothing $2 $4 Nothing }
-      | if Exp '{' Stmts '}' else '{' Stmts '}'                  { IfStmt Nothing $2 $4 (Just (Right $8)) }
-      | if Exp '{' Stmts '}' else If                             { IfStmt Nothing $2 $4 (Just (Left $7)) }
+If    : if SimpleStmt ';' Expr '{' Stmts '}'                            { IfStmt (Just $2) $4 $6 Nothing }
+      | if SimpleStmt ';' Expr '{' Stmts '}' else '{' Stmts '}'       { IfStmt (Just $2) $4 $6 (Just (Right $10)) }
+      | if SimpleStmt ';' Expr '{' Stmts '}' else If                  { IfStmt (Just $2) $4 $6 (Just (Left $9)) }
+      | if Expr '{' Stmts '}'                                       { IfStmt Nothing $2 $4 Nothing }
+      | if Expr '{' Stmts '}' else '{' Stmts '}'                  { IfStmt Nothing $2 $4 (Just (Right $8)) }
+      | if Expr '{' Stmts '}' else If                             { IfStmt Nothing $2 $4 (Just (Left $7)) }
 
 SimpleStmt
       : Expr                       { ExprStmt $1 }
       | id '++'                   { Incr $1 }
       | id '--'                   { Decr $1 }
-      | VarList '=' ExpList       { Assign $1 $3 }
-      | id '+=' Exp               { PlusEq $1 $3 }
-      | id '-=' Exp               { MinusEq $1 $3 }
-      | id '*=' Exp               { MulEq $1 $3 }
-      | id '/=' Exp               { DivEq $1 $3 }
-      | id '%=' Exp               { ModEq $1 $3 }
-      | id '&=' Exp               { BitAndEq $1 $3 }
-      | id '|=' Exp               { BitOrEq $1 $3 }
-      | id '^=' Exp               { BitXOrEq $1 $3 }
-      | id '<<=' Exp              { BitLShiftEq $1 $3 }
-      | id '>>=' Exp              { BitRShiftEq $1 $3 }
-      | id '&^=' Exp              { BitClearEq $1 $3 }
-      | VarList ':=' ExpList      { ShortVarDec $1 $3 }
+      | VarList '=' ExprList       { Assign $1 $3 }
+      | id '+=' Expr               { PlusEq $1 $3 }
+      | id '-=' Expr               { MinusEq $1 $3 }
+      | id '*=' Expr               { MulEq $1 $3 }
+      | id '/=' Expr               { DivEq $1 $3 }
+      | id '%=' Expr               { ModEq $1 $3 }
+      | id '&=' Expr               { BitAndEq $1 $3 }
+      | id '|=' Expr               { BitOrEq $1 $3 }
+      | id '^=' Expr               { BitXOrEq $1 $3 }
+      | id '<<=' Expr              { BitLShiftEq $1 $3 }
+      | id '>>=' Expr              { BitRShiftEq $1 $3 }
+      | id '&^=' Expr              { BitClearEq $1 $3 }
+      | VarList ':=' ExprList      { ShortVarDec $1 $3 }
 
 
 VarDec
