@@ -1,6 +1,6 @@
-// while invalid semicolon trailing the expression
+// exp cant be empty
 package tests;
 
 func main() {
-  for x < 10; {}
+  for ;; {}
 }

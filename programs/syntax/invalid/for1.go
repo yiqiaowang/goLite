@@ -1,9 +1,6 @@
-// infinite double continue/break
+// while invalid semicolon trailing the expression
 package tests;
 
 func main() {
-  for {
-    break;
-    break;
-  }
+  for x < 10; {}
 }
