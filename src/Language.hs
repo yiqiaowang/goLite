@@ -33,7 +33,7 @@ data Clause
 
 -- Recursive If Statement
 data IfStmt
-      = IfStmt (Maybe SimpleStmt) Expression [Stmt] (Maybe (Either IfStmt [Stmt]))
+      = IfStmt (Maybe SimpleStmt) Expression [Stmt] [IfStmt] 
       deriving (Eq, Show)
 
 -- All Statements
@@ -74,7 +74,7 @@ data Stmt
 
 -- Simple statements
 data SimpleStmt
-      = ExpStmt Expression
+      = ExprStmt Expression
       | Incr Identifier
       | Decr Identifier
       | Assign [Identifier] [Expression]
@@ -97,9 +97,9 @@ data Expression
       = Brack Expression
       | Id Identifier
       | Literal Literal
-      | Positive Expression
-      | Negative Expression
-      | Not Expression
+      | UnaryPos Expression
+      | UnaryNeg Expression
+      | BoolNot Expression
       | BitComplement Expression
       | Or Expression Expression
       | And Expression Expression
@@ -109,19 +109,23 @@ data Expression
       | LEThan Expression Expression
       | GThan Expression Expression
       | GEThan Expression Expression
-      | Plus Expression Expression
-      | Minus Expression Expression
-      | Mul Expression Expression
+      | Add Expression Expression
+      | Sub Expression Expression
+      | Mult Expression Expression
       | Div Expression Expression
       | Mod Expression Expression
       | BitAnd Expression Expression
       | BitOr Expression Expression
-      | BitXOr Expression Expression
+      | BitXor Expression Expression
       | BitAndNot Expression Expression
-      | LShift Expression Expression
-      | RShift Expression Expression
-      | Call Identifier [Expression]
-      | Append Identifier Expression
+      | BitLShift Expression Expression
+      | BitRShift Expression Expression
+      | BitClear Expression Expression
+      | FuncCall Identifier [Expression]
+      | Append Expression Expression
       | Index Identifier Expression
       | Field Identifier Identifier
+      | Pointer Expression
+      | Address Expression
+      | Channel Expression
       deriving (Eq, Show)
