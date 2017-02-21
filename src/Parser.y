@@ -94,6 +94,11 @@ import Scanner
         rune                        { Token _ (TokenRune $$) }
         raw                         { Token _ (TokenRaw $$) }
 
+-- Precedences for expressions
+%left '+' '-'
+%left '*' '/'
+%left UNARY
+
 
 %%
 
@@ -266,13 +271,13 @@ MulOp	 : '*'		{ Mult }
 	 | '&^'		{ BitClear }
 
 
-UnaryOp	 : '+'		{ UnaryPos }
-	 | '-'		{ UnaryNeg }
-	 | '!'		{ BoolNot }
-	 | '^'		{ BitComplement }
-	 | '*'		{ Pointer }
-	 | '&'		{ Address }
-	 | '<-'		{ Channel }
+UnaryOp	 : '+'	%prec UNARY { UnaryPos }
+	 | '-'  %prec UNARY { UnaryNeg }
+	 | '!'  %prec UNARY { BoolNot }
+	 | '^'	%prec UNARY { BitComplement }
+	 | '*'	%prec UNARY { Pointer }
+	 | '&'	%prec UNARY { Address }
+	 | '<-'	%prec UNARY { Channel }
 
 
 Num   : int                         { Int $1 }
