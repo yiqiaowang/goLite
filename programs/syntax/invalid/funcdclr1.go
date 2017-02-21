@@ -2,5 +2,5 @@
 package tests;
 
 id(x int) int {
-  x;
+  return x;
 }
