@@ -9,6 +9,6 @@ func main() {
   } else if x {
     if x {} else {}
   } else {
-    if x {} else if {} else {}
+    if x {} else if x {} else {}
   }
 }
