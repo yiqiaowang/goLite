@@ -7,6 +7,8 @@ module Parser
 
 import Language
 import Scanner
+import Weeder
+
 }
 
 %name calc
@@ -322,6 +324,10 @@ parseError (Token p t) =
 
 --
 parse :: FilePath -> String -> Either String Program
-parse = runAlex' calc
+parse fp text = do
+  program <- runAlex' calc fp text
+  case Weeder.weed program of
+    Left weederError -> Left $ show weederError
+    Right program' -> Right program'
 
 }

@@ -11,6 +11,7 @@ library
                      , Language
                      , Pretty
                      , TokenClass
+                     , Weeder
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , array
