@@ -186,7 +186,6 @@ PrimaryExpr : '(' Expr ')' { $2 }
 	    | Lit	   { Literal $1 }
 	    | FuncCall	   { $1 }
 	    | Append	   { $1 }
--- TODO	    | TypeCast	   { $1 }
 
 BinaryOp : '||'         { Or }
 	 | '&&'		{ And }
