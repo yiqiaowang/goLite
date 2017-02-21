@@ -32,6 +32,9 @@ import Scanner
         switch                      { Token _ TokenSwitch }
         case                        { Token _ TokenCase }
         default                     { Token _ TokenDefault }
+        for                         { Token _ TokenFor }
+        break                       { Token _ TokenBreak }
+        continue                    { Token _ TokenContinue }
 
         '('                         { Token _ TokenLParen }
         ')'                         { Token _ TokenRParen }
@@ -101,22 +104,27 @@ Stmts : Stmt Stmts                        { $1 : $2 }
       | {- Empty -}                       { [] }
 
 
-Stmt  : var VarDec ';'                                   { VarDec $2 }
-      | var '(' VarDecList ')'                           { VarDecList $3 }
-      | type TypeDec ';'                                 { TypeDec $2 }
-      | type '(' TypeDecList ')'                         { TypeDecList $3 }
-      | var id '[' Exp ']' Type ';'                      { Array $2 $4 $6 }
-      | var id '[' ']' Type ';'                          { Slice $2 $5 }
-      | return ';'                                       { Return Nothing }
-      | return Exp ';'                                   { Return (Just $2) }
-      | SimpleStmt ';'                                   { SimpleStmt $1 }
-      | print '(' ExpListEmpty ')' ';'                   { Print $3 }
-      | println '(' ExpListEmpty ')' ';'                 { Println $3 }
-      | If                                               { If $1 }
-      | switch '{' ClauseList '}'                      { Switch Nothing Nothing $3 }
-      | switch SimpleStmt'{' ClauseList '}'            { Switch (Just $2) Nothing $4 } 
-      | switch Exp '{' ClauseList '}'           { Switch Nothing (Just $2) $4 }
-      | switch SimpleStmt Exp'{' ClauseList '}' { Switch (Just $2) (Just $3) $5 }
+Stmt  : var VarDec ';'                            { VarDec $2 }
+      | var '(' VarDecList ')'                    { VarDecList $3 }
+      | type TypeDec ';'                          { TypeDec $2 }
+      | type '(' TypeDecList ')'                  { TypeDecList $3 }
+      | var id '[' Exp ']' Type ';'               { Array $2 $4 $6 }
+      | var id '[' ']' Type ';'                   { Slice $2 $5 }
+      | return ';'                                { Return Nothing }
+      | return Exp ';'                            { Return (Just $2) }
+      | SimpleStmt ';'                            { SimpleStmt $1 }
+      | print '(' ExpListEmpty ')' ';'            { Print $3 }
+      | println '(' ExpListEmpty ')' ';'          { Println $3 }
+      | If                                        { If $1 }
+      | switch '{' ClauseList '}'                 { Switch Nothing Nothing $3 }
+      | switch SimpleStmt ';' '{' ClauseList '}'  { Switch (Just $2) Nothing $5 } 
+      | switch Exp '{' ClauseList '}'             { Switch Nothing (Just $2) $4 }
+      | switch SimpleStmt ';' Exp'{' ClauseList '}'   { Switch (Just $2) (Just $4) $6 }
+      | for '{' Stmts '}'                         { Infinite $3 }
+      | for Exp '{' Stmts '}'                     { While $2 $4 }
+      | for SimpleStmt ';' Exp ';' SimpleStmt '{' Stmts '}'         { For $2 $4 $6 $8 }
+      | break ';'                                 { Break }
+      | continue ';'                              { Continue }
 
 ClauseList
       : Clause ';' ClauseList             { $1 : $3 }
@@ -126,9 +134,9 @@ Clause
       : case ExpList ':' Stmts          { Case $2 $4 }
       | default ':' Stmts               { Default $3 }
 
-If    : if SimpleStmt Exp '{' Stmts '}'                            { IfStmt (Just $2) $3 $5 Nothing }
-      | if SimpleStmt Exp '{' Stmts '}' else '{' Stmts '}'       { IfStmt (Just $2) $3 $5 (Just (Right $9)) }
-      | if SimpleStmt Exp '{' Stmts '}' else If                  { IfStmt (Just $2) $3 $5 (Just (Left $8)) }
+If    : if SimpleStmt ';' Exp '{' Stmts '}'                            { IfStmt (Just $2) $4 $6 Nothing }
+      | if SimpleStmt ';' Exp '{' Stmts '}' else '{' Stmts '}'       { IfStmt (Just $2) $4 $6 (Just (Right $10)) }
+      | if SimpleStmt ';' Exp '{' Stmts '}' else If                  { IfStmt (Just $2) $4 $6 (Just (Left $9)) }
       | if Exp '{' Stmts '}'                                       { IfStmt Nothing $2 $4 Nothing }
       | if Exp '{' Stmts '}' else '{' Stmts '}'                  { IfStmt Nothing $2 $4 (Just (Right $8)) }
       | if Exp '{' Stmts '}' else If                             { IfStmt Nothing $2 $4 (Just (Left $7)) }
