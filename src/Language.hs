@@ -33,7 +33,7 @@ data Clause
 
 -- Recursive If Statement
 data IfStmt
-      = IfStmt (Maybe SimpleStmt) Expression [Stmt] [IfStmt] 
+      = IfStmt (Maybe SimpleStmt) Expression [Stmt] (Maybe (Either IfStmt [Stmt]))
       deriving (Eq, Show)
 
 -- All Statements
