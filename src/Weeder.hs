@@ -5,6 +5,8 @@ module Weeder
 
 
 import Language
+import Data.Maybe
+import Control.Monad(join)
 
 
 --
@@ -20,48 +22,45 @@ data WeederError
 
 --
 class Weedable a where
-  weed :: a -> Either WeederError a
+  weed :: a -> Maybe WeederError
+
+  weedList :: [a] -> Maybe WeederError
+  weedList xs = join $ head' $ filter isJust $ map weed xs
 
 
 --
 instance Weedable Program where
-  weed (Program package alls) =
-    case mapM weed alls of
-      Left weederError -> Left weederError
-      Right _ -> return $ Program package alls
+  weed (Program package alls) = weedList alls
 
 
 --
 instance Weedable All where
-  weed s@(Stmt stmt) =
-    case weed stmt of
-      Left weederError -> Left weederError
-      Right _ -> return s
-  weed f@(Function i p t stmts) =
-    case mapM weed stmts of
-      Left weederError -> Left weederError
-      Right _ -> return f
+  weed s@(Stmt stmt) = weed stmt
+  weed f@(Function _ _ _ stmts) = weedList stmts
 
 
 --
 instance Weedable Stmt where
-  weed v@(VarDec var) =
-    case weed var of
-      Left weederError -> Left weederError
-      Right _ -> return v
-  weed stmt = return stmt
+  weed v@(VarDec var) = weed var
+  weed _ = Nothing
 
 
 --
 instance Weedable Variable where
-  weed v@(Variable ids _ []) = return v
+  weed v@(Variable _ _ []) = Nothing
   weed v@(Variable ids _ exps) =
     let (numIds, numExps) = (length ids, length exps) in
       if numIds == numExps
-        then return v
-        else Left $ MismatchingVariableDeclaration numIds numExps
+        then Nothing
+        else Just $ MismatchingVariableDeclaration numIds numExps
+
 
 --
 instance Weedable Clause where
-  weed c@(Case exps stmts) = return c
-  weed d@(Default stmts) = return d
+  weed c@(Case exps stmts) = Nothing
+  weed d@(Default stmts) = Nothing
+
+
+head' :: [a] -> Maybe a
+head' [] = Nothing
+head' (x : xs) = Just x

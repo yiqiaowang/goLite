@@ -327,7 +327,7 @@ parse :: FilePath -> String -> Either String Program
 parse fp text = do
   program <- runAlex' calc fp text
   case Weeder.weed program of
-    Left weederError -> Left $ show weederError
-    Right program' -> Right program'
+    Just weederError -> Left $ show weederError
+    Nothing -> Right program
 
 }
