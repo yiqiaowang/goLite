@@ -167,10 +167,6 @@ SimpleStmt
       : Expr                       { ExprStmt $1 }
       | id '++'                   { Incr $1 }
       | id '--'                   { Decr $1 }
-<<<<<<< HEAD
-      | VarList '=' ExprList       { Assign $1 $3 }
-      | id '+=' Expr               { PlusEq $1 $3 }
-=======
       | VarList '=' ExpList       { Assign $1 $3 }
       | id '+=' Exp               { PlusEq $1 $3 }
       | id '-=' Exp               { MinusEq $1 $3 }
@@ -184,7 +180,7 @@ SimpleStmt
       | id '>>=' Exp              { BitRShiftEq $1 $3 }
       | id '&^=' Exp              { BitClearEq $1 $3 }
       | VarList ':=' ExpList      { ShortVarDec $1 $3 }
->>>>>>> 25a1daf08ff75e6628708369d1dc2b7e60f4c15f
+
 
 
 VarDec
