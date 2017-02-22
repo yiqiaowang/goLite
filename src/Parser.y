@@ -144,11 +144,20 @@ Stmt  : var VarDec                                { VarDec $2 }
       | println '(' ExprListEmpty ')' ';'          { Println $3 }
       | If                                        { If $1 }
       | Switch                                    { $1 }
-      | for '{' Stmts '}'                         { Infinite $3 }
-      | for Expr '{' Stmts '}'                     { While $2 $4 }
-      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}'         { For $2 $4 $6 $8 }
+      | For                                       { $1 }
       | break ';'                                 { Break }
       | continue ';'                              { Continue }
+
+
+{- For Loop -}
+For   :: { Stmt }
+      : for '{' Stmts '}'                         { Infinite $3 }
+      | for Expr '{' Stmts '}'                    { While $2 $4 }
+      | for FSS ';' Expr ';' FSS '{' Stmts '}'    { For $2 $4 $6 $8 }
+{- For Simple Statement -}
+FSS   :: { Maybe SimpleStmt }
+      : SimpleStmt                                { Just $1 }
+      | {- Empty -}                               { Nothing }
 
 
 Switch
