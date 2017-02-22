@@ -1,4 +1,4 @@
-// empty case
+// no default
 package tests;
 
 func main() {

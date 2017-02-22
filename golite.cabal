@@ -6,7 +6,8 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Scanner
+  exposed-modules:     GoLite
+                     , Scanner
                      , Parser
                      , Language
                      , Pretty
@@ -33,7 +34,8 @@ test-suite golite-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
-  other-modules:       Spec.Scanner
+  other-modules:       Spec.GoLite
+                     , Spec.Scanner
                      , Spec.Parser
                      , Spec.Pretty
   build-depends:       base

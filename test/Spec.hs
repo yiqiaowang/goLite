@@ -11,6 +11,7 @@ import qualified Parser
 import qualified Spec.Scanner
 import qualified Spec.Parser
 import qualified Spec.Pretty
+import qualified Spec.GoLite
 
 
 --
@@ -27,14 +28,16 @@ loadPrograms directory = do
 -- not needed for automatic spec discovery.
 main :: IO ()
 main = do
-  validSyntax <- loadPrograms "programs/syntax/valid"
-  invalidSyntax <- loadPrograms "programs/syntax/invalid"
+  validSyntax <- loadPrograms "programs/valid/syntax"
+  invalidParserSyntax <- loadPrograms "programs/invalid/parser"
+  invalidWeederSyntax <- loadPrograms "programs/invalid/weeder"
 
   scannerSummary <- hspecResult Spec.Scanner.spec
-  parserSummary <- hspecResult $ Spec.Parser.spec validSyntax invalidSyntax
-  prettySummary <- hspecResult $ Spec.Pretty.spec validSyntax
+  parserSummary <- hspecResult $ Spec.Parser.spec validSyntax invalidParserSyntax
+  weederSummary <- hspecResult $ Spec.GoLite.spec validSyntax invalidWeederSyntax
+  -- prettySummary <- hspecResult $ Spec.Pretty.spec validSyntax
 
-  if (any (not . isSuccess) [scannerSummary, parserSummary, prettySummary])
+  if any (not . isSuccess) [scannerSummary, parserSummary]
     then exitFailure
     else exitSuccess
 
