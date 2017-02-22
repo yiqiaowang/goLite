@@ -143,23 +143,33 @@ Stmt  : var VarDec                                { VarDec $2 }
       | print '(' ExprListEmpty ')' ';'            { Print $3 }
       | println '(' ExprListEmpty ')' ';'          { Println $3 }
       | If                                        { If $1 }
-      | switch '{' ClauseList '}'                 { Switch Nothing Nothing $3 }
-      | switch SimpleStmt ';' '{' ClauseList '}'  { Switch (Just $2) Nothing $5 }
-      | switch Expr '{' ClauseList '}'             { Switch Nothing (Just $2) $4 }
-      | switch SimpleStmt ';' Expr'{' ClauseList '}'   { Switch (Just $2) (Just $4) $6 }
+      | Switch                                    { $1 }
       | for '{' Stmts '}'                         { Infinite $3 }
       | for Expr '{' Stmts '}'                     { While $2 $4 }
       | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}'         { For $2 $4 $6 $8 }
       | break ';'                                 { Break }
       | continue ';'                              { Continue }
 
+
+Switch
+      :: { Stmt }
+      : switch '{' ClauseList '}'                     { Switch Nothing Nothing $3 }
+      | switch SimpleStmt ';' '{' ClauseList '}'      { Switch (Just $2) Nothing $5 }
+      | switch Expr '{' ClauseList '}'                { Switch Nothing (Just $2) $4 }
+      | switch SimpleStmt ';' Expr '{' ClauseList '}' { Switch (Just $2) (Just $4) $6 }
+
+
 ClauseList
-      : Clause ';' ClauseList             { $1 : $3 }
-      | {- Empty -}                       { [] }
+      :: { [Clause] }
+      : Clause ClauseList             { $1 : $2 }
+      | {- Empty -}                   { [] }
+
 
 Clause
-      : case ExprList ':' Stmts          { Case $2 $4 }
-      | default ':' Stmts               { Default $3 }
+      :: { Clause }
+      : case ExprList ':' Stmts       { Case $2 $4 }
+      | default ':' Stmts             { Default $3 }
+
 
 If    : if SimpleStmt ';' Expr '{' Stmts '}'                            { IfStmt (Just $2) $4 $6 Nothing }
       | if SimpleStmt ';' Expr '{' Stmts '}' else '{' Stmts '}'       { IfStmt (Just $2) $4 $6 (Just (Right $10)) }
