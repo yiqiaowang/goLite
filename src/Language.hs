@@ -8,7 +8,12 @@ data Program
 -- Packages, Identifiers, and Types are all strings
 type Package = String
 type Identifier = String
-type Type = String
+
+data Type
+  = Type String
+  | Array Type Expression
+  | Slice Type
+  deriving (Eq, Show)
 
 -- Literal values
 data Literal
@@ -57,8 +62,6 @@ data Stmt
       | VarDecList [Variable]
       | TypeDec TypeName
       | TypeDecList [TypeName]
-      | Array Identifier Expression Type
-      | Slice Identifier Type
       | SimpleStmt SimpleStmt
       | Print [Expression]
       | Println [Expression]
