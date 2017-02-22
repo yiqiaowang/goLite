@@ -240,17 +240,18 @@ Lit   : Num                         { $1 }
       | string                      { String $1 }
       | raw                         { Raw $1 }
 
-Expr
-       :: { Expression }
-       : UnaryExpr      { $1 }
-       | Expr '||' Expr { Or $1 $3 }
-       | Expr '&&' Expr { And $1 $3 }
-       | Expr RelOp Expr %prec COMP { $2 $1 $3 }
-       | Expr AddOp Expr %prec ADD { $2 $1 $3 }
-       | Expr MultOp Expr %prec MULT { $2 $1 $3 }
+Expr  :: { Expression }
+      : UnaryExpr      { $1 }
+      | Expr '||' Expr { Or $1 $3 }
+      | Expr '&&' Expr { And $1 $3 }
+      | Expr RelOp Expr %prec COMP { $2 $1 $3 }
+      | Expr AddOp Expr %prec ADD { $2 $1 $3 }
+      | Expr MultOp Expr %prec MULT { $2 $1 $3 }
 
-UnaryExpr : UnaryOp UnaryExpr { $1 $2 }
-	  | PrimaryExpr { $1 }
+UnaryExpr
+      :: { Expression }
+      : UnaryOp UnaryExpr { $1 $2 }
+      | PrimaryExpr { $1 }
 
 UnaryOp	 : '+'	%prec UNARY { UnaryPos }
 	 | '-'  %prec UNARY { UnaryNeg }
@@ -260,11 +261,13 @@ UnaryOp	 : '+'	%prec UNARY { UnaryPos }
 	 | '&'	%prec UNARY { Address }
 	 | '<-'	%prec UNARY { Channel }
 
-PrimaryExpr : '(' Expr ')' { $2 }
-	    | id	   { Id $1 }
-	    | Lit	   { Literal $1 }
-	    | FuncCall	   { $1 }
-	    | Append	   { $1 }
+PrimaryExpr
+      :: { Expression }
+      : '(' Expr ')'              { $2 }
+      | id	                      { Id $1 }
+      | Lit	                      { Literal $1 }
+      | id '(' ExprListEmpty ')'  { FuncCall $1 $3 }
+      | Append	                  { $1 }
 
 RelOp	 : '=='		{ Equals }
 	 | '!='		{ NotEquals }
@@ -294,11 +297,6 @@ Type  :: { Type }
 
 
 Append : append '(' Expr ',' Expr ')' { Append $3 $5 }
-
--- Issue: FuncCall doesn't work if we need to support things like
--- math.pow(x,y). This is due to the constructor taking arguments
--- Identifier Expression, instead of Expression Expression.
-FuncCall : id '(' ExprListEmpty ')' ';' { FuncCall $1 $3}
 
 
 {

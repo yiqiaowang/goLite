@@ -15,6 +15,7 @@ data Type
   | Slice Type
   deriving (Eq, Show)
 
+
 -- Literal values
 data Literal
       = Int Integer
