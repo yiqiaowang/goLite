@@ -19,48 +19,48 @@ import Scanner
 
 
 %token
-        package                     { Token _ TokenPackage }
-        ';'                         { Token _ TokenSemicolon }
-        var                         { Token _ TokenVar }
-        type                        { Token _ TokenType }
-        struct                      { Token _ TokenStruct }
-        func                        { Token _ TokenFunc }
-        return                      { Token _ TokenReturn }
-        print                       { Token _ TokenPrint }
-        println                     { Token _ TokenPrintln }
-        if                          { Token _ TokenIf }
-        else                        { Token _ TokenElse }
-        switch                      { Token _ TokenSwitch }
-        case                        { Token _ TokenCase }
-        default                     { Token _ TokenDefault }
-        for                         { Token _ TokenFor }
-        break                       { Token _ TokenBreak }
-        continue                    { Token _ TokenContinue }
+	package                     { Token _ TokenPackage }
+	';'                         { Token _ TokenSemicolon }
+	var                         { Token _ TokenVar }
+	type                        { Token _ TokenType }
+	struct                      { Token _ TokenStruct }
+	func                        { Token _ TokenFunc }
+	return                      { Token _ TokenReturn }
+	print                       { Token _ TokenPrint }
+	println                     { Token _ TokenPrintln }
+	if                          { Token _ TokenIf }
+	else                        { Token _ TokenElse }
+	switch                      { Token _ TokenSwitch }
+	case                        { Token _ TokenCase }
+	default                     { Token _ TokenDefault }
+	for                         { Token _ TokenFor }
+	break                       { Token _ TokenBreak }
+	continue                    { Token _ TokenContinue }
 	append			    { Token _ TokenAppend }
 
-        '('                         { Token _ TokenLParen }
-        ')'                         { Token _ TokenRParen }
-        '='                         { Token _ TokenEq }
-        ','                         { Token _ TokenComma }
-        '{'                         { Token _ TokenLCurly }
-        '}'                         { Token _ TokenRCurly }
-        '['                         { Token _ TokenLSquare }
-        ']'                         { Token _ TokenRSquare } 
-        '++'                        { Token _ TokenInc }
-        '--'                        { Token _ TokenDec }
-        '+='                        { Token _ TokenAddEq }
-        '-='                        { Token _ TokenSubEq }
-        '*='                        { Token _ TokenMultEq }
-        '/='                        { Token _ TokenDivEq }
-        '%='                        { Token _ TokenModEq }
-        '&='                        { Token _ TokenBitAndEq }
-        '|='                        { Token _ TokenBitOrEq }
-        '^='                        { Token _ TokenBitXorEq }
-        '<<='                       { Token _ TokenBitLShiftEq }
-        '>>='                       { Token _ TokenBitRShiftEq }
-        '&^='                       { Token _ TokenBitClearEq }
-        ':='                        { Token _ TokenShortDec }
-        ':'                         { Token _ TokenColon }
+	'('                         { Token _ TokenLParen }
+	')'                         { Token _ TokenRParen }
+	'='                         { Token _ TokenEq }
+	','                         { Token _ TokenComma }
+	'{'                         { Token _ TokenLCurly }
+	'}'                         { Token _ TokenRCurly }
+	'['                         { Token _ TokenLSquare }
+	']'                         { Token _ TokenRSquare }
+	'++'                        { Token _ TokenInc }
+	'--'                        { Token _ TokenDec }
+	'+='                        { Token _ TokenAddEq }
+	'-='                        { Token _ TokenSubEq }
+	'*='                        { Token _ TokenMultEq }
+	'/='                        { Token _ TokenDivEq }
+	'%='                        { Token _ TokenModEq }
+	'&='                        { Token _ TokenBitAndEq }
+	'|='                        { Token _ TokenBitOrEq }
+	'^='                        { Token _ TokenBitXorEq }
+	'<<='                       { Token _ TokenBitLShiftEq }
+	'>>='                       { Token _ TokenBitRShiftEq }
+	'&^='                       { Token _ TokenBitClearEq }
+	':='                        { Token _ TokenShortDec }
+	':'                         { Token _ TokenColon }
 
 -- Binary Operations
 	'||'			    { Token _ TokenLogOr }
@@ -86,21 +86,22 @@ import Scanner
 	'!'			    { Token _ TokenBoolNot }
 	'<-'			    { Token _ TokenChannel }
 
-        id                          { Token _ (TokenId $$) }
-        int                         { Token _ (TokenInt Decimal $$) }
-        oct                         { Token _ (TokenInt Octal $$) }
-        hex                         { Token _ (TokenInt Hex $$) }
-        float                       { Token _ (TokenFloat $$) }
-        string                      { Token _ (TokenString $$) }
-        rune                        { Token _ (TokenRune $$) }
-        raw                         { Token _ (TokenRaw $$) }
+	id                          { Token _ (TokenId $$) }
+	int                         { Token _ (TokenInt Decimal $$) }
+	oct                         { Token _ (TokenInt Octal $$) }
+	hex                         { Token _ (TokenInt Hex $$) }
+	float                       { Token _ (TokenFloat $$) }
+	string                      { Token _ (TokenString $$) }
+	rune                        { Token _ (TokenRune $$) }
+	raw                         { Token _ (TokenRaw $$) }
 
--- Precedences for expressions
-%left '+' '-'
-%left '*' '/'
+-- Precedences for operators. Lower is higher
+%left '||'
+%left '&&'
+%left '==' '!=' '<=' '>' '>=' '<' COMP
+%left '+' '-' '|' '^' ADD
+%left '*' '/' '%' '<<' '>>' '&' '&^' MULT
 %left UNARY
-
-
 %%
 
 Program
@@ -145,7 +146,7 @@ Stmt  : var VarDec ';'                            { VarDec $2 }
       | println '(' ExprListEmpty ')' ';'          { Println $3 }
       | If                                        { If $1 }
       | switch '{' ClauseList '}'                 { Switch Nothing Nothing $3 }
-      | switch SimpleStmt ';' '{' ClauseList '}'  { Switch (Just $2) Nothing $5 } 
+      | switch SimpleStmt ';' '{' ClauseList '}'  { Switch (Just $2) Nothing $5 }
       | switch Expr '{' ClauseList '}'             { Switch Nothing (Just $2) $4 }
       | switch SimpleStmt ';' Expr'{' ClauseList '}'   { Switch (Just $2) (Just $4) $6 }
       | for '{' Stmts '}'                         { Infinite $3 }
@@ -230,26 +231,41 @@ StructList
       : VarList Type ';' StructList { ($1, $2) : $4 }
       | {- Empty -}                 { [] }
 
+Num   : int                         { Int $1 }
+      | oct                         { Int $1 }
+      | hex                         { Int $1 }
+
+Lit   : Num                         { $1 }
+      | float                       { Float64 $1 }
+      | rune                        { Rune $1 }
+      | string                      { String $1 }
+      | raw                         { Raw $1 }
 
 Expr
        :: { Expression }
        : UnaryExpr      { $1 }
-       | Expr BinaryOp Expr { $2 $1 $3 }
+       | Expr '||' Expr { Or $1 $3 }
+       | Expr '&&' Expr { And $1 $3 }
+       | Expr RelOp Expr %prec COMP { $2 $1 $3 }
+       | Expr AddOp Expr %prec ADD { $2 $1 $3 }
+       | Expr MultOp Expr %prec MULT { $2 $1 $3 }
 
-UnaryExpr : PrimaryExpr { $1 }
-	  | UnaryOp UnaryExpr { $1 $2 }
+UnaryExpr : UnaryOp UnaryExpr { $1 $2 }
+	  | PrimaryExpr { $1 }
+
+UnaryOp	 : '+'	%prec UNARY { UnaryPos }
+	 | '-'  %prec UNARY { UnaryNeg }
+	 | '!'  %prec UNARY { BoolNot }
+	 | '^'	%prec UNARY { BitComplement }
+	 | '*'	%prec UNARY { Pointer }
+	 | '&'	%prec UNARY { Address }
+	 | '<-'	%prec UNARY { Channel }
 
 PrimaryExpr : '(' Expr ')' { $2 }
 	    | id	   { Id $1 }
 	    | Lit	   { Literal $1 }
 	    | FuncCall	   { $1 }
 	    | Append	   { $1 }
-
-BinaryOp : '||'         { Or }
-	 | '&&'		{ And }
-	 | RelOp	{ $1 }
-	 | AddOp	{ $1 }
-	 | MulOp	{ $1 }
 
 RelOp	 : '=='		{ Equals }
 	 | '!='		{ NotEquals }
@@ -263,35 +279,13 @@ AddOp	 : '+'		{ Add }
 	 | '|'		{ BitOr }
 	 | '^'		{ BitXor }
 
-MulOp	 : '*'		{ Mult }
+MultOp	 : '*'		{ Mult }
 	 | '/'		{ Div }
 	 | '%'		{ Mod }
 	 | '<<'		{ BitLShift }
 	 | '>>'		{ BitRShift }
 	 | '&'		{ BitAnd }
 	 | '&^'		{ BitClear }
-
-
-UnaryOp	 : '+'	%prec UNARY { UnaryPos }
-	 | '-'  %prec UNARY { UnaryNeg }
-	 | '!'  %prec UNARY { BoolNot }
-	 | '^'	%prec UNARY { BitComplement }
-	 | '*'	%prec UNARY { Pointer }
-	 | '&'	%prec UNARY { Address }
-	 | '<-'	%prec UNARY { Channel }
-
-
-Num   : int                         { Int $1 }
-      | oct                         { Int $1 }
-      | hex                         { Int $1 }
-
-
-Lit   : Num                         { $1 }
-      | float                       { Float64 $1 }
-      | rune                        { Rune $1 }
-      | string                      { String $1 }
-      | raw                         { Raw $1 }
-
 
 Type  : id                          { $1 }
 
@@ -300,12 +294,7 @@ Append : append '(' Expr ',' Expr ')' { Append $3 $5 }
 -- Issue: FuncCall doesn't work if we need to support things like
 -- math.pow(x,y). This is due to the constructor taking arguments
 -- Identifier Expression, instead of Expression Expression.
-
 FuncCall : id '(' ExprListEmpty ')' ';' { FuncCall $1 $3}
-
--- Block : '{' Stmts '}'
-
--- If    : if SimpleStmt ';'
 
 
 {
