@@ -5,9 +5,6 @@ module Weeder
 
 
 import Language
-import Data.Maybe
-import Control.Monad(join)
-import Control.Applicative((<|>))
 
 
 --
@@ -34,14 +31,14 @@ data Context
 
 --
 class Weedable a where
-  weed :: a -> Maybe WeederError
+  weed :: a -> Maybe [WeederError]
   weed = weedCtxt []
 
-  weedCtxt :: [Context] -> a -> Maybe WeederError
+  weedCtxt :: [Context] -> a -> Maybe [WeederError]
   weedCtxt ctxt = weed
 
-  weedListCtxt :: [Context] -> [a] -> Maybe WeederError
-  weedListCtxt ctxt ws = join $ head' $ filter isJust $ map (weedCtxt ctxt) ws
+  weedListCtxt :: [Context] -> [a] -> Maybe [WeederError]
+  weedListCtxt ctxt ws = mconcat $ map (weedCtxt ctxt) ws
 
 --
 instance Weedable Program where
@@ -54,10 +51,10 @@ instance Weedable All where
   weed (Function "main" _ _ stmts) =
     weedListCtxt [] stmts
   weed (Function _ _ _ stmts) =
-    weedListCtxt [CFunction] stmts <|>
+    weedListCtxt [CFunction] stmts `mappend`
       if any isReturn stmts
         then Nothing
-        else Just MissingReturn
+        else Just [MissingReturn]
       where
         isReturn (Return _) = True
         isReturn _ = False
@@ -67,10 +64,10 @@ instance Weedable All where
 instance Weedable Stmt where
   weedCtxt ctxt (If i) = weedCtxt ctxt i
   weedCtxt ctxt (Switch _ _ clauses) =
-    weedListCtxt ctxt clauses <|>
+    weedListCtxt ctxt clauses `mappend`
       let n = length $ filter isDefault clauses in
         if n > 1
-          then Just $ MultipleDefaultsInSwitch n
+          then Just [MultipleDefaultsInSwitch n]
           else Nothing
       where
         isDefault (Case _ _) = False
@@ -81,15 +78,15 @@ instance Weedable Stmt where
   weedCtxt ctxt Break =
     if CLoop `elem` ctxt
       then Nothing
-      else Just InvalidBreak
+      else Just [InvalidBreak]
   weedCtxt ctxt Continue =
     if CLoop `elem` ctxt
       then Nothing
-      else Just InvalidContinue
+      else Just [InvalidContinue]
   weedCtxt ctxt (Return _) =
     if CFunction `elem` ctxt
       then Nothing
-      else Just InvalidReturn
+      else Just [InvalidReturn]
   weedCtxt _  (VarDec var) = weed var
   weedCtxt _ _ = Nothing
 
@@ -101,25 +98,19 @@ instance Weedable Variable where
     let (numIds, numExps) = (length ids, length exps) in
       if numIds == numExps
         then Nothing
-        else Just $ MismatchingVariableDeclaration numIds numExps
+        else Just [MismatchingVariableDeclaration numIds numExps]
 
 
 --
 instance Weedable IfStmt where
   weedCtxt ctxt (IfStmt _ _ stmts Nothing) = weedListCtxt ctxt stmts
   weedCtxt ctxt (IfStmt _ _ stmts (Just (Left i))) =
-    weedListCtxt ctxt stmts <|> weedCtxt ctxt i
+    weedListCtxt ctxt stmts `mappend` weedCtxt ctxt i
   weedCtxt ctxt (IfStmt _ _ stmts (Just (Right stmts'))) =
-    weedListCtxt ctxt stmts <|> weedListCtxt ctxt stmts'
+    weedListCtxt ctxt stmts `mappend` weedListCtxt ctxt stmts'
 
 
 --
 instance Weedable Clause where
   weedCtxt ctxt (Case _ stmts) = weedListCtxt ctxt stmts
   weedCtxt ctxt (Default stmts) = weedListCtxt ctxt stmts
-
-
---
-head' :: [a] -> Maybe a
-head' [] = Nothing
-head' (x : xs) = Just x
