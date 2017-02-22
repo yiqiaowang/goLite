@@ -4,6 +4,7 @@ module Weeder
   ) where
 
 
+import Data.List(group)
 import Language
 
 
@@ -11,10 +12,12 @@ import Language
 data WeederError
   = MultipleDefaultsInSwitch
     { numDefaults :: Int }
-  | MismatchingVariableDeclaration
+  | AssignmentCountMismatch
     { numExpected :: Int
     , numFound :: Int
     }
+  | RepeatedIdentifierInSVD
+    { indentifier :: String }
   | InvalidBreak
   | InvalidContinue
   | InvalidReturn
@@ -75,6 +78,7 @@ instance Weedable Stmt where
   weedCtxt ctxt (Infinite stmts) = weedListCtxt (CLoop : ctxt) stmts
   weedCtxt ctxt (While _ stmts) = weedCtxt ctxt (Infinite stmts)
   weedCtxt ctxt (For _ _ _ stmts) = weedCtxt ctxt (Infinite stmts)
+  weedCtxt ctxt (SimpleStmt stmt) = weedCtxt ctxt stmt
   weedCtxt ctxt Break =
     if CLoop `elem` ctxt
       then Nothing
@@ -92,13 +96,21 @@ instance Weedable Stmt where
 
 
 --
+instance Weedable SimpleStmt where
+  weed (ShortVarDec ids exps) =
+    weedAssignmentLength ids exps `mappend`
+      let repeatedIds = map head $ filter (\ids' -> length ids' > 1) $ group ids in
+          if null repeatedIds
+            then Nothing
+            else Just $ map RepeatedIdentifierInSVD repeatedIds
+  weed (Assign ids exps) = weedAssignmentLength ids exps
+  weed _ = Nothing
+
+
+--
 instance Weedable Variable where
   weed (Variable _ _ []) = Nothing
-  weed (Variable ids _ exps) =
-    let (numIds, numExps) = (length ids, length exps) in
-      if numIds == numExps
-        then Nothing
-        else Just [MismatchingVariableDeclaration numIds numExps]
+  weed (Variable ids _ exps) = weedAssignmentLength ids exps
 
 
 --
@@ -114,3 +126,13 @@ instance Weedable IfStmt where
 instance Weedable Clause where
   weedCtxt ctxt (Case _ stmts) = weedListCtxt ctxt stmts
   weedCtxt ctxt (Default stmts) = weedListCtxt ctxt stmts
+
+
+-- Verifies that the number of identifiers is equal to the number of exp
+-- in any type of assignment
+weedAssignmentLength :: [Identifier] -> [Expression] -> Maybe [WeederError]
+weedAssignmentLength ids exps =
+  let (numIds, numExps) = (length ids, length exps) in
+    if numIds == numExps
+      then Nothing
+      else Just [AssignmentCountMismatch numIds numExps]

@@ -19,5 +19,5 @@ spec valid invalid =
         GoLite.parse file text `shouldSatisfy` isRight
 
     forM_ invalid $ \(file, text) ->
-      it ("correctly parses but fails to weed : " ++ file) $
+      it ("correctly parses but fails in weeder phase : " ++ file) $
         GoLite.parse file text `shouldSatisfy` isLeft
