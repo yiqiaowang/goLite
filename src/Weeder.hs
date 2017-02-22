@@ -12,7 +12,7 @@ import Control.Applicative((<|>))
 
 --
 data WeederError
-  = ExcessiveDefaults
+  = MultipleDefaultsInSwitch
     { numDefaults :: Int }
   | MismatchingVariableDeclaration
     { numExpected :: Int
@@ -66,6 +66,15 @@ instance Weedable All where
 --
 instance Weedable Stmt where
   weedCtxt ctxt (If i) = weedCtxt ctxt i
+  weedCtxt ctxt (Switch _ _ clauses) =
+    weedListCtxt ctxt clauses <|>
+      let n = length $ filter isDefault clauses in
+        if n > 1
+          then Just $ MultipleDefaultsInSwitch n
+          else Nothing
+      where
+        isDefault (Case _ _) = False
+        isDefault (Default _) = True
   weedCtxt ctxt (Infinite stmts) = weedListCtxt (CLoop : ctxt) stmts
   weedCtxt ctxt (While _ stmts) = weedCtxt ctxt (Infinite stmts)
   weedCtxt ctxt (For _ _ _ stmts) = weedCtxt ctxt (Infinite stmts)
