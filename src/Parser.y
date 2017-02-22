@@ -135,7 +135,7 @@ Stmts : Stmt Stmts                        { $1 : $2 }
 
 Stmt  : var VarDec                                { VarDec $2 }
       | var '(' VarDecList ')'                    { VarDecList $3 }
-      | type TypeDec ';'                          { TypeDec $2 }
+      | type TypeDec                              { TypeDec $2 }
       | type '(' TypeDecList ')'                  { TypeDecList $3 }
       | return ';'                                { Return Nothing }
       | return Expr ';'                            { Return (Just $2) }

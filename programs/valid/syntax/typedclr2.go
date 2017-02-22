@@ -1,4 +1,4 @@
-//no name
+//parenthesized declarations
 package tests;
 
 type (
