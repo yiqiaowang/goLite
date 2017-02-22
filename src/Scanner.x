@@ -283,9 +283,11 @@ alexMonadScan' = do
       if alexInputPrevChar inp' `elem` ['\n']
         then case prevToken of
           Nothing -> alexMonadScan'
-          Just (Token _ cls) ->
+          Just (Token p cls) ->
             if isOptionalSemicolonToken cls
-              then alexSemicolon
+              then do
+                setPreviousToken $ Just $ Token p TokenSemicolon
+                alexSemicolon
               else alexMonadScan'
         else
           alexMonadScan'
