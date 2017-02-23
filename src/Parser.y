@@ -61,6 +61,7 @@ import Scanner
 	'&^='                       { Token _ TokenBitClearEq }
 	':='                        { Token _ TokenShortDec }
 	':'                         { Token _ TokenColon }
+      '.'                         { Token _ TokenPeriod }
 
 -- Binary Operations
 	'||'			    { Token _ TokenLogOr }
@@ -267,6 +268,8 @@ PrimaryExpr
       | Lit	                      { Literal $1 }
       | id '(' ExprListEmpty ')'  { FuncCall $1 $3 }
       | Append	                  { $1 }
+      | id '[' Expr ']'           { Index $1 $3 }
+      | id '.' FieldList           { Field ($1 : $3)}                  
 
 RelOp	 : '=='		{ Equals }
 	 | '!='		{ NotEquals }
@@ -288,6 +291,9 @@ MultOp	 : '*'		{ Mult }
 	 | '&'		{ BitAnd }
 	 | '&^'		{ BitClear }
 
+FieldList
+      : id '.' FieldList     { $1 : $3 }
+      | id                   { [$1] }
 
 Type  :: { Type }
       : id                          { Type $1 }
