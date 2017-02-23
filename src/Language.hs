@@ -72,7 +72,7 @@ data Stmt
       | Switch (Maybe SimpleStmt) (Maybe Expression) [Clause]
       | Infinite [Stmt]
       | While Expression [Stmt]
-      | For SimpleStmt Expression SimpleStmt [Stmt]
+      | For (Maybe SimpleStmt) Expression (Maybe SimpleStmt) [Stmt]
       | Break
       | Continue
       deriving (Eq, Show)

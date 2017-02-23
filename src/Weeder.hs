@@ -22,6 +22,8 @@ data WeederError
   | InvalidContinue
   | InvalidReturn
   | MissingReturn
+  | InvalidPostStatement
+    { statement :: SimpleStmt }
   deriving (Eq, Show)
 
 
@@ -77,7 +79,12 @@ instance Weedable Stmt where
         isDefault (Default _) = True
   weedCtxt ctxt (Infinite stmts) = weedListCtxt (CLoop : ctxt) stmts
   weedCtxt ctxt (While _ stmts) = weedCtxt ctxt (Infinite stmts)
-  weedCtxt ctxt (For _ _ _ stmts) = weedCtxt ctxt (Infinite stmts)
+  weedCtxt ctxt (For _ _ (Just post) stmts) =
+    weedCtxt ctxt (Infinite stmts) `mappend` weedPost post
+    where
+      weedPost s@(ShortVarDec _ _) = Just [InvalidPostStatement s]
+      weedPost e@(ExprStmt _) = Just [InvalidPostStatement e]
+      weedPost _ = Nothing
   weedCtxt ctxt (SimpleStmt stmt) = weedCtxt ctxt stmt
   weedCtxt ctxt Break =
     if CLoop `elem` ctxt
