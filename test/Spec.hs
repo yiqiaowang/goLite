@@ -34,11 +34,11 @@ main = do
 
   scannerSummary <- hspecResult Spec.Scanner.spec
   -- parserSummary <- hspecResult $ Spec.Parser.spec validSyntax invalidParserSyntax
-  weederSummary <- hspecResult $
+  parserSummary <- hspecResult $
     Spec.GoLite.spec invalidParser invalidWeeder validSyntax
   prettySummary <- hspecResult $ Spec.Pretty.spec validSyntax
 
-  if any (not . isSuccess) [scannerSummary, parserSummary]
+  if any (not . isSuccess) [scannerSummary, parserSummary, prettySummary]
     then exitFailure
     else exitSuccess
 

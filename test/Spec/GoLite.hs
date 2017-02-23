@@ -16,13 +16,13 @@ type Programs = [(String, String)]
 spec :: Programs -> Programs -> Programs -> Spec
 spec invalidParser invalidWeeder validSyntax =
   describe "GoLite" $ do
-    forM_ invalidWeeder $ \(file, text) ->
-      it ("correctly parses but fails in weeder phase : " ++ file) $
-        GoLite.parse file text `shouldSatisfy` isWeederError
-
     forM_ invalidParser $ \(file, text) ->
-      it ("correctly parses but fails in weeder phase : " ++ file) $
+      it ("fails with a parser error : " ++ file) $
         GoLite.parse file text `shouldSatisfy` isParserError
+
+    forM_ invalidWeeder $ \(file, text) ->
+      it ("correctly parses but fails with a weeder error : " ++ file) $
+        GoLite.parse file text `shouldSatisfy` isWeederError
 
     forM_ validSyntax $ \(file, text) ->
       it ("correctly parses and weeds : " ++ file) $
