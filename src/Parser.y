@@ -110,7 +110,7 @@ Program
 Package
       : package id ';'              { $2 }
 
-Alls  : Alls All                    { $2 : $1 }
+Alls  : All Alls                    { $1 : $2 }
       | {- Empty -}                 { [] }
 
 All   : Stmt                                                 { Stmt $1 }
@@ -144,7 +144,10 @@ Stmt  : var VarDec                                              { VarDec $2 }
       | Switch                                                  { $1 }
       | for '{' Stmts '}'                                       { Infinite $3 }
       | for Expr '{' Stmts '}'                                  { While $2 $4 }
-      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}'    { For $2 $4 $6 $8 }
+      | for ';' Expr ';' '{' Stmts '}'                          { For Nothing $3 Nothing $6 }
+      | for ';' Expr ';' SimpleStmt '{' Stmts '}'               { For Nothing $3 (Just $5) $7 }
+      | for SimpleStmt ';' Expr ';' '{' Stmts '}'               { For (Just $2) $4 Nothing $7 }
+      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}'    { For (Just $2) $4 (Just $6) $8 }
       | break ';'                                               { Break }
       | continue ';'                                            { Continue }
 
@@ -293,7 +296,7 @@ Type  :: { Type }
       | struct '{' StructList '}'   { Struct $3 }
 
 
-Append : append '(' Expr ',' Expr ')' { Append $3 $5 }
+Append : append '(' id ',' Expr ')' { Append $3 $5 }
 
 
 {

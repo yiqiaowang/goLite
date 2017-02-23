@@ -122,15 +122,18 @@ data Expression
       | BitAnd Expression Expression
       | BitOr Expression Expression
       | BitXor Expression Expression
-      | BitAndNot Expression Expression
       | BitLShift Expression Expression
       | BitRShift Expression Expression
       | BitClear Expression Expression
       | FuncCall Identifier [Expression]
-      | Append Expression Expression
+      | Append Identifier Expression
       | Index Identifier Expression
-      | Field Identifier Identifier
+      | Field [Identifier]
       | Pointer Expression
       | Address Expression
       | Channel Expression
       deriving (Eq, Show)
+
+
+
+
