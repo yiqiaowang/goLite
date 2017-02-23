@@ -13,6 +13,7 @@ data Type
   = Type String
   | Array Type Expression
   | Slice Type
+  | Struct [([Identifier], Type)]
   deriving (Eq, Show)
 
 
@@ -52,10 +53,10 @@ data Variable
       = Variable [Identifier] (Maybe Type) [Expression]
       deriving (Eq, Show)
 
-data TypeName
+data TypeName 
       = TypeName Identifier Type
-      | Struct Identifier [([Identifier], Type)]
       deriving (Eq, Show)
+
 
 -- Statements that can be declared inside blocks
 data Stmt
