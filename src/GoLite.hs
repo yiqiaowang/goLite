@@ -1,5 +1,6 @@
 module GoLite
-  ( parse
+  ( GoLiteError(..)
+  , parse
   ) where
 
 
@@ -9,10 +10,18 @@ import qualified Weeder
 import qualified Language
 
 
-parse :: FilePath -> String -> Either String Language.Program
+--
+data GoLiteError
+  = ParserError String
+  | WeederError [Weeder.WeederError]
+  deriving (Eq, Show)
+
+
+--
+parse :: FilePath -> String -> Either GoLiteError Language.Program
 parse fp text =
   case Parser.parse fp text of
-    Left errorMsg -> Left errorMsg
+    Left errorMsg -> Left $ ParserError errorMsg
     Right program -> case Weeder.weed program of
       Nothing -> return program
-      Just weederError -> Left $ show weederError
+      Just weederErrors -> Left $ WeederError weederErrors

@@ -9,16 +9,16 @@ Team Members:
 * Thomas Jansen - 260554029
 
 
----
+--
 ### 1. Reports
 [Milestone 1](reports/milestone1.md)
 
 
----
+--
 ### 2. About
 
 
----
+--
 ### 3. Installation
 ```
 git clone https://github.com/Sable/comp520-2017-01
@@ -26,7 +26,7 @@ cd comp520-2017-01
 stack build
 ```
 
----
+--
 ### 4. Build
 The following two commands are equivalent.
 
@@ -37,12 +37,12 @@ OR
 `./build.sh`
 
 
----
+--
 ### 5. Test
 `stack test`
 
 
----
+--
 ### 6. Usage
 Given a set of command line arguments `ARGS`, the following two commands are equivalent.
 

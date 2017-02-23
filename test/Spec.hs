@@ -29,13 +29,14 @@ loadPrograms directory = do
 main :: IO ()
 main = do
   validSyntax <- loadPrograms "programs/valid/syntax"
-  invalidParserSyntax <- loadPrograms "programs/invalid/parser"
-  invalidWeederSyntax <- loadPrograms "programs/invalid/weeder"
+  invalidParser <- loadPrograms "programs/invalid/parser"
+  invalidWeeder <- loadPrograms "programs/invalid/weeder"
 
   scannerSummary <- hspecResult Spec.Scanner.spec
-  parserSummary <- hspecResult $ Spec.Parser.spec validSyntax invalidParserSyntax
-  weederSummary <- hspecResult $ Spec.GoLite.spec validSyntax invalidWeederSyntax
-  -- prettySummary <- hspecResult $ Spec.Pretty.spec validSyntax
+  -- parserSummary <- hspecResult $ Spec.Parser.spec validSyntax invalidParserSyntax
+  weederSummary <- hspecResult $
+    Spec.GoLite.spec invalidParser invalidWeeder validSyntax
+  prettySummary <- hspecResult $ Spec.Pretty.spec validSyntax
 
   if any (not . isSuccess) [scannerSummary, parserSummary]
     then exitFailure
