@@ -9,9 +9,9 @@ module Scanner
   , alexError'
   ) where
 
-
 import Prelude hiding ( lex )
 import Control.Monad ( liftM )
+import Data.Char (ord)
 import Numeric (readOct, readHex)
 import TokenClass
 }
@@ -225,7 +225,6 @@ alexEOF = do
   (p, _, _, _) <- alexGetInput
   return $ Token p TokenEOF
 
-
 alexSemicolon :: Alex Token
 alexSemicolon = do
   (p, _, _, _) <- alexGetInput
@@ -277,7 +276,7 @@ alexMonadScan' = do
     AlexSkip  inp' len -> do
       alexSetInput inp'
       prevToken <- getPreviousToken
-      if alexInputPrevChar inp' `elem` ['\n']
+      if (ord $ alexInputPrevChar inp') `elem` [3,4,10]
         then case prevToken of
           Nothing -> alexMonadScan'
           Just (Token p cls) ->
