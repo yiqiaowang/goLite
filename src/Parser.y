@@ -131,7 +131,7 @@ Param : VarList Type                      { Parameter $1 $2 }
 
 Id    : id_raw				  { IdOrType $1 }
       | id_raw ArrayAccess 		  { IdArray $1 $2 }
-      | id_raw '.' FieldList 	    	  { IdField $1 $3 }                  
+      | FieldList 	    	   	  { IdField $1 }                  
 
 Stmts : Stmt Stmts                        { $1 : $2 }
       | {- Empty -}                       { [] }
@@ -303,8 +303,8 @@ MultOp	 : '*'		{ Mult }
 	 | '&^'		{ BitClear }
 
 FieldList
-      : id_raw '.' FieldList     { $1 : $3 }
-      | id_raw                   { [$1] }
+      : Id '.' FieldList     { $1 : $3 }
+      | Id                   { [$1] }
 
 Type  :: { Type }
       : id_raw                          { Type $1 }
