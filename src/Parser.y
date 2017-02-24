@@ -135,7 +135,7 @@ Stmts : Stmt Stmts                        { $1 : $2 }
 Stmt  : var VarDec                                              { VarDec $2 }
       | var '(' VarDecList ')'                                  { VarDecList $3 }
       | type TypeDec                                            { TypeDec $2 }
-      | type '(' TypeDecList ')'                                { TypeDecList $3 }
+      | type '(' TypeDecList ')' ';'                             { TypeDecList $3 }
       | return ';'                                              { Return Nothing }
       | return Expr ';'                                         { Return (Just $2) }
       | SimpleStmt ';'                                          { SimpleStmt $1 }
@@ -226,9 +226,14 @@ TypeDecList
       : TypeDec TypeDecList         { $1 : $2 }
       | {- Empty -}                 { [] }
 
+StructListEmpty
+      : VarList Type ';' StructList { ($1, $2) : $4 }
+      | VarList Type ';'            { [($1, $2)] }
+      | {- Empty -}                 { [] }
+
 StructList
       : VarList Type ';' StructList { ($1, $2) : $4 }
-      | {- Empty -}                 { [] }
+      | VarList Type ';'            { [($1, $2)] }
 
 Num   : int                         { Int $1 }
       | oct                         { Int $1 }
@@ -299,7 +304,7 @@ Type  :: { Type }
       : id                          { Type $1 }
       | '[' Expr ']' Type           { Array $4 $2 }
       | '[' ']' Type                { Slice $3 }
-      | struct '{' StructList '}'   { Struct $3 }
+      | struct '{' StructListEmpty '}'   { Struct $3 }
 
 
 Append : append '(' id ',' Expr ')' { Append $3 $5 }
