@@ -43,7 +43,7 @@ A Program data type was used to describe the entire program. It's seperated into
 
 2. Stmt - This data type contains most of the statement options. It includes if statements, loops, switch statements, variable and type declarations, return statements, print statements, breaks and continues.
 
-3. SimpleStmt - This data type contains statements that can be used before blocks in for loops, if statements, and switch statements
+3. SimpleStmt - This data type contains statements that can be used before blocks in for loops, if statements, and switch statements. This includes expression statements, increment and decrement statements, assignment, short variable declarations, and op-assign statements.
 
 If statements were also given their own data types, to allow them to recursively add if statements like so:
 ```
@@ -103,4 +103,7 @@ for i := 0; i < 10; i := 20 {}
 ```
 
 
-### 6. Pretty Printer
+### 6. [Pretty Printer](../src/Pretty.hs)
+In the pretty printer we used a typeclass in order to automatically generate a function that can pretty print a list of instances of the typeclass given a function that can pretty print a single element of that instance. Then we recursively defined the pretty print function for each data type, concatenating all the results into a single string that could be written to a file.
+
+In order to keep track of the indentation, an integer was passed along to every data type that recorded the number of indents those statements should have. The indentation was then assigned to the appropriate statements.
