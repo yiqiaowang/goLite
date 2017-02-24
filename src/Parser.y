@@ -129,7 +129,7 @@ ParamList
       : Param ',' ParamList               { $1 : $3 }
       | Param                             { [$1] }
 
-Param : VarList Type                      { Parameter $1 $2 }
+Param : InstantiationList Type            { Parameter $1 $2 }
 
 
 Id    :: {Identifier}
