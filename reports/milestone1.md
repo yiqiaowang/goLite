@@ -11,7 +11,7 @@ We are developing our compiler with a Haskell based toolchain.
 Yi Qiao
 - Developed the [Scanner](../src/Scanner.x)
 - Contributed to the development of the [Parser](../src/Parser.y)
-- Wrote some tests for the scanner and the parser.
+- Wrote some tests for the Scanner and the Parser
 
 Thomas
 - Wrote the majority of the [Parser](../src/Parser.y)
