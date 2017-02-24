@@ -156,7 +156,7 @@ Stmts : Stmt Stmts                        { $1 : $2 }
       | {- Empty -}                       { [] }
 
 Stmt  : var VarDec                                              { VarDec $2 }
-      | var '(' VarDecList ')'                                  { VarDecList $3 }
+      | var '(' VarDecList ')' ';'                              { VarDecList $3 }
       | type TypeDec                                            { TypeDec $2 }
       | type '(' TypeDecList ')' ';'                            { TypeDecList $3 }
       | return ';'                                              { Return Nothing }
@@ -219,9 +219,9 @@ SimpleStmt
 
 VarDec
       :: { Variable }
-      : VarList Type ';'                  { Variable $1 (Just $2) [] }
-      | VarList '=' ExprList  ';'         { Variable $1 Nothing $3 }
-      | VarList Type '=' ExprList ';'     { Variable $1 (Just $2) $4 }
+      : InstantiationList Type ';'                  { Variable $1 (Just $2) [] }
+      | InstantiationList '=' ExprList  ';'         { Variable $1 Nothing $3 }
+      | InstantiationList Type '=' ExprList ';'     { Variable $1 (Just $2) $4 }
 
 VarDecList
       : VarDec VarDecList                 { $1 : $2 }
@@ -238,6 +238,10 @@ ExprListEmpty
       | Expr                            { [$1] }
       | {- Empty -}                     { [] }
 
+InstantiationList
+      : id_raw ',' InstantiationList    { (IdOrType $1) : $3 }
+      | id_raw                          { [(IdOrType $1)] }
+
 VarList
       : Id ',' VarList              { $1 : $3 }
       | Id                          { [ $1 ] }
@@ -250,13 +254,13 @@ TypeDecList
       | {- Empty -}                 { [] }
 
 StructListEmpty
-      : VarList Type ';' StructList { ($1, $2) : $4 }
-      | VarList Type ';'            { [($1, $2)] }
+      : InstantiationList Type ';' StructList { ($1, $2) : $4 }
+      | InstantiationList Type ';'            { [($1, $2)] }
       | {- Empty -}                 { [] }
 
 StructList
-      : VarList Type ';' StructList { ($1, $2) : $4 }
-      | VarList Type ';'            { [($1, $2)] }
+      : InstantiationList Type ';' StructList { ($1, $2) : $4 }
+      | InstantiationList Type ';'            { [($1, $2)] }
 
 Num   : int                         { $1 }
       | oct                         { $1 }
@@ -296,8 +300,6 @@ PrimaryExpr
       | Lit	                  { Literal $1 }
       | Id '(' ExprListEmpty ')'  { FuncCall  $1 $3 }
       | Append	                  { $1 }
-
-
 
 RelOp	 : '=='		{ Equals }
 	 | '!='		{ NotEquals }

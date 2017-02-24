@@ -4,4 +4,4 @@ package tests;
 var (
   x []int;
   y []string;
-)
+);

@@ -21,7 +21,7 @@ commaSepList string i = intercalate ", " (map (`pretty` i) string)
 
 structList :: ([Identifier], Type) -> Integer -> String
 structList (idList, t) i = concat [spacePrint i, 
-    commaSepList idList i, " ", pretty t i, "\n"]
+    commaSepList idList i, " ", pretty t i, ";\n"]
 
 
 instance Pretty String where
@@ -40,7 +40,7 @@ instance Pretty Type where
     ["[", pretty expr 0, "]", pretty t 0]
   pretty (Slice t) _ = concat ["[]", pretty t 0]
   pretty (Struct list) i = concat ["struct {\n",
-    concatMap (`structList` (i+1)) list, "}\n"]
+    concatMap (`structList` (i+1)) list, "}"]
 
 instance Pretty Literal where
   pretty (Int' i) _ = show i
@@ -103,18 +103,18 @@ instance Pretty All where
 
 instance Pretty Variable where
   pretty (Variable var (Just t) []) i = concat
-    [spacePrint i, commaSepList var i, " ", pretty t i, "\n"]
+    [spacePrint i, commaSepList var i, " ", pretty t i, ";\n"]
   pretty (Variable var (Just t) expr) i = concat
     [spacePrint i, commaSepList var i, 
-    " ", pretty t i, " = ", commaSepList expr i, "\n"]
+    " ", pretty t i, " = ", commaSepList expr i, ";\n"]
   pretty (Variable var Nothing expr) i = concat
     [spacePrint i, commaSepList var i, " = ",
-    commaSepList expr i, "\n"]
+    commaSepList expr i, ";\n"]
 
 
 instance Pretty TypeName where
   pretty (TypeName ident t) i = concat 
-    [spacePrint i,pretty ident i , " ", pretty t i, "\n"] 
+    [spacePrint i,pretty ident i , " ", pretty t i, ";\n"] 
 
 instance Pretty Stmt where
   pretty (VarDec (Variable var (Just t) [])) i = concat
@@ -126,11 +126,11 @@ instance Pretty Stmt where
     [spacePrint i, "var ", commaSepList var i, " = ",
     commaSepList expr i, ";\n"]
   pretty (VarDecList vList) i = concat [spacePrint i, "var (\n", 
-    prettyList vList (i+1), spacePrint i, ")\n"]
+    prettyList vList (i+1), spacePrint i, ");\n"]
   pretty (TypeDec (TypeName ident t)) i = concat
     [spacePrint i, "type ", pretty ident i , " ", pretty t i, ";\n"]
   pretty (TypeDecList tList) i = concat [spacePrint i,
-    "type (\n", prettyList tList (i+1), spacePrint i, ")\n"]
+    "type (\n", prettyList tList (i+1), spacePrint i, ");\n"]
   pretty (SimpleStmt simp) i = concat [spacePrint i, pretty simp i, ";\n"]
   pretty (Print expr) i = concat [spacePrint i, "print(",
     commaSepList expr i, ");\n"]
