@@ -114,7 +114,7 @@ instance Pretty Variable where
 
 instance Pretty TypeName where
   pretty (TypeName ident t) i = concat 
-    [spacePrint i, ident, " ", pretty t i, "\n"] 
+    [spacePrint i,pretty ident i , " ", pretty t i, "\n"] 
 
 instance Pretty Stmt where
   pretty (VarDec (Variable var (Just t) [])) i = concat
@@ -128,7 +128,7 @@ instance Pretty Stmt where
   pretty (VarDecList vList) i = concat [spacePrint i, "var (\n", 
     prettyList vList (i+1), spacePrint i, ")\n"]
   pretty (TypeDec (TypeName ident t)) i = concat
-    [spacePrint i, "type ", ident, " ", pretty t i, ";\n"]
+    [spacePrint i, "type ", pretty ident i , " ", pretty t i, ";\n"]
   pretty (TypeDecList tList) i = concat [spacePrint i,
     "type (\n", prettyList tList (i+1), spacePrint i, ")\n"]
   pretty (SimpleStmt simp) i = concat [spacePrint i, pretty simp i, ";\n"]
@@ -167,21 +167,21 @@ instance Pretty Stmt where
 
 instance Pretty SimpleStmt where
   pretty (ExprStmt expr) i = (pretty expr i)
-  pretty (Incr ident) i = concat [ident, "++"]
-  pretty (Decr ident) i = concat [ident, "--"]
+  pretty (Incr ident) i = concat [pretty ident i , "++"]
+  pretty (Decr ident) i = concat [pretty ident i , "--"]
   pretty (Assign idList exprList) i = concat [commaSepList idList i,
     " = ", commaSepList exprList i]
-  pretty (PlusEq ident expr) i = concat [ident, " += ", pretty expr i]
-  pretty (MinusEq ident expr) i = concat [ident, " -= ", pretty expr i]
-  pretty (MulEq ident expr) i = concat [ident, " *= ", pretty expr i]
-  pretty (DivEq ident expr) i = concat [ident, " /= ", pretty expr i]
-  pretty (ModEq ident expr) i = concat [ident, " %= ", pretty expr i]
-  pretty (BitAndEq ident expr) i = concat [ident, " &= ", pretty expr i]
-  pretty (BitOrEq ident expr) i = concat [ident, " |= ", pretty expr i]
-  pretty (BitXOrEq ident expr) i = concat [ident, " ^= ", pretty expr i]
-  pretty (BitLShiftEq ident expr) i = concat [ident, " <<= ", pretty expr i]
-  pretty (BitRShiftEq ident expr) i = concat [ident, " >>= ", pretty expr i]
-  pretty (BitClearEq ident expr) i = concat [ident, " &^= ", pretty expr i]
+  pretty (PlusEq ident expr) i = concat [pretty ident i , " += ", pretty expr i]
+  pretty (MinusEq ident expr) i = concat [pretty ident i , " -= ", pretty expr i]
+  pretty (MulEq ident expr) i = concat [pretty ident i, " *= ", pretty expr i]
+  pretty (DivEq ident expr) i = concat [pretty ident i , " /= ", pretty expr i]
+  pretty (ModEq ident expr) i = concat [pretty ident i , " %= ", pretty expr i]
+  pretty (BitAndEq ident expr) i = concat [pretty ident i , " &= ", pretty expr i]
+  pretty (BitOrEq ident expr) i = concat [pretty ident i, " |= ", pretty expr i]
+  pretty (BitXOrEq ident expr) i = concat [pretty ident i , " ^= ", pretty expr i]
+  pretty (BitLShiftEq ident expr) i = concat [pretty ident i , " <<= ", pretty expr i]
+  pretty (BitRShiftEq ident expr) i = concat [pretty ident i , " >>= ", pretty expr i]
+  pretty (BitClearEq ident expr) i = concat [pretty ident i, " &^= ", pretty expr i]
   pretty (ShortVarDec idList exprList) i = concat [commaSepList idList i,
     " := ", commaSepList exprList i]
 
@@ -194,7 +194,7 @@ wrapSquareList xs i = concatMap wrapSquare (map (`pretty` i) xs)
 
 instance Pretty Expression where
   pretty (Brack expr) i = concat ["(", pretty expr i, ")"]
-  pretty (Id ident) _ = ident
+  pretty (Id ident) i = pretty ident i
   pretty (Literal lit) i = pretty lit i
   pretty (UnaryPos expr) i = concat ["+", pretty expr i]
   pretty (UnaryNeg expr) i = concat ["-", pretty expr i]
@@ -219,10 +219,8 @@ instance Pretty Expression where
   pretty (BitLShift expr1 expr2) i = concat [pretty expr1 i, " << ", pretty expr2 i]
   pretty (BitRShift expr1 expr2) i = concat [pretty expr1 i, " >> ", pretty expr2 i]
   pretty (BitClear expr1 expr2) i = concat [pretty expr1 i, " &^ ", pretty expr2 i]
-  pretty (FuncCall ident exprList) i = concat [ident, "(", commaSepList exprList i, ")"]
-  pretty (Append ident expr) i = concat ["append(", ident, ", ", pretty expr i, ")"]
-  pretty (Index ident expr) i = concat [ident, wrapSquareList expr i]
-  pretty (Field idList) i = (dotSepList idList)
+  pretty (FuncCall ident exprList) i = concat [pretty ident i , "(", commaSepList exprList i, ")"]
+  pretty (Append ident expr) i = concat ["append(", pretty ident i , ", ", pretty expr i, ")"]
 
 instance Pretty Integer where
   pretty int _ = (show int)
@@ -230,7 +228,7 @@ instance Pretty Integer where
 instance Pretty Identifier where
   pretty (IdOrType s) i = s
   pretty (IdArray s xs) i = concat [s, wrapSquareList xs i] 
-  pretty (IdField s xs) i = concat [s, ".", concatMap (`pretty` i) xs]
+  pretty (IdField xs) i = intercalate "." $ map (`pretty` i) xs
   
 dotSepList :: [String] -> String
 dotSepList string = intercalate "." string

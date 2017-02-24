@@ -97,26 +97,27 @@ import Scanner
 	raw                         { Token _ (TokenRaw $$) }
 
 -- Precedences for operators. Lower is higher
-%left '||'
-%left '&&'
+%left '||' '&&'
 %left '==' '!=' '<=' '>' '>=' '<' COMP
 %left '+' '-' '|' '^' ADD
 %left '*' '/' '%' '<<' '>>' '&' '&^' MULT
 %left UNARY
+
+
 %%
 
 Program
       : Package Alls                { Program $1 $2 }
 
 Package
-      : package id_raw ';'              { IdOrType $2 }
+      : package id_raw ';'              { $2 }
 
 Alls  : All Alls                    { $1 : $2 }
       | {- Empty -}                 { [] }
 
 All   : Stmt                                                 { Stmt $1 }
-      | func id_raw '(' ParamListEmpty ')' '{' Stmts '}'         { Function (IdType_String $2) $4 Nothing $7 }
-      | func id_raw '(' ParamListEmpty ')' Type '{' Stmts '}'    { Function (IdType_String $2) $4 (Just $6) $8 }
+      | func id_raw '(' ParamListEmpty ')' '{' Stmts '}'         { Function (IdOrType $2) $4 Nothing $7 }
+      | func id_raw '(' ParamListEmpty ')' Type '{' Stmts '}'    { Function (IdOrType $2) $4 (Just $6) $8 }
 
 ParamListEmpty
       : Param ',' ParamList               { $1 : $3 }
@@ -129,9 +130,27 @@ ParamList
 
 Param : VarList Type                      { Parameter $1 $2 }
 
-Id    : id_raw				  { IdOrType $1 }
-      | id_raw ArrayAccess 		  { IdArray $1 $2 }
+
+--Id : id_raw IdSuffix
+
+--IdSuffix : {- Empty -} 
+
+Id    :: {Identifier}
+      : id_raw				  { IdOrType $1 }	
+      | id_raw ArrayAccess                { IdArray $1 $2 }
       | FieldList 	    	   	  { IdField $1 }                  
+
+FieldList :: { [Identifier] }
+      : IdField '.' FieldList  { $1 : $3 }
+      | IdField '.' IdField    { $1 : [$3] }
+
+IdField    :: { Identifier }
+	   : id_raw			  { IdOrType $1 }
+      	   | id_raw ArrayAccess 	  { IdArray $1 $2 }
+
+
+ArrayAccess : '[' Num ']' ArrayAccess { $2:$4 }
+	    | '[' Num ']'  	      { [$2] }
 
 Stmts : Stmt Stmts                        { $1 : $2 }
       | {- Empty -}                       { [] }
@@ -224,7 +243,7 @@ VarList
       | Id                          { [ $1 ] }
 
 TypeDec
-      : id_raw Type ';'                    { TypeName (IdType_String $1) $2 }
+      : id_raw Type ';'                    { TypeName (IdOrType $1) $2 }
 
 TypeDecList
       : TypeDec TypeDecList         { $1 : $2 }
@@ -275,11 +294,9 @@ PrimaryExpr
       : '(' Expr ')'              { $2 }
       | Id	                  { Id $1 }
       | Lit	                  { Literal $1 }
-      | Id '(' ExprListEmpty ')'  { FuncCall (IdType_String $1) $3 }
+      | Id '(' ExprListEmpty ')'  { FuncCall  $1 $3 }
       | Append	                  { $1 }
 
-ArrayAccess : '[' Num ']' ArrayAccess { $2:$4 }
-	    | '[' Num ']'  	       { [$2] }
 
 
 RelOp	 : '=='		{ Equals }
@@ -302,9 +319,6 @@ MultOp	 : '*'		{ Mult }
 	 | '&'		{ BitAnd }
 	 | '&^'		{ BitClear }
 
-FieldList
-      : Id '.' FieldList     { $1 : $3 }
-      | Id                   { [$1] }
 
 Type  :: { Type }
       : id_raw                          { Type $1 }
