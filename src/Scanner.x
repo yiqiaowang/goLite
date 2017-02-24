@@ -46,9 +46,9 @@ $comment_content = [~\n]
 -- All token actions have type ( AlexPosn -> String -> Token )
 tokens :-
   @b_comment			  ;
-  $white+                         ;
-  @comment 			  ;
-  @newline                        ;
+  $white+           ;
+  @comment 			    ;
+  @newline          ;
 
 -- goLang keywords, reserved
   break				  { lex' TokenBreak }
@@ -56,7 +56,7 @@ tokens :-
   chan				  { lex' TokenChan }
   const				  { lex' TokenConst }
   continue			  { lex' TokenContinue }
-  default 			  { lex' TokenDefault }
+  default			  { lex' TokenDefault }
   defer				  { lex' TokenDefer }
   else                            { lex' TokenElse }
   fallthrough			  { lex' TokenFallthrough }
@@ -143,7 +143,7 @@ tokens :-
  0|[1-9][0-9]*                    { lex (genIntLex Decimal) }
 
 -- Octal
- 0[0-7]+	       	          { lex (genIntLex Octal) }
+ 0[0-7]+			  { lex (genIntLex Octal) }
 
 -- Hex
  0[xX][0-9a-fA-F]+		 { lex ((genIntLex Hex) . extractHexNumeric) }
@@ -199,18 +199,19 @@ genIntLex Hex = (TokenInt Hex . extractHex2Int . readHex)
 -- To improve error messages, We keep the path of the file we are
 -- lexing in our own state.
 data AlexUserState
-  = AlexUserState { filePath :: FilePath }
+  = AlexUserState
+  { previousToken :: Maybe Token }
 
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState "<unknown>"
+alexInitUserState = AlexUserState Nothing
 
 
-getFilePath :: Alex FilePath
-getFilePath = liftM filePath alexGetUserState
+getPreviousToken :: Alex (Maybe Token)
+getPreviousToken = liftM previousToken alexGetUserState
 
 
-setFilePath :: FilePath -> Alex ()
-setFilePath = alexSetUserState . AlexUserState
+setPreviousToken :: Maybe Token -> Alex ()
+setPreviousToken = alexSetUserState . AlexUserState
 
 
 -- Token includes source code position and a token class
@@ -225,6 +226,12 @@ alexEOF = do
   return $ Token p TokenEOF
 
 
+alexSemicolon :: Alex Token
+alexSemicolon = do
+  (p, _, _, _) <- alexGetInput
+  return $ Token p TokenSemicolon
+
+
 -- Unfortunately, we have to extract the matching bit of string ourselves...
 lex :: (String -> TokenClass) -> AlexAction Token
 lex cons = \(p, _, _, s) i -> return $ Token p (cons (take i s))
@@ -233,6 +240,27 @@ lex cons = \(p, _, _, s) i -> return $ Token p (cons (take i s))
 -- For constructing tokens that do not depend on the input
 lex' :: TokenClass -> AlexAction Token
 lex' = lex . const
+
+
+--
+isOptionalSemicolonToken :: TokenClass -> Bool
+isOptionalSemicolonToken (TokenId _) = True
+isOptionalSemicolonToken (TokenFloat _) = True
+isOptionalSemicolonToken (TokenInt _ _) = True
+isOptionalSemicolonToken (TokenString _) = True
+isOptionalSemicolonToken (TokenRune _) = True
+isOptionalSemicolonToken (TokenRaw _) = True
+isOptionalSemicolonToken (TokenContinue) = True
+isOptionalSemicolonToken (TokenBreak) = True
+isOptionalSemicolonToken (TokenFallthrough) = True
+isOptionalSemicolonToken (TokenReturn) = True
+isOptionalSemicolonToken (TokenInc) = True
+isOptionalSemicolonToken (TokenDec) = True
+isOptionalSemicolonToken (TokenRParen) = True
+isOptionalSemicolonToken (TokenRSquare) = True
+isOptionalSemicolonToken (TokenRCurly) = True
+isOptionalSemicolonToken _ = False
+
 
 -- We rewrite alexMonadScan' to delegate to alexError' when lexing fails
 -- (the default implementation just returns an error message).
@@ -244,22 +272,36 @@ alexMonadScan' = do
     AlexEOF -> alexEOF
     AlexError (p, _, _, s) ->
       alexError' p ("lexical error at character '" ++ take 1 s ++ "'")
+
+    -- will be called at each new line
     AlexSkip  inp' len -> do
       alexSetInput inp'
-      alexMonadScan'
+      prevToken <- getPreviousToken
+      if alexInputPrevChar inp' `elem` ['\n']
+        then case prevToken of
+          Nothing -> alexMonadScan'
+          Just (Token p cls) ->
+            if isOptionalSemicolonToken cls
+              then do
+                setPreviousToken $ Just $ Token p TokenSemicolon
+                alexSemicolon
+              else alexMonadScan'
+        else
+          alexMonadScan'
     AlexToken inp' len action -> do
       alexSetInput inp'
-      action (ignorePendingBytes inp) len
+      token <- action (ignorePendingBytes inp) len
+      setPreviousToken $ Just token
+      return token
 
 
 -- Signal an error, including a commonly accepted source code position.
 alexError' :: AlexPosn -> String -> Alex a
 alexError' (AlexPn _ l c) msg = do
-  fp <- getFilePath
-  alexError (fp ++ ":" ++ show l ++ ":" ++ show c ++ ": " ++ msg)
+  alexError (show l ++ ":" ++ show c ++ ": " ++ msg)
 
 
 -- A variant of runAlex, keeping track of the path of the file we are lexing.
 runAlex' :: Alex a -> FilePath -> String -> Either String a
-runAlex' a fp input = runAlex input (setFilePath fp >> a)
+runAlex' a fp input = runAlex input (setPreviousToken Nothing >> a)
 }

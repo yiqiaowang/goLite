@@ -222,6 +222,7 @@ instance Pretty Expression where
   pretty (FuncCall ident exprList) i = concat [pretty ident i , "(", commaSepList exprList i, ")"]
   pretty (Append ident expr) i = concat ["append(", pretty ident i , ", ", pretty expr i, ")"]
 
+
 instance Pretty Integer where
   pretty int _ = (show int)
 

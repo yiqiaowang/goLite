@@ -119,8 +119,9 @@ All   : Stmt                                                 { Stmt $1 }
       | func id_raw '(' ParamListEmpty ')' '{' Stmts '}'         { Function (IdOrType $2) $4 Nothing $7 }
       | func id_raw '(' ParamListEmpty ')' Type '{' Stmts '}'    { Function (IdOrType $2) $4 (Just $6) $8 }
 
-ParamListEmpty
-      : Param ',' ParamList               { $1 : $3 }
+
+ParamList : Param ',' ParamList               { $1 : $3 }
+
       | Param                             { [$1] }
       | {- Empty -}                       { [] }
 
@@ -130,10 +131,6 @@ ParamList
 
 Param : VarList Type                      { Parameter $1 $2 }
 
-
---Id : id_raw IdSuffix
-
---IdSuffix : {- Empty -} 
 
 Id    :: {Identifier}
       : id_raw				  { IdOrType $1 }	
@@ -165,18 +162,17 @@ Stmt  : var VarDec                                              { VarDec $2 }
       | print '(' ExprListEmpty ')' ';'                         { Print $3 }
       | println '(' ExprListEmpty ')' ';'                       { Println $3 }
       | If                                                      { If $1 }
-      | Switch                                                  { $1 }
-      | for '{' Stmts '}'                                       { Infinite $3 }
-      | for Expr '{' Stmts '}'                                  { While $2 $4 }
-      | for ';' Expr ';' '{' Stmts '}'                          { For Nothing $3 Nothing $6 }
-      | for ';' Expr ';' SimpleStmt '{' Stmts '}'               { For Nothing $3 (Just $5) $7 }
-      | for SimpleStmt ';' Expr ';' '{' Stmts '}'               { For (Just $2) $4 Nothing $7 }
-      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}'    { For (Just $2) $4 (Just $6) $8 }
-      | break ';'                                               { Break }
+      | Switch ';'                                              { $1 }
+      | for '{' Stmts '}' ';'                                   { Infinite $3 }
+      | for Expr '{' Stmts '}' ';'                              { While $2 $4 }
+      | for ';' Expr ';' '{' Stmts '}' ';'                      { For Nothing $3 Nothing $6 }
+      | for ';' Expr ';' SimpleStmt '{' Stmts '}' ';'           { For Nothing $3 (Just $5) $7 }
+      | for SimpleStmt ';' Expr ';' '{' Stmts '}' ';'             { For (Just $2) $4 Nothing $7 }
+      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}' ';'    { For (Just $2) $4 (Just $6) $8 }
+      | break ';'                                                 { Break }
       | continue ';'                                            { Continue }
 
 Switch
-      :: { Stmt }
       : switch '{' ClauseList '}'                     { Switch Nothing Nothing $3 }
       | switch SimpleStmt ';' '{' ClauseList '}'      { Switch (Just $2) Nothing $5 }
       | switch Expr '{' ClauseList '}'                { Switch Nothing (Just $2) $4 }
@@ -186,17 +182,20 @@ ClauseList
       :: { [Clause] }
       : Clause ClauseList             { $1 : $2 }
       | {- Empty -}                   { [] }
-
+      
 Clause
       :: { Clause }
       : case ExprList ':' Stmts       { Case $2 $4 }
       | default ':' Stmts             { Default $3 }
 
-If    : if SimpleStmt ';' Expr '{' Stmts '}'                      { IfStmt (Just $2) $4 $6 Nothing }
-      | if SimpleStmt ';' Expr '{' Stmts '}' else '{' Stmts '}'   { IfStmt (Just $2) $4 $6 (Just (Right $10)) }
-      | if SimpleStmt ';' Expr '{' Stmts '}' else If              { IfStmt (Just $2) $4 $6 (Just (Left $9)) }
-      | if Expr '{' Stmts '}'                                     { IfStmt Nothing $2 $4 Nothing }
-      | if Expr '{' Stmts '}' else '{' Stmts '}'                  { IfStmt Nothing $2 $4 (Just (Right $8)) }
+              
+If    :: { IfStmt }
+      : if SimpleStmt ';' Expr '{' Stmts '}' ';'                           { IfStmt (Just $2) $4 $6 Nothing }
+      | if SimpleStmt ';' Expr '{' Stmts '}' else '{' Stmts '}' ';'      { IfStmt (Just $2) $4 $6 (Just (Right $10)) }
+      | if SimpleStmt ';' Expr '{' Stmts '}' else If                  { IfStmt (Just $2) $4 $6 (Just (Left $9)) }
+      | if Expr '{' Stmts '}' ';'                                  { IfStmt Nothing $2 $4 Nothing }
+      | if Expr '{' Stmts '}' else '{' Stmts '}' ';'                  { IfStmt Nothing $2 $4 (Just (Right $8)) }
+
       | if Expr '{' Stmts '}' else If                             { IfStmt Nothing $2 $4 (Just (Left $7)) }
 
 SimpleStmt
