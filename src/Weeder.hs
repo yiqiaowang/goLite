@@ -24,6 +24,8 @@ data WeederError
   | MissingReturn
   | InvalidPostStatement
     { statement :: SimpleStmt }
+  | InvalidPackageName
+    { name :: String }
   deriving (Eq, Show)
 
 
@@ -47,7 +49,11 @@ class Weedable a where
 
 --
 instance Weedable Program where
-  weed (Program package alls) = weedListCtxt [] alls
+  weed (Program package alls) =
+    weedListCtxt [] alls `mappend` weedPackage package
+    where
+      weedPackage "_" = Just [InvalidPackageName "_"]
+      weedPackage _ = Nothing
 
 
 --
