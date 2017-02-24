@@ -8,13 +8,11 @@ data Program
 -- Packages, Identifiers, and Types are all strings
 type Package = String
 
-data Identifier = IdOrType_String String
-                | Id_Array String [Integer]
-                | Id_Field String [String]
-                deriving (Eq, Show)
+type Identifier = String
+
 data Type
   = Type String
-  | Array Type Integer
+  | Array Type Expression
   | Slice Type
   | Struct [([Identifier], Type)]
   deriving (Eq, Show)
@@ -130,13 +128,9 @@ data Expression
       | BitClear Expression Expression
       | FuncCall Identifier [Expression]
       | Append Identifier Expression
-      | Index Identifier
-      | Field Identifier
+      | Index Identifier Expression
+      | Field [Identifier]
       | Pointer Expression
       | Address Expression
       | Channel Expression
       deriving (Eq, Show)
-
-
-
-

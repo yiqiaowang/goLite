@@ -220,7 +220,7 @@ instance Pretty Expression where
   pretty (BitClear expr1 expr2) i = concat [pretty expr1 i, " &^ ", pretty expr2 i]
   pretty (FuncCall ident exprList) i = concat [ident, "(", commaSepList exprList i, ")"]
   pretty (Append ident expr) i = concat ["append(", ident, ", ", pretty expr i, ")"]
-  pretty (Index ident expr) i = concat [ident, wrapSquareList expr i]
+  pretty (Index ident expr) i = concat [ident, pretty expr i]
   pretty (Field idList) i = (dotSepList idList)
 
 instance Pretty Integer where

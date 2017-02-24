@@ -171,11 +171,10 @@ Clause
       :: { Clause }
       : case ExprList ':' Stmts       { Case $2 $4 }
       | default ':' Stmts             { Default $3 }
-      
 
               
-If    :: { Stmt }
-      :if SimpleStmt ';' Expr '{' Stmts '}' ';'                           { IfStmt (Just $2) $4 $6 Nothing }
+If    :: { IfStmt }
+      : if SimpleStmt ';' Expr '{' Stmts '}' ';'                           { IfStmt (Just $2) $4 $6 Nothing }
       | if SimpleStmt ';' Expr '{' Stmts '}' else '{' Stmts '}' ';'      { IfStmt (Just $2) $4 $6 (Just (Right $10)) }
       | if SimpleStmt ';' Expr '{' Stmts '}' else If                  { IfStmt (Just $2) $4 $6 (Just (Left $9)) }
       | if Expr '{' Stmts '}' ';'                                  { IfStmt Nothing $2 $4 Nothing }
@@ -242,9 +241,9 @@ StructList
       : VarList Type ';' StructList { ($1, $2) : $4 }
       | VarList Type ';'            { [($1, $2)] }
 
-Num   : int                         { Int $1 }
-      | oct                         { Int $1 }
-      | hex                         { Int $1 }
+Num   : int                         { Int' $1 }
+      | oct                         { Int' $1 }
+      | hex                         { Int' $1 }
 
 Lit   : Num                         { $1 }
       | float                       { Float64 $1 }
