@@ -7,12 +7,22 @@ data Program
 
 -- Packages, Identifiers, and Types are all strings
 type Package = String
-type Identifier = String
-type Type = String
+
+data Identifier = IdOrType_String String
+                | Id_Array String [Integer]
+                | Id_Field String [String]
+                deriving (Eq, Show)
+data Type
+  = Type String
+  | Array Type Integer
+  | Slice Type
+  | Struct [([Identifier], Type)]
+  deriving (Eq, Show)
+
 
 -- Literal values
 data Literal
-      = Int Integer
+      = Int' Integer
       | Float64 Float
       -- | Bool Bool
       | Rune Integer
@@ -46,10 +56,10 @@ data Variable
       = Variable [Identifier] (Maybe Type) [Expression]
       deriving (Eq, Show)
 
-data TypeName
+data TypeName 
       = TypeName Identifier Type
-      | Struct Identifier [([Identifier], Type)]
       deriving (Eq, Show)
+
 
 -- Statements that can be declared inside blocks
 data Stmt
@@ -57,8 +67,6 @@ data Stmt
       | VarDecList [Variable]
       | TypeDec TypeName
       | TypeDecList [TypeName]
-      | Array Identifier Expression Type
-      | Slice Identifier Type
       | SimpleStmt SimpleStmt
       | Print [Expression]
       | Println [Expression]
@@ -67,7 +75,7 @@ data Stmt
       | Switch (Maybe SimpleStmt) (Maybe Expression) [Clause]
       | Infinite [Stmt]
       | While Expression [Stmt]
-      | For SimpleStmt Expression SimpleStmt [Stmt]
+      | For (Maybe SimpleStmt) Expression (Maybe SimpleStmt) [Stmt]
       | Break
       | Continue
       deriving (Eq, Show)
@@ -117,15 +125,18 @@ data Expression
       | BitAnd Expression Expression
       | BitOr Expression Expression
       | BitXor Expression Expression
-      | BitAndNot Expression Expression
       | BitLShift Expression Expression
       | BitRShift Expression Expression
       | BitClear Expression Expression
       | FuncCall Identifier [Expression]
-      | Append Expression Expression
-      | Index Identifier Expression
-      | Field Identifier Identifier
+      | Append Identifier Expression
+      | Index Identifier
+      | Field Identifier
       | Pointer Expression
       | Address Expression
       | Channel Expression
       deriving (Eq, Show)
+
+
+
+

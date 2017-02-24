@@ -28,7 +28,7 @@ compile :: GoLiteOptions -> IO ()
 compile options = do
   text <- readFile goLiteFile
   case Parser.parse goLiteFile text of
-    Right program -> writeFile prettyFile $ Pretty.pretty program
+    Right program -> writeFile prettyFile $ Pretty.pretty program 0
     Left errorMsg -> hPutStrLn stderr errorMsg
 
   where

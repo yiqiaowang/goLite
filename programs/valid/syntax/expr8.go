@@ -2,8 +2,6 @@
 package tests;
 
 func main() {
-	var x = []int;
-
-	x = [1,2,3,4];
+ 	var x []int;
 	x = append(x,5);
 }

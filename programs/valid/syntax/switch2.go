@@ -5,6 +5,6 @@ func main() {
   var tag int = 0;
 
   switch tag {
-    case: tag, 3: tag = 2;
+    case tag, 3: tag = 2;
   }
 }
