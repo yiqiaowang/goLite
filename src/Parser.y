@@ -87,7 +87,7 @@ import Scanner
 	'!'			    { Token _ TokenBoolNot }
 	'<-'			    { Token _ TokenChannel }
 
-	id                          { Token _ (TokenId $$) }
+	id_raw                      { Token _ (TokenId $$) }
 	int                         { Token _ (TokenInt Decimal $$) }
 	oct                         { Token _ (TokenInt Octal $$) }
 	hex                         { Token _ (TokenInt Hex $$) }
@@ -97,29 +97,27 @@ import Scanner
 	raw                         { Token _ (TokenRaw $$) }
 
 -- Precedences for operators. Lower is higher
-%left '||'
-%left '&&'
+%left '||' '&&'
 %left '==' '!=' '<=' '>' '>=' '<' COMP
 %left '+' '-' '|' '^' ADD
 %left '*' '/' '%' '<<' '>>' '&' '&^' MULT
 %left UNARY
+
+
 %%
 
 Program
       : Package Alls                { Program $1 $2 }
 
 Package
-      : package id ';'              { $2 }
+      : package id_raw ';'              { $2 }
 
 Alls  : All Alls                    { $1 : $2 }
       | {- Empty -}                 { [] }
 
-
-All   : Stmt                        { Stmt $1 }
-      | func id '(' ParamList ')' '{' Stmts '}' ';'          { Function $2 $4 Nothing $7 }
-      | func id '(' ParamList ')' Type '{' Stmts '}' ';'     { Function $2 $4 (Just $6) $8 }
-      | func id '(' ')' '{' Stmts '}' ';'                   { Function $2 [] Nothing $6 }
-      | func id '(' ')' Type '{' Stmts '}' ';'              { Function $2 [] (Just $5) $7 }
+All   : Stmt                                                 { Stmt $1 }
+      | func id_raw '(' ParamListEmpty ')' '{' Stmts '}'         { Function (IdOrType $2) $4 Nothing $7 }
+      | func id_raw '(' ParamListEmpty ')' Type '{' Stmts '}'    { Function (IdOrType $2) $4 (Just $6) $8 }
 
 
 ParamList : Param ',' ParamList               { $1 : $3 }
@@ -132,6 +130,24 @@ ParamList
       | Param                             { [$1] }
 
 Param : VarList Type                      { Parameter $1 $2 }
+
+
+Id    :: {Identifier}
+      : id_raw				  { IdOrType $1 }	
+      | id_raw ArrayAccess                { IdArray $1 $2 }
+      | FieldList 	    	   	  { IdField $1 }                  
+
+FieldList :: { [Identifier] }
+      : IdField '.' FieldList  { $1 : $3 }
+      | IdField '.' IdField    { $1 : [$3] }
+
+IdField    :: { Identifier }
+	   : id_raw			  { IdOrType $1 }
+      	   | id_raw ArrayAccess 	  { IdArray $1 $2 }
+
+
+ArrayAccess : '[' Num ']' ArrayAccess { $2:$4 }
+	    | '[' Num ']'  	      { [$2] }
 
 Stmts : Stmt Stmts                        { $1 : $2 }
       | {- Empty -}                       { [] }
@@ -184,27 +200,27 @@ If    :: { IfStmt }
 
 SimpleStmt
       : Expr                       { ExprStmt $1 }
-      | id '++'                    { Incr $1 }
-      | id '--'                    { Decr $1 }
+      | Id '++'                    { Incr $1 }
+      | Id '--'                    { Decr $1 }
       | VarList '=' ExprList       { Assign $1 $3 }
-      | id '+=' Expr               { PlusEq $1 $3 }
-      | id '-=' Expr               { MinusEq $1 $3 }
-      | id '*=' Expr               { MulEq $1 $3 }
-      | id '/=' Expr               { DivEq $1 $3 }
-      | id '%=' Expr               { ModEq $1 $3 }
-      | id '&=' Expr               { BitAndEq $1 $3 }
-      | id '|=' Expr               { BitOrEq $1 $3 }
-      | id '^=' Expr               { BitXOrEq $1 $3 }
-      | id '<<=' Expr              { BitLShiftEq $1 $3 }
-      | id '>>=' Expr              { BitRShiftEq $1 $3 }
-      | id '&^=' Expr              { BitClearEq $1 $3 }
+      | Id '+=' Expr               { PlusEq $1 $3 }
+      | Id '-=' Expr               { MinusEq $1 $3 }
+      | Id '*=' Expr               { MulEq $1 $3 }
+      | Id '/=' Expr               { DivEq $1 $3 }
+      | Id '%=' Expr               { ModEq $1 $3 }
+      | Id '&=' Expr               { BitAndEq $1 $3 }
+      | Id '|=' Expr               { BitOrEq $1 $3 }
+      | Id '^=' Expr               { BitXOrEq $1 $3 }
+      | Id '<<=' Expr              { BitLShiftEq $1 $3 }
+      | Id '>>=' Expr              { BitRShiftEq $1 $3 }
+      | Id '&^=' Expr              { BitClearEq $1 $3 }
       | VarList ':=' ExprList      { ShortVarDec $1 $3 }
 
 VarDec
       :: { Variable }
-      : VarList Type ';'                  { Variable $1 (Just $2) [] }
-      | VarList '=' ExprList  ';'         { Variable $1 Nothing $3 }
-      | VarList Type '=' ExprList ';'     { Variable $1 (Just $2) $4 }
+      : InstantiationList Type ';'                  { Variable $1 (Just $2) [] }
+      | InstantiationList '=' ExprList  ';'         { Variable $1 Nothing $3 }
+      | InstantiationList Type '=' ExprList ';'     { Variable $1 (Just $2) $4 }
 
 VarDecList
       : VarDec VarDecList                 { $1 : $2 }
@@ -221,31 +237,35 @@ ExprListEmpty
       | Expr                            { [$1] }
       | {- Empty -}                     { [] }
 
+InstantiationList
+      : id_raw ',' InstantiationList    { (IdOrType $1) : $3 }
+      | id_raw                          { [(IdOrType $1)] }
+
 VarList
-      : id ',' VarList              { $1 : $3 }
-      | id                          { [$1] }
+      : Id ',' VarList              { $1 : $3 }
+      | Id                          { [ $1 ] }
 
 TypeDec
-      : id Type ';'                    { TypeName $1 $2 }
+      : id_raw Type ';'                    { TypeName (IdOrType $1) $2 }
 
 TypeDecList
       : TypeDec TypeDecList         { $1 : $2 }
       | {- Empty -}                 { [] }
 
 StructListEmpty
-      : VarList Type ';' StructList { ($1, $2) : $4 }
-      | VarList Type ';'            { [($1, $2)] }
+      : InstantiationList Type ';' StructList { ($1, $2) : $4 }
+      | InstantiationList Type ';'            { [($1, $2)] }
       | {- Empty -}                 { [] }
 
 StructList
-      : VarList Type ';' StructList { ($1, $2) : $4 }
-      | VarList Type ';'            { [($1, $2)] }
+      : InstantiationList Type ';' StructList { ($1, $2) : $4 }
+      | InstantiationList Type ';'            { [($1, $2)] }
 
-Num   : int                         { Int' $1 }
-      | oct                         { Int' $1 }
-      | hex                         { Int' $1 }
+Num   : int                         { $1 }
+      | oct                         { $1 }
+      | hex                         { $1 }
 
-Lit   : Num                         { $1 }
+Lit   : Num                         { Int' $1 }
       | float                       { Float64 $1 }
       | rune                        { Rune $1 }
       | string                      { String $1 }
@@ -275,12 +295,10 @@ UnaryOp	 : '+'	%prec UNARY { UnaryPos }
 PrimaryExpr
       :: { Expression }
       : '(' Expr ')'              { $2 }
-      | id	                      { Id $1 }
-      | Lit	                      { Literal $1 }
-      | id '(' ExprListEmpty ')'  { FuncCall $1 $3 }
+      | Id	                  { Id $1 }
+      | Lit	                  { Literal $1 }
+      | Id '(' ExprListEmpty ')'  { FuncCall  $1 $3 }
       | Append	                  { $1 }
-      | id '[' Expr ']'           { Index $1 $3 }
-      | id '.' FieldList           { Field ($1 : $3)}                  
 
 RelOp	 : '=='		{ Equals }
 	 | '!='		{ NotEquals }
@@ -302,18 +320,15 @@ MultOp	 : '*'		{ Mult }
 	 | '&'		{ BitAnd }
 	 | '&^'		{ BitClear }
 
-FieldList
-      : id '.' FieldList     { $1 : $3 }
-      | id                   { [$1] }
 
 Type  :: { Type }
-      : id                          { Type $1 }
-      | '[' Expr ']' Type           { Array $4 $2 }
+      : id_raw                          { Type $1 }
+      | '[' Num ']' Type           { Array $4 $2 }
       | '[' ']' Type                { Slice $3 }
       | struct '{' StructListEmpty '}'   { Struct $3 }
 
 
-Append : append '(' id ',' Expr ')' { Append $3 $5 }
+Append : append '(' Id ',' Expr ')' { Append $3 $5 }
 
 
 {
