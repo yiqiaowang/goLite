@@ -1,4 +1,4 @@
 // empty struct
 package tests;
 
-type point struct {}
+type point struct {};

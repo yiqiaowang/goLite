@@ -2,5 +2,5 @@
 package tests;
 
 type point struct {
-  x  float64;
-}
+  x int;
+};
