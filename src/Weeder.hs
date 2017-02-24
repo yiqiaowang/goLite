@@ -17,7 +17,7 @@ data WeederError
     , numFound :: Int
     }
   | RepeatedIdentifierInSVD
-    { indentifier :: String }
+    { indentifier :: Identifier}
   | InvalidBreak
   | InvalidContinue
   | InvalidReturn
@@ -53,7 +53,7 @@ instance Weedable Program where
 --
 instance Weedable All where
   weed (Stmt stmt) = weed stmt
-  weed (Function "main" _ _ stmts) =
+  weed (Function (IdOrType "main") _ _ stmts) =
     weedListCtxt [] stmts
   weed (Function _ _ _ stmts) =
     weedListCtxt [CFunction] stmts `mappend`

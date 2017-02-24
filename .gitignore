@@ -23,3 +23,4 @@ tags
 /.dir-locals.el
 *.DS_Store
 .info
+*.pretty.go

@@ -16,6 +16,7 @@ Yi Qiao
 Thomas
 - Wrote the majority of the [Parser](../src/Parser.y)
 - Wrote the [Pretty Printer](../src/Pretty.hs)
+- Wrote most of the [Language] (../src/Language.hs)
 
 Charlie
 - Developed the [test suite](../programs/) and automated testing (programs/)
@@ -33,8 +34,30 @@ Another design decision made in the scanner was to recognize and split up the th
 The decision to use a monadic scanner is twofold. Coupled with the monadic parser, it allowed us to generate reasonable error messages. Furthermore, the state monad was used to insert optional semicolons into the token stream wherever the conditions to do so were satisfied. This was acheived by storing the previous token and, on newlines, checking to see if the previous token matched one of those outlined in [rule 1](https://golang.org/ref/spec#Semicolons).
 
 
-### 4. Parser
+### 4. [Parser](../src/Parser.hs)
+To make the parser more readable, the tokens were given appropriate aliases, usually just using their names in Go. Precedences were created to allow us to put all the expressions into one data type, without having to seperate them into factors and terms.
 
+A Program data type was used to describe the entire program. It's seperated into the package declaration followed by a list of statements (declarations included as statements). The statement data type was split into three types:
+
+1. All - This can either be any statement, or it can be a function declaration. This is to make it impossible for functions to be declared inside blocks. Only the program data type has a field for an All list.
+
+2. Stmt - This data type contains most of the statement options. It includes if statements, loops, switch statements, variable and type declarations, return statements, print statements, breaks and continues.
+
+3. SimpleStmt - This data type contains statements that can be used before blocks in for loops, if statements, and switch statements. This includes expression statements, increment and decrement statements, assignment, short variable declarations, and op-assign statements.
+
+If statements were also given their own data types, to allow them to recursively add if statements like so:
+```
+if x < 0 {
+} else if x < 1 {
+} else if x < 2 {
+} else if x < 3 {
+} else {}
+```
+Identifiers were given a data type where they could either be a regular identifier (represented by a string), an indexed identifier for arrays and slices, or an identifier with field access for structs.
+
+Types were also given a data type where they could either be a regular type (represented by a string), an array type, a slice type, or a struct type.
+
+A few other data types were created as well for parameters in functions, literal values, clauses in switch statements, variables for variable declarations, and typenames for type declarations.
 
 ### 5. [Weeder](../src/Weeder.hs)
 The weeder is responsible for verifying the syntactic validity of a small set of constructs that are difficult to verify directly in the parser's CFG. We defer the following verifications to the weeding phase.
@@ -80,4 +103,7 @@ for i := 0; i < 10; i := 20 {}
 ```
 
 
-### 6. Pretty Printer
+### 6. [Pretty Printer](../src/Pretty.hs)
+In the pretty printer we used a typeclass in order to automatically generate a function that can pretty print a list of instances of the typeclass given a function that can pretty print a single element of that instance. Then we recursively defined the pretty print function for each data type, concatenating all the results into a single string that could be written to a file.
+
+In order to keep track of the indentation, an integer was passed along to every data type that recorded the number of indents those statements should have. The indentation was then assigned to the appropriate statements.
