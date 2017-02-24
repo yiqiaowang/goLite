@@ -228,7 +228,7 @@ instance Pretty Integer where
 
 instance Pretty Identifier where
   pretty (IdOrType s) i = s
-  pretty (IdArray s xs) i = concat [s, wrapSquareList xs i] 
+  pretty (IdArray s xs) i = concat [s, wrapSquareList (map (`pretty` 0) xs) i] 
   pretty (IdField xs) i = intercalate "." $ map (`pretty` i) xs
   
 dotSepList :: [String] -> String

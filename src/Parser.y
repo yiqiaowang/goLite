@@ -146,8 +146,8 @@ IdField    :: { Identifier }
       	   | id_raw ArrayAccess 	  { IdArray $1 $2 }
 
 
-ArrayAccess : '[' Num ']' ArrayAccess { $2:$4 }
-	    | '[' Num ']'  	      { [$2] }
+ArrayAccess : '[' Expr ']' ArrayAccess { $2:$4 }
+	    | '[' Expr ']'  	      { [$2] }
 
 Stmts : Stmt Stmts                        { $1 : $2 }
       | {- Empty -}                       { [] }
