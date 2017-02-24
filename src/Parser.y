@@ -83,9 +83,9 @@ import Scanner
 	'>>'			    { Token _ TokenBitRShift }
 	'&'			    { Token _ TokenBitAnd }
 	'&^'			    { Token _ TokenBitClear }
+
 -- Unary Operations
 	'!'			    { Token _ TokenBoolNot }
-	'<-'			    { Token _ TokenChannel }
 
 	id_raw                      { Token _ (TokenId $$) }
 	int                         { Token _ (TokenInt Decimal $$) }
@@ -116,11 +116,11 @@ Alls  : All Alls                    { $1 : $2 }
       | {- Empty -}                 { [] }
 
 All   : Stmt                                                 { Stmt $1 }
-      | func id_raw '(' ParamListEmpty ')' '{' Stmts '}'         { Function (IdOrType $2) $4 Nothing $7 }
-      | func id_raw '(' ParamListEmpty ')' Type '{' Stmts '}'    { Function (IdOrType $2) $4 (Just $6) $8 }
+      | func id_raw '(' ParamListEmpty ')' '{' Stmts '}' ';'         { Function (IdOrType $2) $4 Nothing $7 }
+      | func id_raw '(' ParamListEmpty ')' Type '{' Stmts '}' ';'    { Function (IdOrType $2) $4 (Just $6) $8 }
 
 
-ParamList : Param ',' ParamList               { $1 : $3 }
+ParamListEmpty : Param ',' ParamList               { $1 : $3 }
 
       | Param                             { [$1] }
       | {- Empty -}                       { [] }
@@ -237,18 +237,18 @@ ExprListEmpty
       | Expr                            { [$1] }
       | {- Empty -}                     { [] }
 
-InstantiationList
+InstantiationList :: { [Identifier] }
       : id_raw ',' InstantiationList    { (IdOrType $1) : $3 }
       | id_raw                          { [(IdOrType $1)] }
 
-VarList
+VarList :: { [Identifier] }
       : Id ',' VarList              { $1 : $3 }
       | Id                          { [ $1 ] }
 
-TypeDec
+TypeDec ::  { TypeName }
       : id_raw Type ';'                    { TypeName (IdOrType $1) $2 }
 
-TypeDecList
+TypeDecList :: { [TypeName] }
       : TypeDec TypeDecList         { $1 : $2 }
       | {- Empty -}                 { [] }
 
@@ -261,11 +261,13 @@ StructList
       : InstantiationList Type ';' StructList { ($1, $2) : $4 }
       | InstantiationList Type ';'            { [($1, $2)] }
 
-Num   : int                         { $1 }
+Num   :: { Integer }
+      : int                         { $1 }
       | oct                         { $1 }
       | hex                         { $1 }
 
-Lit   : Num                         { Int' $1 }
+Lit   :: { Literal }
+      : Num                         { Int' $1 }
       | float                       { Float64 $1 }
       | rune                        { Rune $1 }
       | string                      { String $1 }
@@ -288,13 +290,10 @@ UnaryOp	 : '+'	%prec UNARY { UnaryPos }
 	 | '-'  %prec UNARY { UnaryNeg }
 	 | '!'  %prec UNARY { BoolNot }
 	 | '^'	%prec UNARY { BitComplement }
-	 | '*'	%prec UNARY { Pointer }
-	 | '&'	%prec UNARY { Address }
-	 | '<-'	%prec UNARY { Channel }
 
 PrimaryExpr
       :: { Expression }
-      : '(' Expr ')'              { $2 }
+      : '(' Expr ')'              { Brack $2 }
       | Id	                  { Id $1 }
       | Lit	                  { Literal $1 }
       | Id '(' ExprListEmpty ')'  { FuncCall  $1 $3 }

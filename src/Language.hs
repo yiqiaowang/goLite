@@ -15,7 +15,7 @@ data Identifier = IdOrType String
                 deriving (Eq, Show)
 data Type
   = Type String
-  | Array Type Expression
+  | Array Type Integer
   | Slice Type
   | Struct [([Identifier], Type)]
   deriving (Eq, Show)
