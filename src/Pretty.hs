@@ -11,15 +11,15 @@ import Language
 
 
 class Pretty a where
-  pretty :: a -> Int -> String
+  pretty :: a -> Integer -> String
 
-  prettyList :: [a] -> Int -> String
+  prettyList :: [a] -> Integer -> String
   prettyList ps i = concatMap (`pretty` i) ps
 
-commaSepList :: Pretty a => [a] -> Int -> String
+commaSepList :: Pretty a => [a] -> Integer -> String
 commaSepList string i = intercalate ", " (map (`pretty` i) string)
 
-structList :: ([Identifier], Type) -> Int -> String
+structList :: ([Identifier], Type) -> Integer -> String
 structList (idList, t) i = concat [spacePrint i, 
     commaSepList idList i, " ", pretty t i, "\n"]
 
@@ -42,7 +42,7 @@ instance Pretty Type where
     concatMap (`structList` (i+1)) list, "}\n"]
 
 instance Pretty Literal where
-  pretty (Int i) _ = show i
+  pretty (Int' i) _ = show i
   pretty (Float64 f) _ = show f
   pretty (Rune i) _ = (show . chr . fromIntegral) i
   pretty (String s) _ = s
@@ -59,7 +59,7 @@ instance Pretty Clause where
   pretty (Default stList) i = concat
     [spacePrint i, "default:\n", prettyList stList (i+1)]
 
-spacePrint :: Int -> String
+spacePrint :: Integer -> String
 spacePrint x = case x <= 0 of
                  True -> ""
                  False -> concat["\t", spacePrint (x-1)]
@@ -184,6 +184,12 @@ instance Pretty SimpleStmt where
   pretty (ShortVarDec idList exprList) i = concat [commaSepList idList i,
     " := ", commaSepList exprList i]
 
+wrapSquare :: String -> String
+wrapSquare s = "[" ++ s++ "]"
+
+wrapSquareList :: Pretty a => [a] -> Integer -> String
+wrapSquareList xs i = concatMap wrapSquare (map (`pretty` i) xs)
+
 
 instance Pretty Expression where
   pretty (Brack expr) i = concat ["(", pretty expr i, ")"]
@@ -214,8 +220,11 @@ instance Pretty Expression where
   pretty (BitClear expr1 expr2) i = concat [pretty expr1 i, " &^ ", pretty expr2 i]
   pretty (FuncCall ident exprList) i = concat [ident, "(", commaSepList exprList i, ")"]
   pretty (Append ident expr) i = concat ["append(", ident, ", ", pretty expr i, ")"]
-  pretty (Index ident expr) i = concat [ident, "[", pretty expr i, "]"]
+  pretty (Index ident expr) i = concat [ident, wrapSquareList expr i]
   pretty (Field idList) i = (dotSepList idList)
+
+instance Pretty Integer where
+  pretty int _ = (show int)
 
 dotSepList :: [String] -> String
 dotSepList string = intercalate "." string
