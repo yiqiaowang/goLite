@@ -22,6 +22,7 @@ $digit = [0-9] -- digits
 $alpha = [a-zA-Z] -- alphabetic characters
 $white = [\ \t \r]
 @newline = \n
+@newOrWhite = ($white|@newline)
 
 $string_val = [^"\\\/\n]
 $string_escape = [\" a b f n r t v \\]
@@ -39,17 +40,15 @@ $raw_val = [^`]
 $comment_content = [~\n]
 @comment = @comment_start$comment_content*
 
-$comment_tail = [^\/\*]
-
 -- Block Comment
-@b_comment = \/\*([^\*]|\n|\*[^\/])*\*\/
+@b_comment = \/\*(@newOrWhite|[~\*]|\*([~\/]|@newOrWhite))*\*\/
 
 -- All token actions have type ( AlexPosn -> String -> Token )
 tokens :-
-  @newline                        ;
+  @b_comment			  ;
   $white+                         ;
   @comment 			  ;
-  @b_comment			  ;
+  @newline                        ;
 
 -- goLang keywords, reserved
   break				  { lex' TokenBreak }
@@ -156,8 +155,7 @@ tokens :-
 
 -- String Values
   \"($string_val|
-	\\$string_escape|
-	\/$comment_tail)*\"       { lex TokenString }
+	\\$string_escape)*\"       { lex TokenString }
 -- Runes
   \'($rune_val|\\$rune_escape)\'  { lex (TokenRune . read) }
 
