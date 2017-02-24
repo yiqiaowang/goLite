@@ -114,12 +114,16 @@ Package
 Alls  : All Alls                    { $1 : $2 }
       | {- Empty -}                 { [] }
 
-All   : Stmt                                                 { Stmt $1 }
-      | func id '(' ParamListEmpty ')' '{' Stmts '}' ';'       { Function $2 $4 Nothing $7 }
-      | func id '(' ParamListEmpty ')' Type '{' Stmts '}' ';'    { Function $2 $4 (Just $6) $8 }
 
-ParamListEmpty
-      : Param ',' ParamList               { $1 : $3 }
+All   : Stmt                        { Stmt $1 }
+      | func id '(' ParamList ')' '{' Stmts '}' ';'          { Function $2 $4 Nothing $7 }
+      | func id '(' ParamList ')' Type '{' Stmts '}' ';'     { Function $2 $4 (Just $6) $8 }
+      | func id '(' ')' '{' Stmts '}' ';'                   { Function $2 [] Nothing $6 }
+      | func id '(' ')' Type '{' Stmts '}' ';'              { Function $2 [] (Just $5) $7 }
+
+
+ParamList : Param ',' ParamList               { $1 : $3 }
+
       | Param                             { [$1] }
       | {- Empty -}                       { [] }
 
@@ -141,7 +145,7 @@ Stmt  : var VarDec                                              { VarDec $2 }
       | SimpleStmt ';'                                          { SimpleStmt $1 }
       | print '(' ExprListEmpty ')' ';'                         { Print $3 }
       | println '(' ExprListEmpty ')' ';'                       { Println $3 }
-      | If ';'                                                  { If $1 }
+      | If                                                      { If $1 }
       | Switch ';'                                              { $1 }
       | for '{' Stmts '}' ';'                                   { Infinite $3 }
       | for Expr '{' Stmts '}' ';'                              { While $2 $4 }
@@ -153,7 +157,6 @@ Stmt  : var VarDec                                              { VarDec $2 }
       | continue ';'                                            { Continue }
 
 Switch
-      :: { Stmt }
       : switch '{' ClauseList '}'                     { Switch Nothing Nothing $3 }
       | switch SimpleStmt ';' '{' ClauseList '}'      { Switch (Just $2) Nothing $5 }
       | switch Expr '{' ClauseList '}'                { Switch Nothing (Just $2) $4 }
@@ -163,17 +166,21 @@ ClauseList
       :: { [Clause] }
       : Clause ClauseList             { $1 : $2 }
       | {- Empty -}                   { [] }
-
+      
 Clause
       :: { Clause }
       : case ExprList ':' Stmts       { Case $2 $4 }
       | default ':' Stmts             { Default $3 }
+      
 
-If    : if SimpleStmt ';' Expr '{' Stmts '}'                      { IfStmt (Just $2) $4 $6 Nothing }
-      | if SimpleStmt ';' Expr '{' Stmts '}' else '{' Stmts '}'   { IfStmt (Just $2) $4 $6 (Just (Right $10)) }
-      | if SimpleStmt ';' Expr '{' Stmts '}' else If              { IfStmt (Just $2) $4 $6 (Just (Left $9)) }
-      | if Expr '{' Stmts '}'                                     { IfStmt Nothing $2 $4 Nothing }
-      | if Expr '{' Stmts '}' else '{' Stmts '}'                  { IfStmt Nothing $2 $4 (Just (Right $8)) }
+              
+If    :: { Stmt }
+      :if SimpleStmt ';' Expr '{' Stmts '}' ';'                           { IfStmt (Just $2) $4 $6 Nothing }
+      | if SimpleStmt ';' Expr '{' Stmts '}' else '{' Stmts '}' ';'      { IfStmt (Just $2) $4 $6 (Just (Right $10)) }
+      | if SimpleStmt ';' Expr '{' Stmts '}' else If                  { IfStmt (Just $2) $4 $6 (Just (Left $9)) }
+      | if Expr '{' Stmts '}' ';'                                  { IfStmt Nothing $2 $4 Nothing }
+      | if Expr '{' Stmts '}' else '{' Stmts '}' ';'                  { IfStmt Nothing $2 $4 (Just (Right $8)) }
+
       | if Expr '{' Stmts '}' else If                             { IfStmt Nothing $2 $4 (Just (Left $7)) }
 
 SimpleStmt
