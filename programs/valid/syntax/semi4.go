@@ -8,5 +8,6 @@ func void(){
 	var a,b,c int = 4+4,5-1,6/2
 	z := 100
 	var a int = 100
+	return
 }
 

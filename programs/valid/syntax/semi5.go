@@ -5,4 +5,5 @@ func void(){
 	var (
 		x int
 	)
+	return
 }

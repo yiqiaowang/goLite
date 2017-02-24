@@ -8,4 +8,5 @@ func void(){
 		case 9 < 4: print("False")
 		default : print("You won't see this")
 	}
+	return
 }

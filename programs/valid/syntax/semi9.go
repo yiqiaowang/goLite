@@ -10,5 +10,6 @@ func void(){
 	x = 100
 	x += 19
 	x %= x - 500
+	return
 	y := 200
 }
