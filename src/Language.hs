@@ -7,11 +7,14 @@ data Program
 
 -- Packages, Identifiers, and Types are all strings
 type Package = String
-type Identifier = String
 
+data Identifier = IdOrType_String String
+                | Id_Array String [Integer]
+                | Id_Field String [String]
+                deriving (Eq, Show)
 data Type
   = Type String
-  | Array Type Expression
+  | Array Type Integer
   | Slice Type
   | Struct [([Identifier], Type)]
   deriving (Eq, Show)
@@ -19,7 +22,7 @@ data Type
 
 -- Literal values
 data Literal
-      = Int Integer
+      = Int' Integer
       | Float64 Float
       -- | Bool Bool
       | Rune Integer
@@ -127,8 +130,8 @@ data Expression
       | BitClear Expression Expression
       | FuncCall Identifier [Expression]
       | Append Identifier Expression
-      | Index Identifier Expression
-      | Field [Identifier]
+      | Index Identifier
+      | Field Identifier
       | Pointer Expression
       | Address Expression
       | Channel Expression
