@@ -11,7 +11,7 @@ We are developing our compiler with a Haskell based toolchain.
 Yi Qiao
 - Developed the [Scanner](../src/Scanner.x)
 - Contributed to the development of the [Parser](../src/Parser.y)
-- Wrote some tests for the Scanner and the Parser
+- Wrote some tests for the [Scanner](../src/Scanner.x) and the [Parser](../src/Parser.y)
 
 Thomas
 - Wrote the majority of the [Parser](../src/Parser.y)
@@ -23,7 +23,7 @@ Charlie
 - Wrote the [compiler wrapper](../src/GoLite.hs) and the [CLI code](../app/Main.hs)
 
 
-### 3. Scanner
+### 3. [Scanner](../src/Scanner.x)
 The scanner was written using a fairly standard Alex setup. Some macros were defined for certain character sets to improve ease of use of these sets later on in the scanner. Tokens are recognized via regexes and returned in their respective productions.   
 
 One of the main design decisions taken in the scanner was to explicitly give everything its own token, in as detailed a way as possible. For example, one can define a token, ```BinaryOp```, for all binary operations and store the associated characters with ```BinaryOp```. This does eliminate some initial code repetition, but it introduces plenty of case matching in further stages. While the decision to assign each binary operation its own token has an initial cost, it reduces the cost of all subsequent uses of binary operations.   
