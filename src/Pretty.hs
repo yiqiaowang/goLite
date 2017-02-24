@@ -23,6 +23,7 @@ structList :: ([Identifier], Type) -> Integer -> String
 structList (idList, t) i = concat [spacePrint i, 
     commaSepList idList i, " ", pretty t i, "\n"]
 
+
 instance Pretty String where
   pretty s _ = s
 
@@ -226,6 +227,11 @@ instance Pretty Expression where
 instance Pretty Integer where
   pretty int _ = (show int)
 
+instance Pretty Identifier where
+  pretty (IdOrType s) i = s
+  pretty (IdArray s xs) i = concat [s, wrapSquareList xs i] 
+  pretty (IdField s xs) i = concat [s, ".", concatMap (`pretty` i) xs]
+  
 dotSepList :: [String] -> String
 dotSepList string = intercalate "." string
 
