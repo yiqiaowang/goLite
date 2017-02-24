@@ -37,4 +37,4 @@ func exampleTest() {
 	var sorted = bubbleSort(list, size);
 
 	return;
-};
+}
