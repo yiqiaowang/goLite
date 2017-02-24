@@ -10,7 +10,7 @@ type Package = String
 
 data Identifier = IdOrType String
                 | IdArray String [Integer]
-                | IdField String [Identifier]
+                | IdField [Identifier]
                 deriving (Eq, Show)
 data Type
   = Type String
