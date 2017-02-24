@@ -48,7 +48,7 @@ $comment_tail = [^\/\*]
 tokens :-
   @newline                        ;
   $white+                         ;
-  @comment 			  ;
+  @comment			  ;
   @b_comment			  ;
 
 -- goLang keywords, reserved
@@ -57,7 +57,7 @@ tokens :-
   chan				  { lex' TokenChan }
   const				  { lex' TokenConst }
   continue			  { lex' TokenContinue }
-  default 			  { lex' TokenDefault }
+  default			  { lex' TokenDefault }
   defer				  { lex' TokenDefer }
   else                            { lex' TokenElse }
   fallthrough			  { lex' TokenFallthrough }
@@ -144,7 +144,7 @@ tokens :-
  0|[1-9][0-9]*                    { lex (genIntLex Decimal) }
 
 -- Octal
- 0[0-7]+	       	          { lex (genIntLex Octal) }
+ 0[0-7]+			  { lex (genIntLex Octal) }
 
 -- Hex
  0[xX][0-9a-fA-F]+		 { lex ((genIntLex Hex) . extractHexNumeric) }
@@ -278,17 +278,18 @@ alexMonadScan' = do
     -- will be called at each new line
     AlexSkip  inp' len -> do
       alexSetInput inp'
-
       prevToken <- getPreviousToken
       if alexInputPrevChar inp' `elem` ['\n']
-        then case prevToken of
-          Nothing -> alexMonadScan'
-          Just (Token _ cls) ->
-            if isOptionalSemicolonToken cls
-              then alexSemicolon
-              else alexMonadScan'
-        else
-          alexMonadScan'
+	then case prevToken of
+	  Nothing -> alexMonadScan'
+	  Just (Token p cls) ->
+	    if isOptionalSemicolonToken cls
+	      then do
+		setPreviousToken $ Just $ Token p TokenSemicolon
+		alexSemicolon
+	      else alexMonadScan'
+	else
+	  alexMonadScan'
     AlexToken inp' len action -> do
       alexSetInput inp'
       token <- action (ignorePendingBytes inp) len
