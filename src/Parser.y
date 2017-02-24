@@ -115,8 +115,8 @@ Alls  : All Alls                    { $1 : $2 }
       | {- Empty -}                 { [] }
 
 All   : Stmt                                                 { Stmt $1 }
-      | func id '(' ParamListEmpty ')' '{' Stmts '}'         { Function $2 $4 Nothing $7 }
-      | func id '(' ParamListEmpty ')' Type '{' Stmts '}'    { Function $2 $4 (Just $6) $8 }
+      | func id '(' ParamListEmpty ')' '{' Stmts '}' ';'       { Function $2 $4 Nothing $7 }
+      | func id '(' ParamListEmpty ')' Type '{' Stmts '}' ';'    { Function $2 $4 (Just $6) $8 }
 
 ParamListEmpty
       : Param ',' ParamList               { $1 : $3 }
@@ -133,23 +133,23 @@ Stmts : Stmt Stmts                        { $1 : $2 }
       | {- Empty -}                       { [] }
 
 Stmt  : var VarDec                                              { VarDec $2 }
-      | var '(' VarDecList ')'                                  { VarDecList $3 }
+      | var '(' VarDecList ')' ';'                              { VarDecList $3 }
       | type TypeDec                                            { TypeDec $2 }
-      | type '(' TypeDecList ')' ';'                             { TypeDecList $3 }
+      | type '(' TypeDecList ')' ';'                            { TypeDecList $3 }
       | return ';'                                              { Return Nothing }
       | return Expr ';'                                         { Return (Just $2) }
       | SimpleStmt ';'                                          { SimpleStmt $1 }
       | print '(' ExprListEmpty ')' ';'                         { Print $3 }
       | println '(' ExprListEmpty ')' ';'                       { Println $3 }
-      | If                                                      { If $1 }
-      | Switch                                                  { $1 }
-      | for '{' Stmts '}'                                       { Infinite $3 }
-      | for Expr '{' Stmts '}'                                  { While $2 $4 }
-      | for ';' Expr ';' '{' Stmts '}'                          { For Nothing $3 Nothing $6 }
-      | for ';' Expr ';' SimpleStmt '{' Stmts '}'               { For Nothing $3 (Just $5) $7 }
-      | for SimpleStmt ';' Expr ';' '{' Stmts '}'               { For (Just $2) $4 Nothing $7 }
-      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}'    { For (Just $2) $4 (Just $6) $8 }
-      | break ';'                                               { Break }
+      | If ';'                                                  { If $1 }
+      | Switch ';'                                              { $1 }
+      | for '{' Stmts '}' ';'                                   { Infinite $3 }
+      | for Expr '{' Stmts '}' ';'                              { While $2 $4 }
+      | for ';' Expr ';' '{' Stmts '}' ';'                      { For Nothing $3 Nothing $6 }
+      | for ';' Expr ';' SimpleStmt '{' Stmts '}' ';'           { For Nothing $3 (Just $5) $7 }
+      | for SimpleStmt ';' Expr ';' '{' Stmts '}' ';'             { For (Just $2) $4 Nothing $7 }
+      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}' ';'    { For (Just $2) $4 (Just $6) $8 }
+      | break ';'                                                 { Break }
       | continue ';'                                            { Continue }
 
 Switch
