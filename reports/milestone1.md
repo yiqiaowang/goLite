@@ -16,6 +16,7 @@ Yi Qiao
 Thomas
 - Wrote the majority of the [Parser](../src/Parser.y)
 - Wrote the [Pretty Printer](../src/Pretty.hs)
+- Wrote most of the [Language] (../src/Language.hs)
 
 Charlie
 - Developed the [test suite](../programs/) and automated testing (programs/)
