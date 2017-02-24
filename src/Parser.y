@@ -116,10 +116,11 @@ Alls  : Alls All                    { $2 : $1 }
 
 
 All   : Stmt                        { Stmt $1 }
-      | func id '(' ParamList ')' '{' Stmts '}'         { Function $2 $4 Nothing $7 }
-      | func id '(' ParamList ')' Type '{' Stmts '}'    { Function $2 $4 (Just $6) $8 }
-      | func id '(' ')' '{' Stmts '}'                   { Function $2 [] Nothing $6 }
-      | func id '(' ')' Type '{' Stmts '}'              { Function $2 [] (Just $5) $7 }
+      | func id '(' ParamList ')' '{' Stmts '}' ';'          { Function $2 $4 Nothing $7 }
+      | func id '(' ParamList ')' Type '{' Stmts '}' ';'     { Function $2 $4 (Just $6) $8 }
+      | func id '(' ')' '{' Stmts '}' ';'                   { Function $2 [] Nothing $6 }
+      | func id '(' ')' Type '{' Stmts '}' ';'              { Function $2 [] (Just $5) $7 }
+
 
 ParamList : Param ',' ParamList               { $1 : $3 }
       | Param                             { [$1] }
@@ -132,41 +133,41 @@ Stmts : Stmt Stmts                        { $1 : $2 }
       | {- Empty -}                       { [] }
 
 
-Stmt  : var VarDec ';'                            { VarDec $2 }
-      | var '(' VarDecList ')'                    { VarDecList $3 }
-      | type TypeDec ';'                          { TypeDec $2 }
-      | type '(' TypeDecList ')'                  { TypeDecList $3 }
-      | var id '[' Expr ']' Type ';'               { Array $2 $4 $6 }
-      | var id '[' ']' Type ';'                   { Slice $2 $5 }
-      | return ';'                                { Return Nothing }
-      | return Expr ';'                            { Return (Just $2) }
-      | SimpleStmt ';'                            { SimpleStmt $1 }
-      | print '(' ExprListEmpty ')' ';'            { Print $3 }
-      | println '(' ExprListEmpty ')' ';'          { Println $3 }
-      | If                                        { If $1 }
-      | switch '{' ClauseList '}'                 { Switch Nothing Nothing $3 }
-      | switch SimpleStmt ';' '{' ClauseList '}'  { Switch (Just $2) Nothing $5 } 
-      | switch Expr '{' ClauseList '}'             { Switch Nothing (Just $2) $4 }
-      | switch SimpleStmt ';' Expr'{' ClauseList '}'   { Switch (Just $2) (Just $4) $6 }
-      | for '{' Stmts '}'                         { Infinite $3 }
-      | for Expr '{' Stmts '}'                     { While $2 $4 }
-      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}'         { For $2 $4 $6 $8 }
-      | break ';'                                 { Break }
-      | continue ';'                              { Continue }
+Stmt  : var VarDec                                            { VarDec $2 }
+      | var '(' VarDecList ')' ';'                    	 	 { VarDecList $3 }
+      | type TypeDec                           	 	 { TypeDec $2 }
+      | type '(' TypeDecList ')' ';'                  	 	 { TypeDecList $3 }
+      | var id '[' Expr ']' Type ';'               	 	 { Array $2 $4 $6 }
+      | var id '[' ']' Type ';'                   	 	 { Slice $2 $5 }
+      | return ';'                                 	 	 { Return Nothing }
+      | return Expr ';'                            	 	 { Return (Just $2) }
+      | SimpleStmt ';'                            	 	 { SimpleStmt $1 }
+      | print '(' ExprListEmpty ')' ';'            	 	 { Print $3 }
+      | println '(' ExprListEmpty ')' ';'          	 	 { Println $3 }
+      | If                                        	 	 { If $1 }
+      | switch '{' ClauseList '}'  ';'               	 	 { Switch Nothing Nothing $3 }
+      | switch SimpleStmt ';' '{' ClauseList '}' ';'  	 	 { Switch (Just $2) Nothing $5 } 
+      | switch Expr '{' ClauseList '}' ';'            	 	 { Switch Nothing (Just $2) $4 }
+      | switch SimpleStmt ';' Expr'{' ClauseList '}' ';' 	 { Switch (Just $2) (Just $4) $6 }
+      | for '{' Stmts '}' ';'                        	 	 { Infinite $3 }
+      | for Expr '{' Stmts '}' ';'                    	 	 { While $2 $4 }
+      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}' ';' { For $2 $4 $6 $8 }
+      | break ';'                                  	     	 { Break }
+      | continue ';'                              		 { Continue }
 
 ClauseList
-      : Clause ';' ClauseList             { $1 : $3 }
+      : Clause ClauseList             { $1 : $2 }
       | {- Empty -}                       { [] }
 
 Clause
       : case ExprList ':' Stmts          { Case $2 $4 }
       | default ':' Stmts               { Default $3 }
 
-If    : if SimpleStmt ';' Expr '{' Stmts '}'                            { IfStmt (Just $2) $4 $6 Nothing }
-      | if SimpleStmt ';' Expr '{' Stmts '}' else '{' Stmts '}'       { IfStmt (Just $2) $4 $6 (Just (Right $10)) }
+If    : if SimpleStmt ';' Expr '{' Stmts '}' ';'                           { IfStmt (Just $2) $4 $6 Nothing }
+      | if SimpleStmt ';' Expr '{' Stmts '}' else '{' Stmts '}' ';'      { IfStmt (Just $2) $4 $6 (Just (Right $10)) }
       | if SimpleStmt ';' Expr '{' Stmts '}' else If                  { IfStmt (Just $2) $4 $6 (Just (Left $9)) }
-      | if Expr '{' Stmts '}'                                       { IfStmt Nothing $2 $4 Nothing }
-      | if Expr '{' Stmts '}' else '{' Stmts '}'                  { IfStmt Nothing $2 $4 (Just (Right $8)) }
+      | if Expr '{' Stmts '}' ';'                                  { IfStmt Nothing $2 $4 Nothing }
+      | if Expr '{' Stmts '}' else '{' Stmts '}' ';'                  { IfStmt Nothing $2 $4 (Just (Right $8)) }
       | if Expr '{' Stmts '}' else If                             { IfStmt Nothing $2 $4 (Just (Left $7)) }
 
 SimpleStmt
@@ -189,9 +190,9 @@ SimpleStmt
 
 
 VarDec
-      : VarList Type                  { Variable $1 (Just $2) [] }
-      | VarList '=' ExprList           { Variable $1 Nothing $3 }
-      | VarList Type '=' ExprList      { Variable $1 (Just $2) $4 }
+      : VarList Type ';'                  { Variable $1 (Just $2) [] }
+      | VarList '=' ExprList ';'          { Variable $1 Nothing $3 }
+      | VarList Type '=' ExprList ';'     { Variable $1 (Just $2) $4 }
 
 
 VarDecList
@@ -217,8 +218,8 @@ VarList
 
 
 TypeDec
-      : id Type ';'                    { TypeName $1 $2 }
-      | id struct '{' StructList '}'   { Struct $1 $4 }
+      : id Type ';'                        { TypeName $1 $2 }
+      | id struct '{' StructList '}' ';'   { Struct $1 $4 }
 
 
 TypeDecList
