@@ -280,16 +280,16 @@ alexMonadScan' = do
       alexSetInput inp'
       prevToken <- getPreviousToken
       if alexInputPrevChar inp' `elem` ['\n']
-	then case prevToken of
-	  Nothing -> alexMonadScan'
-	  Just (Token p cls) ->
-	    if isOptionalSemicolonToken cls
-	      then do
-		setPreviousToken $ Just $ Token p TokenSemicolon
-		alexSemicolon
-	      else alexMonadScan'
-	else
-	  alexMonadScan'
+        then case prevToken of
+          Nothing -> alexMonadScan'
+          Just (Token p cls) ->
+            if isOptionalSemicolonToken cls
+              then do
+                setPreviousToken $ Just $ Token p TokenSemicolon
+                alexSemicolon
+              else alexMonadScan'
+        else
+          alexMonadScan'
     AlexToken inp' len action -> do
       alexSetInput inp'
       token <- action (ignorePendingBytes inp) len
