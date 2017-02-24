@@ -141,27 +141,27 @@ instance Pretty Stmt where
     "return ", pretty expr 0, ";\n"]
   pretty (If ifstmt) i = concat [spacePrint i, pretty ifstmt i]
   pretty (Switch Nothing Nothing c) i = concat [spacePrint i, 
-    "switch {\n", prettyList c (i+1), "}\n"]
+   "switch {\n", prettyList c (i+1), spacePrint i, "}\n"]
   pretty (Switch (Just stmt) Nothing c) i = concat [spacePrint i, 
-    "switch ", pretty stmt 0, "; {\n", prettyList c (i+1), "}\n"]
+    "switch ", pretty stmt 0, "; {\n", prettyList c (i+1), spacePrint i, "}\n"]
   pretty (Switch Nothing (Just expr) c) i = concat [spacePrint i, 
-    "switch ", pretty expr 0, " {\n", prettyList c (i+1), "}\n"]
+    "switch ", pretty expr 0, " {\n", prettyList c (i+1), spacePrint i, "}\n"]
   pretty (Switch (Just stmt) (Just expr) c) i = concat [spacePrint i, 
     "switch", pretty stmt 0, "; ", pretty expr 0, " {\n",
-    prettyList c (i+1), "}\n"]
+    prettyList c (i+1), spacePrint i, "}\n"]
   pretty (Infinite stmts) i = concat [spacePrint i, "for {\n", 
-    prettyList stmts (i+1), "}\n"]
+    prettyList stmts (i+1), spacePrint i, "}\n"]
   pretty (While expr stmts) i = concat [spacePrint i, "for ",
-    pretty expr 0, " {\n", prettyList stmts (i+1), "}\n"]
+    pretty expr 0, " {\n", prettyList stmts (i+1), spacePrint i, "}\n"]
   pretty (For Nothing expr Nothing stmts) i = concat [spacePrint i, "for ; ",
-    pretty expr 0, "; {\n", prettyList stmts (i+1), "}\n"]
+    pretty expr 0, "; {\n", prettyList stmts (i+1), spacePrint i, "}\n"]
   pretty (For (Just simp1) expr Nothing stmts) i = concat [spacePrint i, "for ",
-    pretty simp1 0, "; ", pretty expr 0, "; {\n", prettyList stmts (i+1), "}\n"]
+    pretty simp1 0, "; ", pretty expr 0, "; {\n", prettyList stmts (i+1), spacePrint i, "}\n"]
   pretty (For Nothing expr (Just simp2) stmts) i = concat [spacePrint i, "for ; ",
-   pretty expr 0, "; ", pretty simp2 i, " {\n", prettyList stmts (i+1), "}\n"]
+   pretty expr 0, "; ", pretty simp2 i, " {\n", prettyList stmts (i+1), spacePrint i, "}\n"]
   pretty (For (Just simp1) expr (Just simp2) stmts) i = concat [spacePrint i, "for ",
     pretty simp1 0, "; ", pretty expr 0, "; ", pretty simp2 0, " {\n",
-    prettyList stmts (i+1), "}\n"]
+    prettyList stmts (i+1), spacePrint i, "}\n"]
   pretty Break i = concat [spacePrint i, "break;\n"]
   pretty Continue i = concat [spacePrint i, "continue;\n"]
 
