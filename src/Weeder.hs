@@ -18,6 +18,7 @@ data WeederError
     }
   | RepeatedIdentifierInSVD
     { indentifier :: Identifier}
+  | InvalidSVD
   | InvalidBreak
   | InvalidContinue
   | InvalidReturn
@@ -60,7 +61,7 @@ instance Weedable Program where
 instance Weedable All where
   weed (Stmt stmt) = weed stmt
   weed (Function (IdOrType "main") _ _ stmts) =
-    weedListCtxt [] stmts
+    weedListCtxt [CFunction] stmts
   weed (Function _ _ _ stmts) =
     weedListCtxt [CFunction] stmts `mappend`
       if any isReturn stmts
@@ -91,7 +92,7 @@ instance Weedable Stmt where
       weedPost s@(ShortVarDec _ _) = Just [InvalidPostStatement s]
       weedPost e@(ExprStmt _) = Just [InvalidPostStatement e]
       weedPost _ = Nothing
-  weedCtxt ctxt (SimpleStmt stmt) = weedCtxt ctxt stmt
+  weedCtxt ctxt (SimpleStmt stmt) = weedCtxt ctxt stmt `mappend` weed stmt
   weedCtxt ctxt Break =
     if CLoop `elem` ctxt
       then Nothing
@@ -110,6 +111,15 @@ instance Weedable Stmt where
 
 --
 instance Weedable SimpleStmt where
+
+  -- This may need to be changed
+  weedCtxt ctxt (ShortVarDec _ _) =
+    if CFunction `elem` ctxt
+       then Nothing 
+       else Just [InvalidSVD]
+  weedCtxt ctxt _ = Nothing
+  --
+
   weed (ShortVarDec ids exps) =
     weedAssignmentLength ids exps `mappend`
       let repeatedIds = map head $ filter (\ids' -> length ids' > 1) $ group ids in
