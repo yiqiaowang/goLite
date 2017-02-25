@@ -21,6 +21,7 @@ func bubbleSort(slice []int, size int) []int {
   return sorted;
 }
 
+// Test the algorithm to see if it works
 func exampleTest() {
 	var list []int;
 	list = append(list, 7);
