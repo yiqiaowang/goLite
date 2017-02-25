@@ -28,7 +28,7 @@ loadPrograms directory = do
 -- not needed for automatic spec discovery.
 main :: IO ()
 main = do
-  validSyntax <- loadPrograms "programs/valid/syntax"
+  validSyntax <- loadPrograms "programs/valid/syntax" `mappend` loadPrograms "programs/valid"
   invalidParser <- loadPrograms "programs/invalid/parser"
   invalidWeeder <- loadPrograms "programs/invalid/weeder"
 
