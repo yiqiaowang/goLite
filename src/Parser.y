@@ -195,7 +195,6 @@ If    :: { IfStmt }
       | if SimpleStmt ';' Expr '{' Stmts '}' else If                  { IfStmt (Just $2) $4 $6 (Just (Left $9)) }
       | if Expr '{' Stmts '}' ';'                                  { IfStmt Nothing $2 $4 Nothing }
       | if Expr '{' Stmts '}' else '{' Stmts '}' ';'                  { IfStmt Nothing $2 $4 (Just (Right $8)) }
-
       | if Expr '{' Stmts '}' else If                             { IfStmt Nothing $2 $4 (Just (Left $7)) }
 
 SimpleStmt

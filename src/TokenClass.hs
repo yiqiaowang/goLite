@@ -3,7 +3,6 @@ module TokenClass
   , IntType(..)
   ) where
 
-
 -- Each action has type :: String -> TokenClass -> Token
 data TokenClass
   = TokenBreak
@@ -83,13 +82,13 @@ data TokenClass
   | TokenSemicolon
   | TokenId String
   | TokenFloat Float
-  | TokenInt IntType Integer
+  | TokenInt IntType
+             Integer
   | TokenString String
   | TokenRune Integer
   | TokenRaw String
   | TokenEOF
-  deriving (Eq,Show)
-
+  deriving (Eq, Show)
 
 data IntType
   = Decimal
