@@ -394,6 +394,9 @@ instance Pretty Expression where
 instance Pretty Integer where
   pretty int _ = (show int)
 
+instance Pretty Int where
+  pretty int _ = (show int)
+
 instance Pretty Identifier where
   pretty (IdOrType s) i = s
   pretty (IdArray s xs) i = concat [s, wrapSquareList (map (`pretty` 0) xs) i]

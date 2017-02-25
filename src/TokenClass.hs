@@ -83,7 +83,7 @@ data TokenClass
   | TokenId String
   | TokenFloat Float
   | TokenInt IntType
-             Integer
+             Int
   | TokenString String
   | TokenRune Integer
   | TokenRaw String
