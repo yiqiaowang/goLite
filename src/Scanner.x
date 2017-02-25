@@ -276,7 +276,7 @@ alexMonadScan' = do
     AlexSkip  inp' len -> do
       alexSetInput inp'
       prevToken <- getPreviousToken
-      if (ord $ alexInputPrevChar inp') `elem` [3,4,10]
+      if (ord $ alexInputPrevChar inp') `elem` [0,3,4,10]
         then case prevToken of
           Nothing -> alexMonadScan'
           Just (Token p cls) ->
