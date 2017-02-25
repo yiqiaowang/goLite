@@ -55,7 +55,29 @@ instance Weedable All where
       else Just [MissingReturn]
     where
       isReturn (Return _) = True
+      isReturn (If a) = (ifReturn a)
+      isReturn (Switch _ _ a) = (clauseReturn a)
       isReturn _ = False
+
+hasReturn :: [Stmt] -> Bool
+hasReturn [] = False
+hasReturn ((Return _):xs) = True
+hasReturn ((If a):[]) = (ifReturn a)
+hasReturn ((Switch _ _ a):[]) = (clauseReturn a)
+hasReturn ((If a):xs) = ((ifReturn a) || (hasReturn xs))
+hasReturn ((Switch _ _ a):xs) = ((clauseReturn a) || (hasReturn xs))
+
+ifReturn :: IfStmt -> Bool
+ifReturn (IfStmt _ _ a Nothing) = (hasReturn a)
+ifReturn (IfStmt _ _ a (Just (Right b))) = ((hasReturn a) && (hasReturn b))
+ifReturn (IfStmt _ _ a (Just (Left c))) = ((hasReturn a) && (ifReturn c))
+
+clauseReturn :: [Clause] -> Bool
+clauseReturn [] = False
+clauseReturn ((Case _ a):[]) = (hasReturn a)
+clauseReturn ((Default a):[]) = (hasReturn a)
+clauseReturn ((Case _ a):xs) = ((hasReturn a) && (clauseReturn xs))
+clauseReturn ((Default a):xs) = ((hasReturn a) && (clauseReturn xs))
 
 --
 instance Weedable Stmt where
