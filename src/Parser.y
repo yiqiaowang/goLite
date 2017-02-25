@@ -97,7 +97,7 @@ import Scanner
 	raw                         { Token _ (TokenRaw $$) }
 
 -- Precedences for operators. Lower is higher
-%left '||' '&&'
+%left '||' '&&' LOG
 %left '==' '!=' '<=' '>' '>=' '<' COMP
 %left '+' '-' '|' '^' ADD
 %left '*' '/' '%' '<<' '>>' '&' '&^' MULT
@@ -195,7 +195,6 @@ If    :: { IfStmt }
       | if SimpleStmt ';' Expr '{' Stmts '}' else If                  { IfStmt (Just $2) $4 $6 (Just (Left $9)) }
       | if Expr '{' Stmts '}' ';'                                  { IfStmt Nothing $2 $4 Nothing }
       | if Expr '{' Stmts '}' else '{' Stmts '}' ';'                  { IfStmt Nothing $2 $4 (Just (Right $8)) }
-
       | if Expr '{' Stmts '}' else If                             { IfStmt Nothing $2 $4 (Just (Left $7)) }
 
 SimpleStmt
@@ -261,7 +260,7 @@ StructList
       : InstantiationList Type ';' StructList { ($1, $2) : $4 }
       | InstantiationList Type ';'            { [($1, $2)] }
 
-Num   :: { Integer }
+Num   :: { Int }
       : int                         { $1 }
       | oct                         { $1 }
       | hex                         { $1 }
@@ -275,8 +274,8 @@ Lit   :: { Literal }
 
 Expr  :: { Expression }
       : UnaryExpr      { $1 }
-      | Expr '||' Expr { Or $1 $3 }
-      | Expr '&&' Expr { And $1 $3 }
+      | Expr '||' Expr %prec LOG { Or $1 $3 }
+      | Expr '&&' Expr %prec LOG { And $1 $3 }
       | Expr RelOp Expr %prec COMP { $2 $1 $3 }
       | Expr AddOp Expr %prec ADD { $2 $1 $3 }
       | Expr MultOp Expr %prec MULT { $2 $1 $3 }

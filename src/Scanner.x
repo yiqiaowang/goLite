@@ -179,11 +179,11 @@ prependZero :: String -> String
 prependZero s = "0" ++ s
 
 -- Extract the integer value result of readOct
-extractOct2Int :: [(Integer, String)] -> Integer
+extractOct2Int :: [(Int, String)] -> Int
 extractOct2Int ((i,s):xs) = i
 
 -- Extract the integer value result of readHex
-extractHex2Int :: [(Integer, String)] -> Integer
+extractHex2Int :: [(Int, String)] -> Int
 extractHex2Int ((i,s):xs) = i
 
 -- Extract the numeric value from a hex number
@@ -276,7 +276,7 @@ alexMonadScan' = do
     AlexSkip  inp' len -> do
       alexSetInput inp'
       prevToken <- getPreviousToken
-      if (ord $ alexInputPrevChar inp') `elem` [3,4,10]
+      if (ord $ alexInputPrevChar inp') `elem` [0,3,4,10]
         then case prevToken of
           Nothing -> alexMonadScan'
           Just (Token p cls) ->

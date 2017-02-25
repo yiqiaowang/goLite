@@ -15,7 +15,7 @@ data Identifier = IdOrType String
                 deriving (Eq, Show)
 data Type
   = Type String
-  | Array Type Integer
+  | Array Type Int
   | Slice Type
   | Struct [([Identifier], Type)]
   deriving (Eq, Show)
@@ -23,7 +23,7 @@ data Type
 
 -- Literal values
 data Literal
-      = Int' Integer
+      = Int' Int
       | Float64 Float
       -- | Bool Bool
       | Rune Integer
