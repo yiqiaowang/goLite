@@ -1,4 +1,4 @@
-// exp cant be empty
+// exp can be empty
 package tests;
 
 func main() {
