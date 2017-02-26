@@ -165,10 +165,14 @@ Stmt  : var VarDec                                              { VarDec $2 }
       | Switch ';'                                              { $1 }
       | for '{' Stmts '}' ';'                                   { Infinite $3 }
       | for Expr '{' Stmts '}' ';'                              { While $2 $4 }
-      | for ';' Expr ';' '{' Stmts '}' ';'                      { For Nothing $3 Nothing $6 }
-      | for ';' Expr ';' SimpleStmt '{' Stmts '}' ';'           { For Nothing $3 (Just $5) $7 }
-      | for SimpleStmt ';' Expr ';' '{' Stmts '}' ';'             { For (Just $2) $4 Nothing $7 }
-      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}' ';'    { For (Just $2) $4 (Just $6) $8 }
+      | for ';' ';' '{' Stmts '}' ';'				{ For Nothing Nothing Nothing $5 }
+      | for SimpleStmt ';' ';' SimpleStmt '{' Stmts '}' ';'	{ For (Just $2) Nothing (Just $5) $7 }
+      | for ';' ';' SimpleStmt '{' Stmts '}' ';'		{ For Nothing Nothing (Just $4) $6 }
+      | for SimpleStmt ';' ';' '{' Stmts '}' ';'		{ For (Just $2) Nothing Nothing $6 }
+      | for ';' Expr ';' '{' Stmts '}' ';'                      { For Nothing (Just $3) Nothing $6 }
+      | for ';' Expr ';' SimpleStmt '{' Stmts '}' ';'           { For Nothing (Just $3) (Just $5) $7 }
+      | for SimpleStmt ';' Expr ';' '{' Stmts '}' ';'             { For (Just $2) (Just $4) Nothing $7 }
+      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}' ';'    { For (Just $2) (Just $4) (Just $6) $8 }
       | break ';'                                                 { Break }
       | continue ';'                                            { Continue }
 

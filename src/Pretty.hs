@@ -391,6 +391,10 @@ instance Pretty Expression where
   pretty (Append ident expr) i =
     concat ["append(", pretty ident i, ", ", pretty expr i, ")"]
 
+instance Pretty (Maybe Expression) where
+  pretty Nothing i = ""
+  pretty (Just e) i = pretty e i
+
 instance Pretty Integer where
   pretty int _ = (show int)
 
