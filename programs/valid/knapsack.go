@@ -26,9 +26,8 @@ func knapsack(maxW, n int, weights, values []int) int {
 }
 
 // Test the algorithm to see if it works
-func exampleTest() int {
+func exampleTest() {
   var (
-    maxW = 20
     n = 8
     weights, values []int
     )
@@ -50,6 +49,11 @@ func exampleTest() int {
   values = append(values, 6);
   values = append(values, 9);
   values = append(values, 8);
+
+  for i := 0; i < 50; i++ {
+    println ("max value for max weight of", i, "is",
+              knapsack(i, n, weights, values));
+  } 
   
-  return knapsack(maxW, n, weights, values);
+  return;
 }

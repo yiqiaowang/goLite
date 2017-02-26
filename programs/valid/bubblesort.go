@@ -34,8 +34,11 @@ func exampleTest() {
 	list = append(list, 32);
 
 	var size = 8;
+  var sorted = bubbleSort(list, size);
 
-	var sorted = bubbleSort(list, size);
+  for i := 0; i < size; i++ {
+    println ("value at", i, "is", sorted[i]);
+  } 
 
 	return;
 }
