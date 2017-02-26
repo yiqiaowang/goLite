@@ -1,4 +1,4 @@
-// no return outside of conditional
+// Terminating statement: For loop
 package tests;
 
 func id(x int, y int) {
