@@ -36,6 +36,7 @@ class Weedable a where
   weedListCtxt :: [Context] -> [a] -> Maybe [WeederError]
   weedListCtxt ctxt ws = mconcat $ map (weedCtxt ctxt) ws
 
+
 --
 instance Weedable Program where
   weed (Program package alls) =
@@ -48,36 +49,68 @@ instance Weedable Program where
 instance Weedable All where
   weed (Stmt stmt) = weed stmt
   weed (Function (IdOrType "main") _ _ stmts) = weedListCtxt [CFunction] stmts
-  weed (Function _ _ _ stmts) =
-    weedListCtxt [CFunction] stmts `mappend`
-    if any isReturn stmts
-      then Nothing
-      else Just [MissingReturn]
-    where
-      isReturn (Return _) = True
-      isReturn (If a) = (ifReturn a)
-      isReturn (Switch _ _ a) = (clauseReturn a)
-      isReturn _ = False
+  weed (Function _ _ Nothing stmts) =
+    weedListCtxt [CFunction] stmts
+  weed (Function _ _ (Just _) stmts) =
+    weedListCtxt [CFunction] stmts `mappend` (isTerminating $ last stmts)
 
-hasReturn :: [Stmt] -> Bool
-hasReturn [] = False
-hasReturn ((Return _):xs) = True
-hasReturn ((If a):[]) = (ifReturn a)
-hasReturn ((Switch _ _ a):[]) = (clauseReturn a)
-hasReturn ((If a):xs) = ((ifReturn a) || (hasReturn xs))
-hasReturn ((Switch _ _ a):xs) = ((clauseReturn a) || (hasReturn xs))
 
-ifReturn :: IfStmt -> Bool
-ifReturn (IfStmt _ _ a Nothing) = (hasReturn a)
-ifReturn (IfStmt _ _ a (Just (Right b))) = ((hasReturn a) && (hasReturn b))
-ifReturn (IfStmt _ _ a (Just (Left c))) = ((hasReturn a) && (ifReturn c))
+-- A function to assert whether a given statement, which should be terminating,
+-- is terminating or not. If it is, Nothing is returned, otherwise, a MissingReturn
+-- Error is returned.
+isTerminating ::  Stmt -> Maybe [WeederError]
+isTerminating (Return _) = Nothing
+isTerminating (If (IfStmt _ _ xs (Just (Left a)))) = isTerminatingList xs `mappend` isTerminating (If a)
+isTerminating (If (IfStmt _ _ xs (Just (Right a)))) = isTerminatingList xs `mappend` isTerminatingList a
+isTerminating (For (Just _) Nothing (Just _) xs) =
+  if hasBreak xs
+     then Just [MissingReturn]
+     else Nothing
+isTerminating (Infinite _) = Nothing
+isTerminating (Switch _ _ cs) =
+  if not $ hasDefault cs
+     then Just [MissingReturn]
+     else isTerminatingClauseList cs
+-- isTerminating (StmtBlock (Block xs)) = isTerminatingList xs
+isTerminating _ = Just [MissingReturn]
 
-clauseReturn :: [Clause] -> Bool
-clauseReturn [] = False
-clauseReturn ((Case _ a):[]) = (hasReturn a)
-clauseReturn ((Default a):[]) = (hasReturn a)
-clauseReturn ((Case _ a):xs) = ((hasReturn a) && (clauseReturn xs))
-clauseReturn ((Default a):xs) = ((hasReturn a) && (clauseReturn xs))
+
+-- Wrapper to assert that the Last statement in a statement list is terminating.
+-- The empty Stmt list is trivially non-terminating
+isTerminatingList :: [Stmt] -> Maybe [WeederError]
+isTerminatingList [] = Just [MissingReturn]
+isTerminatingList xs = isTerminating $ last xs
+
+-- A clause is terminating if its statement list is terminating.
+isTerminatingClause :: Clause -> Maybe [WeederError]
+isTerminatingClause (Case _ xs) =
+  if hasBreak xs
+     then Just [MissingReturn]
+     else isTerminatingList xs
+isTerminatingClause (Default xs) =
+  if hasBreak xs
+     then Just [MissingReturn]
+     else isTerminatingList xs
+
+-- Not to be confused by the naming similar to isTerminatingList,
+-- isTerminatingClauseList doesnt asserts that the last Clause is terminating.
+-- Actually, it asserts that ALL clauses in the clause list are terminating.
+isTerminatingClauseList :: [Clause] -> Maybe [WeederError]
+isTerminatingClauseList [] = Just [MissingReturn]
+isTerminatingClauseList xs = mconcat $ map isTerminatingClause xs
+
+-- Asserts that a statement list contains a Break Statement
+hasBreak :: [Stmt] -> Bool
+hasBreak [] = False
+hasBreak (Break:xs) = True
+hasBreak (_:xs) = hasBreak xs
+
+-- Asserts that a clause list contains a default clause
+hasDefault :: [Clause] -> Bool
+hasDefault [] = False
+hasDefault (Default _:xs) = True
+hasDefault (_:xs) = hasDefault xs
+
 
 --
 instance Weedable Stmt where
@@ -112,6 +145,7 @@ instance Weedable Stmt where
     if CFunction `elem` ctxt
       then Nothing
       else Just [InvalidReturn]
+  -- weedCtxt ctxt (StmtBlock (Block xs)) = weedListCtxt ctxt xs
   weedCtxt _ (VarDec var) = weed var
   weedCtxt _ _ = Nothing
 
