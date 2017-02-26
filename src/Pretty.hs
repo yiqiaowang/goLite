@@ -316,6 +316,7 @@ instance Pretty Stmt where
       , spacePrint i
       , "}\n"
       ]
+  pretty (Block xs) i = concat [spacePrint i, "{\n", prettyList xs (i+1), spacePrint i, "};\n"]
   pretty Break i = concat [spacePrint i, "break;\n"]
   pretty Continue i = concat [spacePrint i, "continue;\n"]
 

@@ -77,6 +77,7 @@ data Stmt
       | Infinite [Stmt]
       | While Expression [Stmt]
       | For (Maybe SimpleStmt) (Maybe Expression) (Maybe SimpleStmt) [Stmt]
+      | Block [Stmt]
       | Break
       | Continue
       deriving (Eq, Show)

@@ -173,6 +173,7 @@ Stmt  : var VarDec                                              { VarDec $2 }
       | for ';' Expr ';' SimpleStmt '{' Stmts '}' ';'           { For Nothing (Just $3) (Just $5) $7 }
       | for SimpleStmt ';' Expr ';' '{' Stmts '}' ';'             { For (Just $2) (Just $4) Nothing $7 }
       | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}' ';'    { For (Just $2) (Just $4) (Just $6) $8 }
+      | '{' Stmts '}' ';'	   	    	       	   	     	{ Block $2 }
       | break ';'                                                 { Break }
       | continue ';'                                            { Continue }
 

@@ -66,12 +66,16 @@ isTerminating (For (Just _) Nothing (Just _) xs) =
   if hasBreak xs
      then Just [MissingReturn]
      else Nothing
-isTerminating (Infinite _) = Nothing
+isTerminating (Infinite xs) =
+  if hasBreak xs
+     then Just [MissingReturn]
+     else Nothing
 isTerminating (Switch _ _ cs) =
   if not $ hasDefault cs
      then Just [MissingReturn]
      else isTerminatingClauseList cs
 -- isTerminating (StmtBlock (Block xs)) = isTerminatingList xs
+isTerminating (Block xs) = isTerminatingList xs
 isTerminating _ = Just [MissingReturn]
 
 
