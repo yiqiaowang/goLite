@@ -12,7 +12,7 @@ Team Members:
 --
 ## MileStones
 ### Milestone 1
-* Question 1: The structure of [programs](programs/) looks like 
+* Question 1: The structure of [```programs/```](programs/) looks like 
 
     ```
     programs/
