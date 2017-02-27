@@ -10,7 +10,7 @@ Team Members:
 
 
 --
-## MileStones
+## MileStones - Please read for notes regarding Milestones
 ### Milestone 1
 * Question 1: The structure of [```programs/```](programs/) looks like 
 
