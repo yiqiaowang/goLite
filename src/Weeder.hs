@@ -19,6 +19,7 @@ data WeederError
   | MissingReturn
   | InvalidPostStatement { statement :: SimpleStmt}
   | InvalidPackageName { name :: String}
+  | InvalidIdentifier
   deriving (Eq, Show)
 
 --
@@ -49,11 +50,14 @@ instance Weedable Program where
 instance Weedable All where
   weed (Stmt stmt) = weed stmt
   weed (Function (IdOrType "main") _ _ stmts) = weedListCtxt [CFunction] stmts
-  weed (Function _ _ Nothing stmts) =
+  weed (Function _ _ _ stmts) =
     weedListCtxt [CFunction] stmts
-  weed (Function _ _ (Just _) stmts) =
-    weedListCtxt [CFunction] stmts `mappend` (isTerminating $ last stmts)
 
+-- Use the following to weed for returns/terminating statements, Milestone 2
+  -- weed (Function _ _ Nothing stmts) =
+  --   weedListCtxt [CFunction] stmts
+  -- weed (Function _ _ (Just _) stmts) =
+  --   weedListCtxt [CFunction] stmts `mappend` (isTerminating $ last stmts)
 
 -- A function to assert whether a given statement, which should be terminating,
 -- is terminating or not. If it is, Nothing is returned, otherwise, a MissingReturn
@@ -116,6 +120,7 @@ hasDefault (Default _:xs) = True
 hasDefault (_:xs) = hasDefault xs
 
 
+
 --
 instance Weedable Stmt where
   weedCtxt ctxt (If i) = weedCtxt ctxt i
@@ -149,7 +154,6 @@ instance Weedable Stmt where
     if CFunction `elem` ctxt
       then Nothing
       else Just [InvalidReturn]
-  -- weedCtxt ctxt (StmtBlock (Block xs)) = weedListCtxt ctxt xs
   weedCtxt _ (VarDec var) = weed var
   weedCtxt _ _ = Nothing
 
@@ -165,17 +169,21 @@ instance Weedable SimpleStmt
   --
   weed (ShortVarDec ids exps) =
     weedAssignmentLength ids exps `mappend`
-    let repeatedIds = map head $ filter (\ids' -> length ids' > 1) $ group ids
+    (let repeatedIds = map head $ filter (\ids' -> length ids' > 1) $ group ids
     in if null repeatedIds
          then Nothing
-         else Just $ map RepeatedIdentifierInSVD repeatedIds
-  weed (Assign ids exps) = weedAssignmentLength ids exps
+         else Just $ map RepeatedIdentifierInSVD repeatedIds) `mappend`
+    weedBlankIdentifiers exps
+  weed (Assign ids exps) = weedAssignmentLength ids exps `mappend` weedBlankIdentifiers exps
+  weed (Incr (IdOrType "_")) = Just [InvalidIdentifier]
+  weed (Decr (IdOrType "_")) = Just [InvalidIdentifier]
+  weed (ShortBinary _ _ exps) = weedBlankIdentifier exps
   weed _ = Nothing
 
 --
 instance Weedable Variable where
   weed (Variable _ _ []) = Nothing
-  weed (Variable ids _ exps) = weedAssignmentLength ids exps
+  weed (Variable ids _ exps) = weedAssignmentLength ids exps `mappend` weedBlankIdentifiers exps
 
 --
 instance Weedable IfStmt where
@@ -190,6 +198,8 @@ instance Weedable Clause where
   weedCtxt ctxt (Case _ stmts) = weedListCtxt ctxt stmts
   weedCtxt ctxt (Default stmts) = weedListCtxt ctxt stmts
 
+
+
 -- Verifies that the number of identifiers is equal to the number of exp
 -- in any type of assignment
 weedAssignmentLength :: [Identifier] -> [Expression] -> Maybe [WeederError]
@@ -198,3 +208,29 @@ weedAssignmentLength ids exps =
   in if numIds == numExps
        then Nothing
        else Just [AssignmentCountMismatch numIds numExps]
+
+
+-- Verifies that no blank identifiers are used in expressions
+
+weedBlankIdentifiers :: [Expression] -> Maybe [WeederError]
+weedBlankIdentifiers [] = Nothing
+weedBlankIdentifiers (x:xs) = weedBlankIdentifier x `mappend` weedBlankIdentifiers xs
+
+
+weedBlankIdentifier :: Expression -> Maybe [WeederError]
+weedBlankIdentifier (Brack x) = weedBlankIdentifier x
+weedBlankIdentifier (Id (IdOrType "_")) = Just [InvalidIdentifier]
+weedBlankIdentifier (Id (IdArray _ exprs)) = weedBlankIdentifiers exprs
+weedBlankIdentifier (Id (IdField ids)) = weedBlankIdentifier' ids
+weedBlankIdentifier (Binary _ e1 e2) = weedBlankIdentifier e1 `mappend` weedBlankIdentifier e2
+weedBlankIdentifier (Unary _ e1) = weedBlankIdentifier e1
+weedBlankIdentifier (Append (IdOrType "_") _) = Just [InvalidIdentifier]
+weedBlankIdentifier (Append _ e1) = weedBlankIdentifier e1
+weedBlankIdentifier (FuncCall (IdOrType "_") _) = Just [InvalidIdentifier]
+weedBlankIdentifier (FuncCall _ e1) = weedBlankIdentifiers e1
+weedBlankIdentifier _ = Nothing
+
+
+weedBlankIdentifier' :: [Identifier] -> Maybe [WeederError]
+weedBlankIdentifier' [] = Nothing
+weedBlankIdentifier' (i:is) = weedBlankIdentifier (Id i) `mappend` weedBlankIdentifier' is
