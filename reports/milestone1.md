@@ -1,4 +1,5 @@
 # Milestone 1 Report
+Group comp520-2017-01
 
 ### 1. Framework
 We are developing our compiler with a Haskell based toolchain.
