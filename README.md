@@ -30,7 +30,7 @@ Team Members:
     
   For question 1, please grade the 6 golite programs located in the ```valid/``` directory (ie. their paths should be ```programs/valid/*.go```). For the invalid programs, any golite program in any subpath of ```invalid/``` can be graded, however 30 invalid golite programs are provided in the ```invalid/``` directory for convenience (ie. their paths should be ```programs/invalid/*.go```).
 * Question 2: If you run out of disk quota when building, it might help to use ```stack.yaml.bak``` instead of ```stack.yaml```. To use ```stack.yaml.bak``` just rename it to ```stack.yaml```.
-* Question 3: [Report] (reports/milestone1.md) 
+* Question 3: [Report] (doc/milestone1.md) 
 
 
 
