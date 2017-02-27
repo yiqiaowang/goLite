@@ -17,5 +17,5 @@ spec validSyntax =
         case Parser.parse file text of
           Right program -> case Parser.parse file $ Pretty.pretty program 0 of
             Right program' -> program `shouldBe` program'
-            Left parseError -> error "shit"
-          Left parseError -> error "fuck"
+            Left parseError -> error "Pretty Print Error"
+          Left parseError -> error "Pretty Print Error"
