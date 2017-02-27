@@ -51,6 +51,7 @@ instance Weedable All where
   weed (Stmt stmt) = weed stmt
   weed (Function (IdOrType "main") _ _ stmts) = weedListCtxt [CFunction] stmts
   weed (Function _ _ _ stmts) =
+<<<<<<< HEAD
     weedListCtxt [CFunction] stmts
 
 -- Use the following to weed for returns/terminating statements, Milestone 2
@@ -120,6 +121,14 @@ hasDefault (Default _:xs) = True
 hasDefault (_:xs) = hasDefault xs
 
 
+hasReturn :: [Stmt] -> Bool
+hasReturn [] = False
+hasReturn ((Return _):xs) = True
+hasReturn ((If a):[]) = (ifReturn a)
+hasReturn ((Switch _ _ a):[]) = (clauseReturn a)
+hasReturn ((If a):xs) = ((ifReturn a) || (hasReturn xs))
+hasReturn ((Switch _ _ a):xs) = ((clauseReturn a) || (hasReturn xs))
+hasReturn (x:xs) = (hasReturn xs)
 
 --
 instance Weedable Stmt where
