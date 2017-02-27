@@ -326,21 +326,21 @@ instance Pretty SimpleStmt where
   pretty (Decr ident) i = concat [pretty ident i, "--"]
   pretty (Assign idList exprList) i =
     concat [commaSepList idList i, " = ", commaSepList exprList i]
-  pretty (PlusEq ident expr) i = concat [pretty ident i, " += ", pretty expr i]
-  pretty (MinusEq ident expr) i = concat [pretty ident i, " -= ", pretty expr i]
-  pretty (MulEq ident expr) i = concat [pretty ident i, " *= ", pretty expr i]
-  pretty (DivEq ident expr) i = concat [pretty ident i, " /= ", pretty expr i]
-  pretty (ModEq ident expr) i = concat [pretty ident i, " %= ", pretty expr i]
-  pretty (BitAndEq ident expr) i =
+  pretty (ShortBinary PlusEq ident expr) i = concat [pretty ident i, " += ", pretty expr i]
+  pretty (ShortBinary MinusEq ident expr) i = concat [pretty ident i, " -= ", pretty expr i]
+  pretty (ShortBinary MulEq ident expr) i = concat [pretty ident i, " *= ", pretty expr i]
+  pretty (ShortBinary DivEq ident expr) i = concat [pretty ident i, " /= ", pretty expr i]
+  pretty (ShortBinary ModEq ident expr) i = concat [pretty ident i, " %= ", pretty expr i]
+  pretty (ShortBinary BitAndEq ident expr) i =
     concat [pretty ident i, " &= ", pretty expr i]
-  pretty (BitOrEq ident expr) i = concat [pretty ident i, " |= ", pretty expr i]
-  pretty (BitXOrEq ident expr) i =
+  pretty (ShortBinary BitOrEq ident expr) i = concat [pretty ident i, " |= ", pretty expr i]
+  pretty (ShortBinary BitXorEq ident expr) i =
     concat [pretty ident i, " ^= ", pretty expr i]
-  pretty (BitLShiftEq ident expr) i =
+  pretty (ShortBinary BitLShiftEq ident expr) i =
     concat [pretty ident i, " <<= ", pretty expr i]
-  pretty (BitRShiftEq ident expr) i =
+  pretty (ShortBinary BitRShiftEq ident expr) i =
     concat [pretty ident i, " >>= ", pretty expr i]
-  pretty (BitClearEq ident expr) i =
+  pretty (ShortBinary BitClearEq ident expr) i =
     concat [pretty ident i, " &^= ", pretty expr i]
   pretty (ShortVarDec idList exprList) i =
     concat [commaSepList idList i, " := ", commaSepList exprList i]
@@ -357,35 +357,35 @@ instance Pretty Expression where
   pretty (Brack expr) i = concat ["(", pretty expr i, ")"]
   pretty (Id ident) i = pretty ident i
   pretty (Literal lit) i = pretty lit i
-  pretty (UnaryPos expr) i = concat ["+", pretty expr i]
-  pretty (UnaryNeg expr) i = concat ["-", pretty expr i]
-  pretty (BoolNot expr) i = concat ["!", pretty expr i]
-  pretty (BitComplement expr) i = concat ["^", pretty expr i]
-  pretty (Or expr1 expr2) i = concat [pretty expr1 i, " || ", pretty expr2 i]
-  pretty (And expr1 expr2) i = concat [pretty expr1 i, " && ", pretty expr2 i]
-  pretty (Equals expr1 expr2) i =
+  pretty (Unary Pos expr) i = concat ["+", pretty expr i]
+  pretty (Unary Neg expr) i = concat ["-", pretty expr i]
+  pretty (Unary BoolNot expr) i = concat ["!", pretty expr i]
+  pretty (Unary BitComplement expr) i = concat ["^", pretty expr i]
+  pretty (Binary Or expr1 expr2) i = concat [pretty expr1 i, " || ", pretty expr2 i]
+  pretty (Binary And expr1 expr2) i = concat [pretty expr1 i, " && ", pretty expr2 i]
+  pretty (Binary Equals expr1 expr2) i =
     concat [pretty expr1 i, " == ", pretty expr2 i]
-  pretty (NotEquals expr1 expr2) i =
+  pretty (Binary NotEquals expr1 expr2) i =
     concat [pretty expr1 i, " != ", pretty expr2 i]
-  pretty (LThan expr1 expr2) i = concat [pretty expr1 i, " < ", pretty expr2 i]
-  pretty (LEThan expr1 expr2) i =
+  pretty (Binary LThan expr1 expr2) i = concat [pretty expr1 i, " < ", pretty expr2 i]
+  pretty (Binary LEThan expr1 expr2) i =
     concat [pretty expr1 i, " <= ", pretty expr2 i]
-  pretty (GThan expr1 expr2) i = concat [pretty expr1 i, " > ", pretty expr2 i]
-  pretty (GEThan expr1 expr2) i =
+  pretty (Binary GThan expr1 expr2) i = concat [pretty expr1 i, " > ", pretty expr2 i]
+  pretty (Binary GEThan expr1 expr2) i =
     concat [pretty expr1 i, " >= ", pretty expr2 i]
-  pretty (Add expr1 expr2) i = concat [pretty expr1 i, " + ", pretty expr2 i]
-  pretty (Sub expr1 expr2) i = concat [pretty expr1 i, " - ", pretty expr2 i]
-  pretty (Mult expr1 expr2) i = concat [pretty expr1 i, " * ", pretty expr2 i]
-  pretty (Div expr1 expr2) i = concat [pretty expr1 i, " / ", pretty expr2 i]
-  pretty (Mod expr1 expr2) i = concat [pretty expr1 i, " % ", pretty expr2 i]
-  pretty (BitAnd expr1 expr2) i = concat [pretty expr1 i, " & ", pretty expr2 i]
-  pretty (BitOr expr1 expr2) i = concat [pretty expr1 i, " | ", pretty expr2 i]
-  pretty (BitXor expr1 expr2) i = concat [pretty expr1 i, " ^ ", pretty expr2 i]
-  pretty (BitLShift expr1 expr2) i =
+  pretty (Binary Add expr1 expr2) i = concat [pretty expr1 i, " + ", pretty expr2 i]
+  pretty (Binary Sub expr1 expr2) i = concat [pretty expr1 i, " - ", pretty expr2 i]
+  pretty (Binary Mult expr1 expr2) i = concat [pretty expr1 i, " * ", pretty expr2 i]
+  pretty (Binary Div expr1 expr2) i = concat [pretty expr1 i, " / ", pretty expr2 i]
+  pretty (Binary Mod expr1 expr2) i = concat [pretty expr1 i, " % ", pretty expr2 i]
+  pretty (Binary BitAnd expr1 expr2) i = concat [pretty expr1 i, " & ", pretty expr2 i]
+  pretty (Binary BitOr expr1 expr2) i = concat [pretty expr1 i, " | ", pretty expr2 i]
+  pretty (Binary BitXor expr1 expr2) i = concat [pretty expr1 i, " ^ ", pretty expr2 i]
+  pretty (Binary BitLShift expr1 expr2) i =
     concat [pretty expr1 i, " << ", pretty expr2 i]
-  pretty (BitRShift expr1 expr2) i =
+  pretty (Binary BitRShift expr1 expr2) i =
     concat [pretty expr1 i, " >> ", pretty expr2 i]
-  pretty (BitClear expr1 expr2) i =
+  pretty (Binary BitClear expr1 expr2) i =
     concat [pretty expr1 i, " &^ ", pretty expr2 i]
   pretty (FuncCall ident exprList) i =
     concat [pretty ident i, "(", commaSepList exprList i, ")"]

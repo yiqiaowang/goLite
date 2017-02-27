@@ -152,6 +152,7 @@ ArrayAccess : '[' Expr ']' ArrayAccess { $2:$4 }
 Stmts : Stmt Stmts                        { $1 : $2 }
       | {- Empty -}                       { [] }
 
+
 Stmt  : var VarDec                                              { VarDec $2 }
       | var '(' VarDecList ')' ';'                              { VarDecList $3 }
       | type TypeDec                                            { TypeDec $2 }
@@ -207,17 +208,17 @@ SimpleStmt
       | Id '++'                    { Incr $1 }
       | Id '--'                    { Decr $1 }
       | VarList '=' ExprList       { Assign $1 $3 }
-      | Id '+=' Expr               { PlusEq $1 $3 }
-      | Id '-=' Expr               { MinusEq $1 $3 }
-      | Id '*=' Expr               { MulEq $1 $3 }
-      | Id '/=' Expr               { DivEq $1 $3 }
-      | Id '%=' Expr               { ModEq $1 $3 }
-      | Id '&=' Expr               { BitAndEq $1 $3 }
-      | Id '|=' Expr               { BitOrEq $1 $3 }
-      | Id '^=' Expr               { BitXOrEq $1 $3 }
-      | Id '<<=' Expr              { BitLShiftEq $1 $3 }
-      | Id '>>=' Expr              { BitRShiftEq $1 $3 }
-      | Id '&^=' Expr              { BitClearEq $1 $3 }
+      | Id '+=' Expr               { ShortBinary PlusEq $1 $3 }
+      | Id '-=' Expr               { ShortBinary MinusEq $1 $3 }
+      | Id '*=' Expr               { ShortBinary MulEq $1 $3 }
+      | Id '/=' Expr               { ShortBinary DivEq $1 $3 }
+      | Id '%=' Expr               { ShortBinary ModEq $1 $3 }
+      | Id '&=' Expr               { ShortBinary BitAndEq $1 $3 }
+      | Id '|=' Expr               { ShortBinary BitOrEq $1 $3 }
+      | Id '^=' Expr               { ShortBinary BitXorEq $1 $3 }
+      | Id '<<=' Expr              { ShortBinary BitLShiftEq $1 $3 }
+      | Id '>>=' Expr              { ShortBinary BitRShiftEq $1 $3 }
+      | Id '&^=' Expr              { ShortBinary BitClearEq $1 $3 }
       | VarList ':=' ExprList      { ShortVarDec $1 $3 }
 
 VarDec
@@ -279,19 +280,19 @@ Lit   :: { Literal }
 
 Expr  :: { Expression }
       : UnaryExpr      { $1 }
-      | Expr '||' Expr %prec LOG { Or $1 $3 }
-      | Expr '&&' Expr %prec LOG { And $1 $3 }
-      | Expr RelOp Expr %prec COMP { $2 $1 $3 }
-      | Expr AddOp Expr %prec ADD { $2 $1 $3 }
-      | Expr MultOp Expr %prec MULT { $2 $1 $3 }
+      | Expr '||' Expr %prec LOG { Binary Or $1 $3 }
+      | Expr '&&' Expr %prec LOG { Binary And $1 $3 }
+      | Expr RelOp Expr %prec COMP { Binary $2 $1 $3 }
+      | Expr AddOp Expr %prec ADD { Binary $2 $1 $3 }
+      | Expr MultOp Expr %prec MULT { Binary $2 $1 $3 }
 
 UnaryExpr
       :: { Expression }
-      : UnaryOp UnaryExpr { $1 $2 }
+      : UnaryOp UnaryExpr { Unary $1 $2 }
       | PrimaryExpr { $1 }
 
-UnaryOp	 : '+'	%prec UNARY { UnaryPos }
-	 | '-'  %prec UNARY { UnaryNeg }
+UnaryOp	 : '+'	%prec UNARY { Pos }
+	 | '-'  %prec UNARY { Neg }
 	 | '!'  %prec UNARY { BoolNot }
 	 | '^'	%prec UNARY { BitComplement }
 

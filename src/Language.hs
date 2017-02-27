@@ -88,48 +88,61 @@ data SimpleStmt
       | Incr Identifier
       | Decr Identifier
       | Assign [Identifier] [Expression]
-      | PlusEq Identifier Expression
-      | MinusEq Identifier Expression
-      | MulEq Identifier Expression
-      | DivEq Identifier Expression
-      | ModEq Identifier Expression
-      | BitAndEq Identifier Expression
-      | BitOrEq Identifier Expression
-      | BitXOrEq Identifier Expression
-      | BitLShiftEq Identifier Expression
-      | BitRShiftEq Identifier Expression
-      | BitClearEq Identifier Expression
+      | ShortBinary BinaryOpEq Identifier Expression
       | ShortVarDec [Identifier] [Expression]
       deriving (Eq, Show)
+
+data BinaryOpEq
+      = PlusEq
+      | MinusEq
+      | MulEq
+      | DivEq
+      | ModEq
+      | BitAndEq
+      | BitOrEq
+      | BitXorEq
+      | BitLShiftEq
+      | BitRShiftEq
+      | BitClearEq
+      deriving (Eq, Show)
+
 
 -- Expressions
 data Expression
       = Brack Expression
       | Id Identifier
       | Literal Literal
-      | UnaryPos Expression
-      | UnaryNeg Expression
-      | BoolNot Expression
-      | BitComplement Expression
-      | Or Expression Expression
-      | And Expression Expression
-      | Equals Expression Expression
-      | NotEquals Expression Expression
-      | LThan Expression Expression
-      | LEThan Expression Expression
-      | GThan Expression Expression
-      | GEThan Expression Expression
-      | Add Expression Expression
-      | Sub Expression Expression
-      | Mult Expression Expression
-      | Div Expression Expression
-      | Mod Expression Expression
-      | BitAnd Expression Expression
-      | BitOr Expression Expression
-      | BitXor Expression Expression
-      | BitLShift Expression Expression
-      | BitRShift Expression Expression
-      | BitClear Expression Expression
       | FuncCall Identifier [Expression]
       | Append Identifier Expression
+      | Unary UnaryOp Expression
+      | Binary BinaryOp Expression Expression
+      deriving (Eq, Show)
+
+data UnaryOp
+      = Pos
+      | Neg
+      | BoolNot
+      | BitComplement
+      deriving (Eq, Show)
+
+data BinaryOp
+      = Or
+      | And
+      | Equals
+      | NotEquals
+      | LThan
+      | LEThan
+      | GThan
+      | GEThan
+      | Add
+      | Sub
+      | Mult
+      | Div
+      | Mod
+      | BitAnd
+      | BitOr
+      | BitXor
+      | BitLShift
+      | BitRShift
+      | BitClear
       deriving (Eq, Show)
