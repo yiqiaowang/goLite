@@ -10,8 +10,8 @@ We are developing our compiler with a Haskell based toolchain.
 ### 2. Team Work
 Yi Qiao
 - Developed the [Scanner](../src/Scanner.x)
-- Contributed to the development of the [Parser](../src/Parser.y)
-- Wrote some tests for the [Scanner](../src/Scanner.x) and the [Parser](../src/Parser.y)
+- Contributed to the development of the [Parser](../src/Parser.y) and the [Weeder](../src/Weeder.hs)
+- Wrote tests for the [Scanner](../src/Scanner.x) and the [Parser](../src/Parser.y)
 
 Thomas
 - Wrote the majority of the [Parser](../src/Parser.y)
@@ -25,7 +25,7 @@ Charlie
 
 
 ### 3. [Scanner](../src/Scanner.x)
-The scanner was written using a fairly standard Alex setup. Some macros were defined for certain character sets to improve ease of use of these sets later on in the scanner. Tokens are recognized via regexes and returned in their respective productions.   
+The scanner was written using a standard Alex setup. Some macros were defined for certain character sets to improve ease of use of these sets later on in the scanner. Tokens are recognized via regexes and returned in their respective productions.   
 
 One of the main design decisions taken in the scanner was to explicitly give everything its own token, in as detailed a way as possible. For example, one can define a token, ```BinaryOp```, for all binary operations and store the associated characters with ```BinaryOp```. This does eliminate some initial code repetition, but it introduces plenty of case matching in further stages. While the decision to assign each binary operation its own token has an initial cost, it reduces the cost of all subsequent uses of binary operations.   
 
@@ -83,25 +83,15 @@ func main() {
 }
 ```
 
-- Verifying that `return` statements only occur inside of function declarations.
-```
-package main;
-
-return;
-```
-
-- Verifying that functions have a return statement.
-```
-func num() int {
-
-}
-```
-
 - Verifying that the post statement in a for loop is valid.
 ```
 for i := 0; i < 10; i := 20 {}
 ```
 
+- Verifying that blank identifiers are used correctly
+```
+a[0] = a[1 + _]
+```
 
 ### 6. [Pretty Printer](../src/Pretty.hs)
 In the pretty printer we used a typeclass in order to automatically generate a function that can pretty print a list of instances of the typeclass given a function that can pretty print a single element of that instance. Then we recursively defined the pretty print function for each data type, concatenating all the results into a single string that could be written to a file.
