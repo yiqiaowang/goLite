@@ -145,7 +145,7 @@ instance Pretty All where
       , commaSepList params 0
       , ") {\n"
       , prettyList stmts 1
-      , "}\n"
+      , "}\n\n"
       ]
   pretty (Function name params (Just t) stmts) _ =
     concat

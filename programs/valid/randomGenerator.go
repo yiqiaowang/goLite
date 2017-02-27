@@ -4,7 +4,8 @@ package random;
 var (
   seed int = 0
   multiplier int = 23961
-  adder int = 53785935; )
+  adder int = 53785935
+  modder int = 38199; )
 
 
 // get and set the seed
@@ -37,13 +38,23 @@ func getAdder() int {
   return adder;
 }
 
+// get and set the modding number used in the random number generator
+func setModder(nModder int) {
+  modder = nModder;
+  return;
+}
+
+func getModder() int {
+  return modder;
+}
+
 // Get the next random int between min and max (min included)
 func getNextInt(min, max int) int {
   mod := max - min;
 
-  seed = (seed * multiplier + adder) % mod + min;
+  seed = (seed * multiplier + adder) % modder;
 
-  return seed;
+  return seed % mod + min;
 }
 
 // Test the algorithm to see if it works
