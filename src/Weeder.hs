@@ -50,14 +50,11 @@ instance Weedable Program where
 instance Weedable All where
   weed (Stmt stmt) = weed stmt
   weed (Function (IdOrType "main") _ _ stmts) = weedListCtxt [CFunction] stmts
-  weed (Function _ _ _ stmts) =
+  weed (Function _ _ Nothing stmts) =
     weedListCtxt [CFunction] stmts
+  weed (Function _ _ (Just _) stmts) =
+    weedListCtxt [CFunction] stmts `mappend` (isTerminating $ last stmts)
 
--- Use the following to weed for returns/terminating statements, Milestone 2
-  -- weed (Function _ _ Nothing stmts) =
-  --   weedListCtxt [CFunction] stmts
-  -- weed (Function _ _ (Just _) stmts) =
-  --   weedListCtxt [CFunction] stmts `mappend` (isTerminating $ last stmts)
 
 -- A function to assert whether a given statement, which should be terminating,
 -- is terminating or not. If it is, Nothing is returned, otherwise, a MissingReturn
