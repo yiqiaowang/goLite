@@ -6,6 +6,7 @@ import System.FilePath
 import System.Console.ArgParser
 import qualified Parser
 import qualified Pretty
+import GoLite(parse)
 
 
 data GoLiteOptions = GoLiteOptions
@@ -18,6 +19,7 @@ goLiteOptionsParser = GoLiteOptions
   `parsedBy` reqPos "filename" `Descr` "goLite source file with relative file path"
 
 
+
 main :: IO ()
 main = do
   interface <- mkApp goLiteOptionsParser
@@ -27,9 +29,9 @@ main = do
 compile :: GoLiteOptions -> IO ()
 compile options = do
   text <- readFile goLiteFile
-  case Parser.parse goLiteFile text of
+  case parse goLiteFile text of
     Right program -> writeFile prettyFile $ Pretty.pretty program 0
-    Left errorMsg -> hPutStrLn stderr errorMsg
+    Left errorMsg -> errorWithoutStackTrace $ show errorMsg
 
   where
     goLiteFile = filename options
