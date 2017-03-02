@@ -12,7 +12,7 @@ type Package = String
 data Identifier = IdOrType String
                 | IdArray String [Expression]
                 | IdField [Identifier]
-                deriving (Eq, Show)
+                deriving (Eq, Ord, Show)
 data Type
   = Type String
   | Array Type Int
@@ -29,7 +29,7 @@ data Literal
       | Rune Integer
       | String String
       | Raw String
-      deriving (Eq, Show)
+      deriving (Eq, Ord, Show)
 
 -- Parameter data type (List of identifiers with an associated type)
 data Parameter
@@ -116,14 +116,14 @@ data Expression
       | Append Identifier Expression
       | Unary UnaryOp Expression
       | Binary BinaryOp Expression Expression
-      deriving (Eq, Show)
+      deriving (Eq, Ord, Show)
 
 data UnaryOp
       = Pos
       | Neg
       | BoolNot
       | BitComplement
-      deriving (Eq, Show)
+      deriving (Eq, Ord, Show)
 
 data BinaryOp
       = Or
@@ -145,4 +145,4 @@ data BinaryOp
       | BitLShift
       | BitRShift
       | BitClear
-      deriving (Eq, Show)
+      deriving (Eq, Ord, Show)
