@@ -15,11 +15,12 @@ import qualified Data.Map.Strict as Map
 import Language (Identifier, Type)
 
 data SymbolTableError
-  = DuplicateIdentifier { duplicateIdentifier :: Identifier}
-  | NotFoundIdentifier { notFoundIdentifier :: Identifier}
+  = DuplicateIdentifier { duplicateIdentifier :: String }
+  | NotFoundIdentifier { notFoundIdentifier :: String }
+  | InconsistentTable
   deriving (Eq, Show)
 
-type SymMap = Map Identifier Entry
+type SymMap = Map String Entry
 
 data Entry = Entry
   { typeCategory :: TypeCategory
@@ -27,7 +28,8 @@ data Entry = Entry
   } deriving (Eq, Show)
 
 data TypeCategory
-  = VariableType
+  = CategoryIdentifier
+  | CategoryType 
   deriving (Eq, Show)
 
 
@@ -36,15 +38,15 @@ newMap :: SymMap
 newMap = Map.empty :: SymMap
 
 -- Check if an idname is in the symbol table
-hasKey :: Identifier -> SymMap -> Bool
+hasKey :: String -> SymMap -> Bool
 hasKey key map = Map.member key map
 
 -- -- Add new entry to symbol table
-addSym :: Identifier -> Entry -> SymMap -> SymMap
+addSym :: String -> Entry -> SymMap -> SymMap
 addSym id entry map = Map.insert id entry map
 
 -- -- Get an entry from the symbol table
-getSym :: Identifier -> SymMap -> Maybe Entry
+getSym :: String -> SymMap -> Maybe Entry
 getSym name map = Map.lookup name map
 
 newtype Frame =
@@ -99,11 +101,11 @@ topFrame (SymbolTable s) =
     else Just $ top s
 
 -- Adds an entry to the top frame
-addEntry :: Identifier
-         -> Entry
-         -> SymbolTable
+addEntry :: SymbolTable
+         -> String
+         -> Entry 
          -> (SymbolTable, Maybe SymbolTableError)
-addEntry i e s =
+addEntry s i e =
   if hasKey i (getMap $ fst $ popFrame s)
     then (s, Just (DuplicateIdentifier i))
     else (s', Nothing)
@@ -114,13 +116,15 @@ addEntry i e s =
 
 -- Lookup an entry in the symbol table
 lookupIdentifier :: SymbolTable
-                 -> Identifier
+                 -> String
                  -> Either Entry SymbolTableError
 lookupIdentifier s i =
   if isEmpty $ getStack s
     then Right $ NotFoundIdentifier i
     else if hasKey i (getMap t)
-           then Left $ getSym i (getMap t)
+           then case (getSym i (getMap t)) of
+                 (Nothing) -> Right InconsistentTable
+                 (Just e) -> Left e
            else lookupIdentifier s' i
   where
     t = fst $ popFrame s
