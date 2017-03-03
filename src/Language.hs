@@ -14,7 +14,7 @@ data Identifier = IdOrType String
                 | IdField [Identifier]
                 deriving (Eq, Ord, Show)
 data Type
-  = Type String
+  = Alias String
   | Array Type Int
   | Slice Type
   | Struct [([Identifier], Type)]
