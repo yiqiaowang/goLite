@@ -12,7 +12,7 @@ module SymbolTable
 import Data.Map.Strict
        (Map, adjust, insert, lookup, member, toList)
 import qualified Data.Map.Strict as Map
-import Language (Identifier)
+import Language (Identifier, Type)
 
 data SymbolTableError
   = DuplicateIdentifier { duplicateIdentifier :: Identifier}
@@ -22,17 +22,14 @@ data SymbolTableError
 type SymMap = Map Identifier Entry
 
 data Entry = Entry
-  { identifier :: Identifier
-  , category :: TypeCategory
-  , dataType :: DataType
+  { typeCategory :: TypeCategory
+  , dataType :: Type
   } deriving (Eq, Show)
 
 data TypeCategory
-  = Variable
-  | Type
+  = VariableType
   deriving (Eq, Show)
 
-type DataType = String
 
 -- Create a new SymMap
 newMap :: SymMap
@@ -118,12 +115,12 @@ addEntry i e s =
 -- Lookup an entry in the symbol table
 lookupIdentifier :: SymbolTable
                  -> Identifier
-                 -> (Maybe Entry, Maybe SymbolTableError)
+                 -> Either Entry SymbolTableError
 lookupIdentifier s i =
   if isEmpty $ getStack s
-    then (Nothing, Just (NotFoundIdentifier i))
+    then Right $ NotFoundIdentifier i
     else if hasKey i (getMap t)
-           then (getSym i (getMap t), Nothing)
+           then Left $ getSym i (getMap t)
            else lookupIdentifier s' i
   where
     t = fst $ popFrame s
