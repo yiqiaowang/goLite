@@ -326,7 +326,7 @@ MultOp	 : '*'		{ Mult }
 
 
 Type  :: { Type }
-      : id_raw                          { Type $1 }
+      : id_raw                          { Alias $1 }
       | '[' Num ']' Type           { Array $4 $2 }
       | '[' ']' Type                { Slice $3 }
       | struct '{' StructListEmpty '}'   { Struct $3 }

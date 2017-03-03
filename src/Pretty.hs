@@ -30,7 +30,7 @@ instance Pretty Program where
     concat ["package ", package, ";\n", "\n", prettyList alls 0]
 
 instance Pretty Type where
-  pretty (Type s) _ = s
+  pretty (Alias s) _ = s
   pretty (Array t expr) _ = concat ["[", pretty expr 0, "]", pretty t 0]
   pretty (Slice t) _ = concat ["[]", pretty t 0]
   pretty (Struct list) i =
