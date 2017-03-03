@@ -7,4 +7,6 @@ data TypeCheckError =
 
 --
 class TypeCheckable a where
-  typecheck :: a -> Maybe [TypeCheckError]
+  typecheck :: a -> SymbolTable -> Maybe [TypeCheckError]
+
+
