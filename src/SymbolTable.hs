@@ -46,7 +46,6 @@ newMap = Map.empty :: SymMap
 initMap :: SymMap
 initMap = fromList[(IdOrType "true", Entry CategoryVariable $ Just Bool)
                   ,(IdOrType "false", Entry CategoryVariable $ Just Bool)
-                  ,(IdOrType "x", Entry CategoryVariable $ Just (Alias "int"))
                   ,(IdOrType "int", Entry CategoryType $ Just (Alias "int"))
                   ,(IdOrType "float64", Entry CategoryType $ Just (Alias "float64"))
                   ,(IdOrType "rune", Entry CategoryType $ Just (Alias "rune"))
