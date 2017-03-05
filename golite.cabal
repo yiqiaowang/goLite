@@ -13,7 +13,7 @@ library
                      , Pretty
                      , TokenClass
                      , Weeder
-                     , TypeCheck
+                     , TypeChecker
                      , SymbolTable
   build-depends:       base >= 4.7 && < 5
                      , containers
