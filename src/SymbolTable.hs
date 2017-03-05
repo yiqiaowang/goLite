@@ -2,33 +2,37 @@
 module SymbolTable
   ( SymbolTable
   , SymbolTableError
-  , newSymbolTable
+  , Entry (..)
+  , TypeCategory (..)
+  , initSymbolTable
   , newFrame
   , popFrame
   , pushFrame
   , topFrame
+  , addEntry
+  , lookupIdentifier
   ) where
 
 import Data.Map.Strict
-       (Map, adjust, insert, lookup, member, toList)
+       (Map, adjust, insert, lookup, member, toList, fromList)
 import qualified Data.Map.Strict as Map
-import Language (Identifier, Type)
+import Language
 
 data SymbolTableError
-  = DuplicateIdentifier { duplicateIdentifier :: String }
-  | NotFoundIdentifier { notFoundIdentifier :: String }
+  = DuplicateIdentifier { duplicateIdentifier :: Identifier }
+  | NotFoundIdentifier { notFoundIdentifier :: Identifier }
   | InconsistentTable
   deriving (Eq, Show)
 
-type SymMap = Map String Entry
+type SymMap = Map Identifier Entry
 
 data Entry = Entry
   { typeCategory :: TypeCategory
-  , dataType :: Type
+  , dataType :: Maybe Type
   } deriving (Eq, Show)
 
 data TypeCategory
-  = CategoryIdentifier
+  = CategoryVariable
   | CategoryType 
   deriving (Eq, Show)
 
@@ -37,16 +41,29 @@ data TypeCategory
 newMap :: SymMap
 newMap = Map.empty :: SymMap
 
+
+-- Initial symbol table mapping
+initMap :: SymMap
+initMap = fromList[(IdOrType "true", Entry CategoryVariable $ Just Bool)
+                  ,(IdOrType "false", Entry CategoryVariable $ Just Bool)
+                  ,(IdOrType "x", Entry CategoryVariable $ Just (Alias "int"))
+                  ,(IdOrType "int", Entry CategoryType $ Just (Alias "int"))
+                  ,(IdOrType "float64", Entry CategoryType $ Just (Alias "float64"))
+                  ,(IdOrType "rune", Entry CategoryType $ Just (Alias "rune"))
+                  ,(IdOrType "bool", Entry CategoryType $ Just (Alias "bool"))
+                  ,(IdOrType "string", Entry CategoryType $ Just (Alias "string"))]
+
+  
 -- Check if an idname is in the symbol table
-hasKey :: String -> SymMap -> Bool
+hasKey :: Identifier -> SymMap -> Bool
 hasKey key map = Map.member key map
 
 -- -- Add new entry to symbol table
-addSym :: String -> Entry -> SymMap -> SymMap
+addSym :: Identifier -> Entry -> SymMap -> SymMap
 addSym id entry map = Map.insert id entry map
 
 -- -- Get an entry from the symbol table
-getSym :: String -> SymMap -> Maybe Entry
+getSym :: Identifier -> SymMap -> Maybe Entry
 getSym name map = Map.lookup name map
 
 newtype Frame =
@@ -83,7 +100,9 @@ newtype SymbolTable =
   SymbolTable Stack
   deriving (Eq, Show)
 
-newSymbolTable = SymbolTable empty :: SymbolTable
+emptySymbolTable = SymbolTable empty :: SymbolTable
+
+initSymbolTable = pushFrame emptySymbolTable (Frame initMap) :: SymbolTable
 
 newFrame :: SymbolTable -> SymbolTable
 newFrame (SymbolTable s) = SymbolTable (push (Frame newMap) s)
@@ -102,13 +121,13 @@ topFrame (SymbolTable s) =
 
 -- Adds an entry to the top frame
 addEntry :: SymbolTable
-         -> String
+         -> Identifier
          -> Entry 
-         -> (SymbolTable, Maybe SymbolTableError)
+         -> Either SymbolTable SymbolTableError
 addEntry s i e =
   if hasKey i (getMap $ fst $ popFrame s)
-    then (s, Just (DuplicateIdentifier i))
-    else (s', Nothing)
+    then Right (DuplicateIdentifier i)
+    else Left s'
   where
     s' = pushFrame p (Frame $ addSym i e (getMap f))
     f = fst $ popFrame s
@@ -116,7 +135,7 @@ addEntry s i e =
 
 -- Lookup an entry in the symbol table
 lookupIdentifier :: SymbolTable
-                 -> String
+                 -> Identifier
                  -> Either Entry SymbolTableError
 lookupIdentifier s i =
   if isEmpty $ getStack s
