@@ -56,12 +56,12 @@ instance TypeCheckable All where
   typeCheck symtbl (Function iden params ret stmts) =
     case addEntry symtbl iden (Entry CategoryVariable $ Just Func) of
       Left symtbl' ->
-            case typeCheckBlock (newFrame symtbl') stmts of
-              Left symtbl'' -> 
-                case typeCheckReturns symtbl'' stmts ret of
-                Nothing -> Left (Nothing, snd $ popFrame symtbl'')
-                Just err -> Right err
-              Right err -> Right err
+        case typeCheckBlock (newFrame symtbl') stmts of
+          Left symtbl'' ->
+            case typeCheckReturns symtbl'' stmts ret of
+              Nothing -> Left (Nothing, snd $ popFrame symtbl'')
+              Just err -> Right err
+          Right err -> Right err
       Right err -> Right $ SymbolTableError err
 
 -- TypeChecks a block of statements
@@ -124,27 +124,18 @@ instance TypeCheckable Stmt where
   typeCheck symtbl (VarDec var) = typeCheck symtbl var
   typeCheck symtbl (Return _) = Left (Nothing, symtbl)
 
-
 instance TypeCheckable Identifier where
-  typeCheck symtbl i = case lookupIdentifier symtbl i of
-                         Left (Entry _ t) -> Left (t, symtbl)
-                         Right err -> Right $ SymbolTableError err
-    
-
+  typeCheck symtbl i =
+    case lookupIdentifier symtbl i of
+      Left (Entry _ t) -> Left (t, symtbl)
+      Right err -> Right $ SymbolTableError err
 
 instance TypeCheckable Variable where
   typeCheck symtbl (Variable [] maybe_type []) = Left (Nothing, symtbl)
-  -- typeCheck symtbl (Variable [i] maybe_type [e]) =
-  --   case addEntry symtbl i (Entry CategoryVariable maybe_type) of
-  --     Left symtbl' -> Left (Nothing, symtbl')
-  --     Right err -> Right $ SymbolTableError err
   typeCheck symtbl (Variable (i:is) maybe_type (e:es)) =
     case addEntry symtbl i (Entry CategoryVariable maybe_type) of
       Left symtbl' -> typeCheck symtbl' (Variable is maybe_type es)
       Right err -> Right $ SymbolTableError err
-
-
-
 
 instance TypeCheckable SimpleStmt
 
