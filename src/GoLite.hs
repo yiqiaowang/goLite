@@ -7,11 +7,14 @@ import qualified Language
 import qualified Parser
 import qualified Scanner
 import qualified Weeder
+import qualified TypeChecker
+import qualified SymbolTable (initSymbolTable, SymbolTable)
 
 --
 data GoLiteError
   = ParserError String
   | WeederError [Weeder.WeederError]
+  | TypeCheckerError TypeChecker.TypeCheckError
   deriving (Eq, Show)
 
 --
@@ -21,5 +24,7 @@ parse fp text =
     Left errorMsg -> Left $ ParserError errorMsg
     Right program ->
       case Weeder.weed program of
-        Nothing -> return program
+        Nothing -> case TypeChecker.typeCheck SymbolTable.initSymbolTable program of
+                     Left (_, symtbl) -> Right program
+                     Right err -> Left $ TypeCheckerError err
         Just weederErrors -> Left $ WeederError weederErrors
