@@ -61,7 +61,7 @@ data Variable
       deriving (Eq, Show)
 
 data TypeName 
-      = TypeName Identifier Type
+      = TypeName Type Type
       deriving (Eq, Show)
 
 

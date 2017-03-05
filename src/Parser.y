@@ -251,7 +251,7 @@ VarList :: { [Identifier] }
       | Id                          { [ $1 ] }
 
 TypeDec ::  { TypeName }
-      : id_raw Type ';'                    { TypeName (IdOrType $1) $2 }
+      : id_raw Type ';'                    { TypeName (Type $1) $2 }
 
 TypeDecList :: { [TypeName] }
       : TypeDec TypeDecList         { $1 : $2 }
