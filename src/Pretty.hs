@@ -13,14 +13,33 @@ class Pretty a where
   prettyList :: [a] -> Integer -> String
   prettyList ps i = concatMap (`pretty` i) ps
 
-commaSepList
-  :: Pretty a
-  => [a] -> Integer -> String
+commaSepList :: Pretty a => [a] -> Integer -> String
 commaSepList string i = intercalate ", " (map (`pretty` i) string)
 
 structList :: ([Identifier], Type) -> Integer -> String
 structList (idList, t) i =
   concat [spacePrint i, commaSepList idList i, " ", pretty t i, ";\n"]
+
+spacePrint :: Integer -> String
+spacePrint x =
+  case x <= 0 of
+    True -> ""
+    False -> concat ["\t", spacePrint (x - 1)]
+
+wrapSquare :: String -> String
+wrapSquare s = "[" ++ s ++ "]"
+
+wrapSquareList :: Pretty a => [a] -> Integer -> String
+wrapSquareList xs i = concatMap wrapSquare (map (`pretty` i) xs)
+
+dotSepList :: [String] -> String
+dotSepList string = intercalate "." string
+
+
+
+
+
+
 
 instance Pretty String where
   pretty s _ = s
@@ -29,114 +48,8 @@ instance Pretty Program where
   pretty (Program package alls) _ =
     concat ["package ", package, ";\n", "\n", prettyList alls 0]
 
-instance Pretty Type where
-  pretty (Alias s) _ = s
-  pretty (Array t expr) _ = concat ["[", pretty expr 0, "]", pretty t 0]
-  pretty (Slice t) _ = concat ["[]", pretty t 0]
-  pretty (Struct list) i =
-    concat ["struct {\n", concatMap (`structList` (i + 1)) list, "}"]
-
-instance Pretty Literal where
-  pretty (Int' i) _ = show i
-  pretty (Float64 f) _ = show f
-  pretty (Rune i) _ = (show . chr . fromIntegral) i
-  pretty (String s) _ = s
-  pretty (Raw s) _ = s
-
-instance Pretty Parameter where
-  pretty (Parameter idList t) i =
-    concat [commaSepList idList i, " ", pretty t 0]
-
-instance Pretty Clause where
-  pretty (Case exList stList) i =
-    concat
-      [ spacePrint i
-      , "case "
-      , commaSepList exList i
-      , ":\n"
-      , prettyList stList (i + 1)
-      ]
-  pretty (Default stList) i =
-    concat [spacePrint i, "default:\n", prettyList stList (i + 1)]
-
-spacePrint :: Integer -> String
-spacePrint x =
-  case x <= 0 of
-    True -> ""
-    False -> concat ["\t", spacePrint (x - 1)]
-
-instance Pretty IfStmt where
-  pretty (IfStmt Nothing expr stList Nothing) i =
-    concat
-      [ "if "
-      , pretty expr 0
-      , " {\n"
-      , prettyList stList (i + 1)
-      , spacePrint i
-      , "}\n"
-      ]
-  pretty (IfStmt Nothing expr stList (Just (Right elseStmt))) i =
-    concat
-      [ "if "
-      , pretty expr 0
-      , " {\n"
-      , prettyList stList (i + 1)
-      , spacePrint i
-      , "} else {\n"
-      , prettyList elseStmt (i + 1)
-      , spacePrint i
-      , "}\n"
-      ]
-  pretty (IfStmt Nothing expr stList (Just (Left ifStmt))) i =
-    concat
-      [ "if "
-      , pretty expr 0
-      , " {\n"
-      , prettyList stList (i + 1)
-      , spacePrint i
-      , "} else "
-      , pretty ifStmt i
-      ]
-  pretty (IfStmt (Just st) expr stList Nothing) i =
-    concat
-      [ "if "
-      , pretty st 0
-      , "; "
-      , pretty expr 0
-      , " {\n"
-      , prettyList stList (i + 1)
-      , spacePrint i
-      , "}\n"
-      ]
-  pretty (IfStmt (Just st) expr stList (Just (Right elseStmt))) i =
-    concat
-      [ "if "
-      , pretty st 0
-      , "; "
-      , pretty expr 0
-      , " {\n"
-      , prettyList stList (i + 1)
-      , spacePrint i
-      , "} else {\n"
-      , prettyList elseStmt (i + 1)
-      , spacePrint i
-      , "}\n"
-      ]
-  pretty (IfStmt (Just st) expr stList (Just (Left ifStmt))) i =
-    concat
-      [ "if "
-      , pretty st 0
-      , "; "
-      , pretty expr 0
-      , " {\n"
-      , prettyList stList (i + 1)
-      , spacePrint i
-      , "} else "
-      , pretty ifStmt i
-      ]
-
 instance Pretty All where
-  pretty (Stmt s) _ = pretty s 0
+  pretty (TopDec dec) _ = pretty dec 0
   pretty (Function name params Nothing stmts) _ =
     concat
       [ "func "
@@ -160,27 +73,7 @@ instance Pretty All where
       , "}\n\n"
       ]
 
-instance Pretty Variable where
-  pretty (Variable var (Just t) []) i =
-    concat [spacePrint i, commaSepList var i, " ", pretty t i, ";\n"]
-  pretty (Variable var (Just t) expr) i =
-    concat
-      [ spacePrint i
-      , commaSepList var i
-      , " "
-      , pretty t i
-      , " = "
-      , commaSepList expr i
-      , ";\n"
-      ]
-  pretty (Variable var Nothing expr) i =
-    concat [spacePrint i, commaSepList var i, " = ", commaSepList expr i, ";\n"]
-
-instance Pretty TypeName where
-  pretty (TypeName ident t) i =
-    concat [spacePrint i, pretty ident i, " ", pretty t i, ";\n"]
-
-instance Pretty Stmt where
+instance Pretty TopLevel where
   pretty (VarDec (Variable var (Just t) [])) i =
     concat [spacePrint i, "var ", commaSepList var i, " ", pretty t i, ";\n"]
   pretty (VarDec (Variable var (Just t) expr)) i =
@@ -211,6 +104,52 @@ instance Pretty Stmt where
   pretty (TypeDecList tList) i =
     concat
       [spacePrint i, "type (\n", prettyList tList (i + 1), spacePrint i, ");\n"]
+
+instance Pretty Variable where
+  pretty (Variable var (Just t) []) i =
+    concat [spacePrint i, commaSepList var i, " ", pretty t i, ";\n"]
+  pretty (Variable var (Just t) expr) i =
+    concat
+      [ spacePrint i
+      , commaSepList var i
+      , " "
+      , pretty t i
+      , " = "
+      , commaSepList expr i
+      , ";\n"
+      ]
+  pretty (Variable var Nothing expr) i =
+    concat [spacePrint i, commaSepList var i, " = ", commaSepList expr i, ";\n"]     
+
+instance Pretty TypeName where
+  pretty (TypeName ident t) i =
+    concat [spacePrint i, pretty ident i, " ", pretty t i, ";\n"]
+
+instance Pretty Identifier where
+  pretty (IdOrType s) i = s
+  pretty (IdArray s xs) i = concat [s, wrapSquareList (map (`pretty` 0) xs) i]
+  pretty (IdField xs) i = intercalate "." $ map (`pretty` i) xs
+
+instance Pretty Type where
+  pretty (Alias s) _ = s
+  pretty (Array t expr) _ = concat ["[", pretty expr 0, "]", pretty t 0]
+  pretty (Slice t) _ = concat ["[]", pretty t 0]
+  pretty (Struct list) i =
+    concat ["struct {\n", concatMap (`structList` (i + 1)) list, "}"]
+
+instance Pretty Parameter where
+  pretty (Parameter idList t) i =
+    concat [commaSepList idList i, " ", pretty t 0]
+
+
+
+
+
+
+
+
+instance Pretty Stmt where
+  pretty (StmtDec dec) i = pretty dec i
   pretty (SimpleStmt simp) i = concat [spacePrint i, pretty simp i, ";\n"]
   pretty (Print expr) i =
     concat [spacePrint i, "print(", commaSepList expr i, ");\n"]
@@ -318,10 +257,10 @@ instance Pretty Stmt where
       ]
   pretty (Block xs) i = concat [spacePrint i, "{\n", prettyList xs (i+1), spacePrint i, "};\n"]
   pretty Break i = concat [spacePrint i, "break;\n"]
-  pretty Continue i = concat [spacePrint i, "continue;\n"]
+  pretty Continue i = concat [spacePrint i, "continue;\n"]   
 
 instance Pretty SimpleStmt where
-  pretty (ExprStmt expr) i = (pretty expr i)
+  pretty (StmtFuncCall func) i = (pretty func i)
   pretty (Incr ident) i = concat [pretty ident i, "++"]
   pretty (Decr ident) i = concat [pretty ident i, "--"]
   pretty (Assign idList exprList) i =
@@ -345,13 +284,99 @@ instance Pretty SimpleStmt where
   pretty (ShortVarDec idList exprList) i =
     concat [commaSepList idList i, " := ", commaSepList exprList i]
 
-wrapSquare :: String -> String
-wrapSquare s = "[" ++ s ++ "]"
+instance Pretty FunctionCall where
+  pretty (FunctionCall ident exprList) i =
+    concat [pretty ident i, "(", commaSepList exprList i, ")"]
 
-wrapSquareList
-  :: Pretty a
-  => [a] -> Integer -> String
-wrapSquareList xs i = concatMap wrapSquare (map (`pretty` i) xs)
+instance Pretty IfStmt where
+  pretty (IfStmt Nothing expr stList Nothing) i =
+    concat
+      [ "if "
+      , pretty expr 0
+      , " {\n"
+      , prettyList stList (i + 1)
+      , spacePrint i
+      , "}\n"
+      ]
+  pretty (IfStmt Nothing expr stList (Just (Right elseStmt))) i =
+    concat
+      [ "if "
+      , pretty expr 0
+      , " {\n"
+      , prettyList stList (i + 1)
+      , spacePrint i
+      , "} else {\n"
+      , prettyList elseStmt (i + 1)
+      , spacePrint i
+      , "}\n"
+      ]
+  pretty (IfStmt Nothing expr stList (Just (Left ifStmt))) i =
+    concat
+      [ "if "
+      , pretty expr 0
+      , " {\n"
+      , prettyList stList (i + 1)
+      , spacePrint i
+      , "} else "
+      , pretty ifStmt i
+      ]
+  pretty (IfStmt (Just st) expr stList Nothing) i =
+    concat
+      [ "if "
+      , pretty st 0
+      , "; "
+      , pretty expr 0
+      , " {\n"
+      , prettyList stList (i + 1)
+      , spacePrint i
+      , "}\n"
+      ]
+  pretty (IfStmt (Just st) expr stList (Just (Right elseStmt))) i =
+    concat
+      [ "if "
+      , pretty st 0
+      , "; "
+      , pretty expr 0
+      , " {\n"
+      , prettyList stList (i + 1)
+      , spacePrint i
+      , "} else {\n"
+      , prettyList elseStmt (i + 1)
+      , spacePrint i
+      , "}\n"
+      ]
+  pretty (IfStmt (Just st) expr stList (Just (Left ifStmt))) i =
+    concat
+      [ "if "
+      , pretty st 0
+      , "; "
+      , pretty expr 0
+      , " {\n"
+      , prettyList stList (i + 1)
+      , spacePrint i
+      , "} else "
+      , pretty ifStmt i
+      ]
+
+instance Pretty Clause where
+  pretty (Case exList stList) i =
+    concat
+      [ spacePrint i
+      , "case "
+      , commaSepList exList i
+      , ":\n"
+      , prettyList stList (i + 1)
+      ]
+  pretty (Default stList) i =
+    concat [spacePrint i, "default:\n", prettyList stList (i + 1)]
+
+
+
+
+
+
+
+
 
 instance Pretty Expression where
   pretty (Brack expr) i = concat ["(", pretty expr i, ")"]
@@ -387,10 +412,16 @@ instance Pretty Expression where
     concat [pretty expr1 i, " >> ", pretty expr2 i]
   pretty (Binary BitClear expr1 expr2) i =
     concat [pretty expr1 i, " &^ ", pretty expr2 i]
-  pretty (FuncCall ident exprList) i =
-    concat [pretty ident i, "(", commaSepList exprList i, ")"]
+  pretty (ExprFuncCall func) i = pretty func i
   pretty (Append ident expr) i =
     concat ["append(", pretty ident i, ", ", pretty expr i, ")"]
+
+instance Pretty Literal where
+  pretty (Int' i) _ = show i
+  pretty (Float64 f) _ = show f
+  pretty (Rune i) _ = (show . chr . fromIntegral) i
+  pretty (String s) _ = s
+  pretty (Raw s) _ = s
 
 instance Pretty (Maybe Expression) where
   pretty Nothing i = ""
@@ -402,10 +433,3 @@ instance Pretty Integer where
 instance Pretty Int where
   pretty int _ = (show int)
 
-instance Pretty Identifier where
-  pretty (IdOrType s) i = s
-  pretty (IdArray s xs) i = concat [s, wrapSquareList (map (`pretty` 0) xs) i]
-  pretty (IdField xs) i = intercalate "." $ map (`pretty` i) xs
-
-dotSepList :: [String] -> String
-dotSepList string = intercalate "." string
