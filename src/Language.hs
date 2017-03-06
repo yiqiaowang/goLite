@@ -60,8 +60,12 @@ data Variable
       = Variable [Identifier] (Maybe Type) [Expression]
       deriving (Eq, Show)
 
+
+
 data TypeName 
-      = TypeName Type Type
+-- Where the First Type is the variable name and the second
+-- Type is the Associated Type
+      = TypeName Type Type 
       deriving (Eq, Show)
 
 
