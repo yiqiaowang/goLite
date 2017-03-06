@@ -53,7 +53,7 @@ instance Weedable All where
   weed (Function _ _ Nothing stmts) =
     weedListCtxt [CFunction] stmts
   weed (Function _ _ (Just _) stmts) =
-    weedListCtxt [CFunction] stmts `mappend` (isTerminating $ last stmts)
+    weedListCtxt [CFunction] stmts -- `mappend` (isTerminating $ last stmts)
 
 
 -- A function to assert whether a given statement, which should be terminating,

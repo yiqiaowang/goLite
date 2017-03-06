@@ -24,7 +24,8 @@ parse fp text =
     Left errorMsg -> Left $ ParserError errorMsg
     Right program ->
       case Weeder.weed program of
-        Nothing -> case TypeChecker.typeCheck SymbolTable.initSymbolTable program of
-                     Left (_, symtbl) -> Right program
-                     Right err -> Left $ TypeCheckerError err
+        Nothing -> Right program
+          -- case TypeChecker.typeCheck SymbolTable.initSymbolTable program of
+          --            Left (_, symtbl) -> Right program
+          --            Right err -> Left $ TypeCheckerError err
         Just weederErrors -> Left $ WeederError weederErrors
