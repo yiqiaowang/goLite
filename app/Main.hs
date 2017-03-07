@@ -5,7 +5,6 @@ import qualified Parser
 import qualified Pretty
 import System.Console.ArgParser
 import System.FilePath
-import System.IO (hPutStrLn, stderr)
 
 data GoLiteOptions = GoLiteOptions
   { filename :: String
