@@ -48,21 +48,23 @@ instance Weedable Program where
 
 --
 instance Weedable All where
-  weed (Stmt stmt) = weed stmt
+  weed (TopDec stmt) = weed stmt
   weed (Function (IdOrType "main") _ _ stmts) = weedListCtxt [CFunction] stmts
   weed (Function _ _ Nothing stmts) =
     weedListCtxt [CFunction] stmts
   weed (Function _ _ (Just _) stmts) =
     weedListCtxt [CFunction] stmts -- `mappend` (isTerminating $ last stmts)
 
+instance Weedable TopLevel where
+  weedCtxt _ (VarDec var) = weed var
 
 -- A function to assert whether a given statement, which should be terminating,
 -- is terminating or not. If it is, Nothing is returned, otherwise, a MissingReturn
 -- Error is returned.
 isTerminating ::  Stmt -> Maybe [WeederError]
 isTerminating (Return _) = Nothing
-isTerminating (If (IfStmt _ _ xs (Just (Left a)))) = isTerminatingList xs `mappend` isTerminating (If a)
-isTerminating (If (IfStmt _ _ xs (Just (Right a)))) = isTerminatingList xs `mappend` isTerminatingList a
+isTerminating (If (IfStmt _ _ xs (IfStmtCont (Just (Left a))))) = isTerminatingList xs `mappend` isTerminating (If a)
+isTerminating (If (IfStmt _ _ xs (IfStmtCont (Just (Right a))))) = isTerminatingList xs `mappend` isTerminatingList a
 isTerminating (For (Just _) Nothing (Just _) xs) =
   if hasBreak xs
      then Just [MissingReturn]
@@ -135,7 +137,7 @@ instance Weedable Stmt where
     weedCtxt ctxt (Infinite stmts) `mappend` weedPost post
     where
       weedPost s@(ShortVarDec _ _) = Just [InvalidPostStatement s]
-      weedPost e@(ExprStmt _) = Just [InvalidPostStatement e]
+      weedPost e@(StmtFuncCall _) = Just [InvalidPostStatement e]
       weedPost _ = Nothing
   weedCtxt ctxt (SimpleStmt stmt) = weedCtxt ctxt stmt `mappend` weed stmt
   weedCtxt ctxt Break =
@@ -150,7 +152,6 @@ instance Weedable Stmt where
     if CFunction `elem` ctxt
       then Nothing
       else Just [InvalidReturn]
-  weedCtxt _ (VarDec var) = weed var
   weedCtxt _ _ = Nothing
 
 --
@@ -183,10 +184,10 @@ instance Weedable Variable where
 
 --
 instance Weedable IfStmt where
-  weedCtxt ctxt (IfStmt _ _ stmts Nothing) = weedListCtxt ctxt stmts
-  weedCtxt ctxt (IfStmt _ _ stmts (Just (Left i))) =
+  weedCtxt ctxt (IfStmt _ _ stmts (IfStmtCont Nothing)) = weedListCtxt ctxt stmts
+  weedCtxt ctxt (IfStmt _ _ stmts (IfStmtCont (Just (Left i)))) =
     weedListCtxt ctxt stmts `mappend` weedCtxt ctxt i
-  weedCtxt ctxt (IfStmt _ _ stmts (Just (Right stmts'))) =
+  weedCtxt ctxt (IfStmt _ _ stmts (IfStmtCont (Just (Right stmts')))) =
     weedListCtxt ctxt stmts `mappend` weedListCtxt ctxt stmts'
 
 --
@@ -222,8 +223,8 @@ weedBlankIdentifier (Binary _ e1 e2) = weedBlankIdentifier e1 `mappend` weedBlan
 weedBlankIdentifier (Unary _ e1) = weedBlankIdentifier e1
 weedBlankIdentifier (Append (IdOrType "_") _) = Just [InvalidIdentifier]
 weedBlankIdentifier (Append _ e1) = weedBlankIdentifier e1
-weedBlankIdentifier (FuncCall (IdOrType "_") _) = Just [InvalidIdentifier]
-weedBlankIdentifier (FuncCall _ e1) = weedBlankIdentifiers e1
+weedBlankIdentifier (ExprFuncCall (FunctionCall (IdOrType "_") _)) = Just [InvalidIdentifier]
+weedBlankIdentifier (ExprFuncCall (FunctionCall _ e1)) = weedBlankIdentifiers e1
 weedBlankIdentifier _ = Nothing
 
 
