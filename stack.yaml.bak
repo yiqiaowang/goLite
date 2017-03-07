@@ -1,8 +1,0 @@
-flags: {}
-extra-package-dbs: []
-packages:
-- '.'
-extra-deps:
-- argparser-0.3.4
-resolver: ghc-7.10.3
-system-ghc: true
