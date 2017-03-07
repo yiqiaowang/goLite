@@ -159,10 +159,7 @@ instance Pretty Stmt where
   pretty (Return (Just expr)) i =
     concat [spacePrint i, "return ", pretty expr 0, ";\n"]
   pretty (If ifstmt) i = concat [spacePrint i, pretty ifstmt i]
-  pretty (Switch Nothing Nothing c) i =
-    concat
-      [spacePrint i, "switch {\n", prettyList c (i + 1), spacePrint i, "}\n"]
-  pretty (Switch (Just stmt) Nothing c) i =
+  pretty (Switch stmt Nothing c) i =
     concat
       [ spacePrint i
       , "switch "
@@ -172,17 +169,7 @@ instance Pretty Stmt where
       , spacePrint i
       , "}\n"
       ]
-  pretty (Switch Nothing (Just expr) c) i =
-    concat
-      [ spacePrint i
-      , "switch "
-      , pretty expr 0
-      , " {\n"
-      , prettyList c (i + 1)
-      , spacePrint i
-      , "}\n"
-      ]
-  pretty (Switch (Just stmt) (Just expr) c) i =
+  pretty (Switch stmt (Just expr) c) i =
     concat
       [ spacePrint i
       , "switch"
@@ -207,41 +194,7 @@ instance Pretty Stmt where
       , spacePrint i
       , "}\n"
       ]
-  pretty (For Nothing expr Nothing stmts) i =
-    concat
-      [ spacePrint i
-      , "for ; "
-      , pretty expr 0
-      , "; {\n"
-      , prettyList stmts (i + 1)
-      , spacePrint i
-      , "}\n"
-      ]
-  pretty (For (Just simp1) expr Nothing stmts) i =
-    concat
-      [ spacePrint i
-      , "for "
-      , pretty simp1 0
-      , "; "
-      , pretty expr 0
-      , "; {\n"
-      , prettyList stmts (i + 1)
-      , spacePrint i
-      , "}\n"
-      ]
-  pretty (For Nothing expr (Just simp2) stmts) i =
-    concat
-      [ spacePrint i
-      , "for ; "
-      , pretty expr 0
-      , "; "
-      , pretty simp2 i
-      , " {\n"
-      , prettyList stmts (i + 1)
-      , spacePrint i
-      , "}\n"
-      ]
-  pretty (For (Just simp1) expr (Just simp2) stmts) i =
+  pretty (For simp1 expr simp2 stmts) i =
     concat
       [ spacePrint i
       , "for "
@@ -283,44 +236,14 @@ instance Pretty SimpleStmt where
     concat [pretty ident i, " &^= ", pretty expr i]
   pretty (ShortVarDec idList exprList) i =
     concat [commaSepList idList i, " := ", commaSepList exprList i]
+  pretty (EmptyStmt) i = ""
 
 instance Pretty FunctionCall where
   pretty (FunctionCall ident exprList) i =
     concat [pretty ident i, "(", commaSepList exprList i, ")"]
 
 instance Pretty IfStmt where
-  pretty (IfStmt Nothing expr stList (IfStmtCont Nothing)) i =
-    concat
-      [ "if "
-      , pretty expr 0
-      , " {\n"
-      , prettyList stList (i + 1)
-      , spacePrint i
-      , "}\n"
-      ]
-  pretty (IfStmt Nothing expr stList (IfStmtCont (Just (Right elseStmt)))) i =
-    concat
-      [ "if "
-      , pretty expr 0
-      , " {\n"
-      , prettyList stList (i + 1)
-      , spacePrint i
-      , "} else {\n"
-      , prettyList elseStmt (i + 1)
-      , spacePrint i
-      , "}\n"
-      ]
-  pretty (IfStmt Nothing expr stList (IfStmtCont (Just (Left ifStmt)))) i =
-    concat
-      [ "if "
-      , pretty expr 0
-      , " {\n"
-      , prettyList stList (i + 1)
-      , spacePrint i
-      , "} else "
-      , pretty ifStmt i
-      ]
-  pretty (IfStmt (Just st) expr stList (IfStmtCont Nothing)) i =
+  pretty (IfStmt st expr stList (IfStmtCont Nothing)) i =
     concat
       [ "if "
       , pretty st 0
@@ -331,7 +254,7 @@ instance Pretty IfStmt where
       , spacePrint i
       , "}\n"
       ]
-  pretty (IfStmt (Just st) expr stList (IfStmtCont (Just (Right elseStmt)))) i =
+  pretty (IfStmt st expr stList (IfStmtCont (Just (Right elseStmt)))) i =
     concat
       [ "if "
       , pretty st 0
@@ -345,7 +268,7 @@ instance Pretty IfStmt where
       , spacePrint i
       , "}\n"
       ]
-  pretty (IfStmt (Just st) expr stList (IfStmtCont (Just (Left ifStmt)))) i =
+  pretty (IfStmt st expr stList (IfStmtCont (Just (Left ifStmt)))) i =
     concat
       [ "if "
       , pretty st 0

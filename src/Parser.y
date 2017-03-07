@@ -225,14 +225,8 @@ Stmt  : TopLevel                                                    { StmtDec $1
       | Switch ';'                                                  { $1 }
       | for '{' Stmts '}' ';'                                       { Infinite $3 }
       | for Expr '{' Stmts '}' ';'                                  { While $2 $4 }
-      | for ';' ';' '{' Stmts '}' ';'				        { For Nothing Nothing Nothing $5 }
-      | for SimpleStmt ';' ';' SimpleStmt '{' Stmts '}' ';'   	  { For (Just $2) Nothing (Just $5) $7 }
-      | for ';' ';' SimpleStmt '{' Stmts '}' ';'		        { For Nothing Nothing (Just $4) $6 }
-      | for SimpleStmt ';' ';' '{' Stmts '}' ';'		        { For (Just $2) Nothing Nothing $6 }
-      | for ';' Expr ';' '{' Stmts '}' ';'                          { For Nothing (Just $3) Nothing $6 }
-      | for ';' Expr ';' SimpleStmt '{' Stmts '}' ';'               { For Nothing (Just $3) (Just $5) $7 }
-      | for SimpleStmt ';' Expr ';' '{' Stmts '}' ';'               { For (Just $2) (Just $4) Nothing $7 }
-      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}' ';'    { For (Just $2) (Just $4) (Just $6) $8 }
+      | for SimpleStmt ';' ';' SimpleStmt '{' Stmts '}' ';'   	  { For $2 Nothing $5 $7 }
+      | for SimpleStmt ';' Expr ';' SimpleStmt '{' Stmts '}' ';'    { For $2 (Just $4) $6 $8 }
       | '{' Stmts '}' ';'	   	    	       	   	     	  { Block $2 }
       | break ';'                                                   { Break }
       | continue ';'                                                { Continue }
@@ -254,6 +248,7 @@ SimpleStmt
       | Id '>>=' Expr              { ShortBinary BitRShiftEq $1 $3 }
       | Id '&^=' Expr              { ShortBinary BitClearEq $1 $3 }
       | VarList ':=' ExprList      { ShortVarDec $1 $3 }
+      | {- Empty -}                { EmptyStmt }
 
 FunctionCall
       : Id '(' ExprListEmpty ')'   { FunctionCall  $1 $3 }
@@ -263,18 +258,18 @@ VarList :: { [Identifier] }
       | Id                          { [ $1 ] }
 
 If    :: { IfStmt }
-      : if SimpleStmt ';' Expr '{' Stmts '}' ';'                         { IfStmt (Just $2) $4 $6 (IfStmtCont Nothing) }
-      | if SimpleStmt ';' Expr '{' Stmts '}' else '{' Stmts '}' ';'      { IfStmt (Just $2) $4 $6 (IfStmtCont $ Just (Right $10)) }
-      | if SimpleStmt ';' Expr '{' Stmts '}' else If                     { IfStmt (Just $2) $4 $6 (IfStmtCont $ Just (Left $9)) }
-      | if Expr '{' Stmts '}' ';'                                        { IfStmt Nothing $2 $4 (IfStmtCont Nothing)}
-      | if Expr '{' Stmts '}' else '{' Stmts '}' ';'                     { IfStmt Nothing $2 $4 (IfStmtCont $ Just (Right $8)) }
-      | if Expr '{' Stmts '}' else If                                    { IfStmt Nothing $2 $4 (IfStmtCont $ Just (Left $7)) }
+      : if SimpleStmt ';' Expr '{' Stmts '}' ';'                         { IfStmt $2 $4 $6 (IfStmtCont Nothing) }
+      | if SimpleStmt ';' Expr '{' Stmts '}' else '{' Stmts '}' ';'      { IfStmt $2 $4 $6 (IfStmtCont $ Just (Right $10)) }
+      | if SimpleStmt ';' Expr '{' Stmts '}' else If                     { IfStmt $2 $4 $6 (IfStmtCont $ Just (Left $9)) }
+      | if Expr '{' Stmts '}' ';'                                        { IfStmt (EmptyStmt) $2 $4 (IfStmtCont Nothing) }
+      | if Expr '{' Stmts '}' else '{' Stmts '}' ';'                     { IfStmt (EmptyStmt) $2 $4 (IfStmtCont $ Just (Right $8)) }
+      | if Expr '{' Stmts '}' else If                                    { IfStmt (EmptyStmt) $2 $4 (IfStmtCont $ Just (Left $7)) }
 
 Switch
-      : switch '{' ClauseList '}'                     { Switch Nothing Nothing $3 }
-      | switch SimpleStmt ';' '{' ClauseList '}'      { Switch (Just $2) Nothing $5 }
-      | switch Expr '{' ClauseList '}'                { Switch Nothing (Just $2) $4 }
-      | switch SimpleStmt ';' Expr '{' ClauseList '}' { Switch (Just $2) (Just $4) $6 }
+      : switch SimpleStmt ';' '{' ClauseList '}'      { Switch $2 Nothing $5 }
+      | switch SimpleStmt ';' Expr '{' ClauseList '}' { Switch $2 (Just $4) $6 }
+      | switch '{' ClauseList '}'                     { Switch (EmptyStmt) Nothing $3 }
+      | switch Expr '{' ClauseList '}'                { Switch (EmptyStmt) (Just $2) $4 }
 
 ClauseList
       :: { [Clause] }
