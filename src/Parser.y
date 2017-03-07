@@ -263,12 +263,12 @@ VarList :: { [Identifier] }
       | Id                          { [ $1 ] }
 
 If    :: { IfStmt }
-      : if SimpleStmt ';' Expr '{' Stmts '}' ';'                         { IfStmt (Just $2) $4 $6 Nothing }
-      | if SimpleStmt ';' Expr '{' Stmts '}' else '{' Stmts '}' ';'      { IfStmt (Just $2) $4 $6 (Just (Right $10)) }
-      | if SimpleStmt ';' Expr '{' Stmts '}' else If                     { IfStmt (Just $2) $4 $6 (Just (Left $9)) }
-      | if Expr '{' Stmts '}' ';'                                        { IfStmt Nothing $2 $4 Nothing }
-      | if Expr '{' Stmts '}' else '{' Stmts '}' ';'                     { IfStmt Nothing $2 $4 (Just (Right $8)) }
-      | if Expr '{' Stmts '}' else If                                    { IfStmt Nothing $2 $4 (Just (Left $7)) }
+      : if SimpleStmt ';' Expr '{' Stmts '}' ';'                         { IfStmt (Just $2) $4 $6 (IfStmtCont Nothing) }
+      | if SimpleStmt ';' Expr '{' Stmts '}' else '{' Stmts '}' ';'      { IfStmt (Just $2) $4 $6 (IfStmtCont $ Just (Right $10)) }
+      | if SimpleStmt ';' Expr '{' Stmts '}' else If                     { IfStmt (Just $2) $4 $6 (IfStmtCont $ Just (Left $9)) }
+      | if Expr '{' Stmts '}' ';'                                        { IfStmt Nothing $2 $4 (IfStmtCont Nothing)}
+      | if Expr '{' Stmts '}' else '{' Stmts '}' ';'                     { IfStmt Nothing $2 $4 (IfStmtCont $ Just (Right $8)) }
+      | if Expr '{' Stmts '}' else If                                    { IfStmt Nothing $2 $4 (IfStmtCont $ Just (Left $7)) }
 
 Switch
       : switch '{' ClauseList '}'                     { Switch Nothing Nothing $3 }
