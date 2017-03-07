@@ -50,7 +50,10 @@ initMap = fromList[(IdOrType "true", Entry CategoryVariable $ Just Bool)
                   ,(IdOrType "float64", Entry CategoryType $ Just (Alias "float64"))
                   ,(IdOrType "rune", Entry CategoryType $ Just (Alias "rune"))
                   ,(IdOrType "bool", Entry CategoryType $ Just (Alias "bool"))
-                  ,(IdOrType "string", Entry CategoryType $ Just (Alias "string"))]
+                  ,(IdOrType "string", Entry CategoryType $ Just (Alias "string"))
+                  ,(IdOrType "print", Entry CategoryVariable $ Just (Func))
+                  ,(IdOrType "println", Entry CategoryVariable $ Just (Func))
+                  ,(IdOrType "append", Entry CategoryVariable $ Just (Func))]
 
   
 -- Check if an idname is in the symbol table
@@ -122,11 +125,11 @@ topFrame (SymbolTable s) =
 addEntry :: SymbolTable
          -> Identifier
          -> Entry 
-         -> Either SymbolTable SymbolTableError
+         -> Either SymbolTableError SymbolTable 
 addEntry s i e =
   if hasKey i (getMap $ fst $ popFrame s)
-    then Right (DuplicateIdentifier i)
-    else Left s'
+    then Left (DuplicateIdentifier i)
+    else Right s'
   where
     s' = pushFrame p (Frame $ addSym i e (getMap f))
     f = fst $ popFrame s
@@ -135,14 +138,14 @@ addEntry s i e =
 -- Lookup an entry in the symbol table
 lookupIdentifier :: SymbolTable
                  -> Identifier
-                 -> Either Entry SymbolTableError
+                 -> Either SymbolTableError Entry 
 lookupIdentifier s i =
   if isEmpty $ getStack s
-    then Right $ NotFoundIdentifier i
+    then Left $ NotFoundIdentifier i
     else if hasKey i (getMap t)
            then case (getSym i (getMap t)) of
-                 (Nothing) -> Right InconsistentTable
-                 (Just e) -> Left e
+                 (Nothing) -> Left InconsistentTable
+                 (Just e) -> Right e
            else lookupIdentifier s' i
   where
     t = fst $ popFrame s
