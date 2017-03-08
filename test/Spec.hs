@@ -23,13 +23,12 @@ loadPrograms directory = do
       mapM (\file -> readFile file >>= \text -> return (file, text)) minFiles
 
 
-
 -- `main` is here so that this module can be run from GHCi on its own.  It is
 -- not needed for automatic spec discovery.
 main :: IO ()
 main = do
-  validSyntax <- loadPrograms "programs/valid/syntax" `mappend` loadPrograms "programs/valid"
-  invalidParser <- loadPrograms "programs/invalid/parser"
+  validSyntax <- loadPrograms "programs/valid/syntax" `mappend` loadPrograms "programs/valid" `mappend` loadPrograms "programs/valid/classvalid"
+  invalidParser <- loadPrograms "programs/invalid/parser" `mappend` loadPrograms "programs/invalid/classinvalid"
   invalidWeeder <- loadPrograms "programs/invalid/weeder"
 
   scannerSummary <- hspecResult Spec.Scanner.spec

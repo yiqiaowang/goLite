@@ -115,8 +115,8 @@ Alls  : All Alls                    { $1 : $2 }
       | {- Empty -}                 { [] }
 
 All   : TopLevel                                                     { TopDec $1 }
-      | func id_raw '(' ParamListEmpty ')' '{' Stmts '}' ';'         { Function (IdOrType $2) $4 Nothing $7 }
-      | func id_raw '(' ParamListEmpty ')' Type '{' Stmts '}' ';'    { Function (IdOrType $2) $4 (Just $6) $8 }
+      | func id_raw '(' ParamListEmpty ')' '{' Stmts '}' ';'         { Function $2 $4 Nothing $7 }
+      | func id_raw '(' ParamListEmpty ')' Type '{' Stmts '}' ';'    { Function $2 $4 (Just $6) $8 }
 
 TopLevel
       : var VarDec                                                   { VarDec $2 }
@@ -234,8 +234,8 @@ SimpleStmt
       | {- Empty -}                { EmptyStmt }
 
 FunctionCall
-      : Id '(' ExprListEmpty ')'   { FunctionCall  $1 $3 }
-      | '(' Id ')' '(' ExprListEmpty ')'   { FunctionCall  $2 $5 }
+      : id_raw '(' ExprListEmpty ')'   { FunctionCall  $1 $3 }
+      | '(' id_raw ')' '(' ExprListEmpty ')'   { FunctionCall  $2 $5 }
 
 VarList :: { [Identifier] }
       : Id ',' VarList              { $1 : $3 }

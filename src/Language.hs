@@ -8,11 +8,12 @@ data Program =
 
 -- Packages, Identifiers, and Types are all strings
 type Package = String
+type FunctionName = String
 
 -- All Statements
 data All
   = TopDec TopLevel
-  | Function Identifier
+  | Function FunctionName
              [Parameter]
              (Maybe Type)
              [Stmt]
@@ -105,7 +106,7 @@ data SimpleStmt
 
 -- For function calls (can be statements or expressions)
 data FunctionCall =
-  FunctionCall Identifier
+  FunctionCall FunctionName
                [Expression]
   deriving (Eq, Ord, Show)
 
