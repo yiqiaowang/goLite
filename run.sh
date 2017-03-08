@@ -1,5 +1,5 @@
 #/bin/bash
 
-args=("$@")
+args="$@"
 
 stack exec golite-exe -- $args
