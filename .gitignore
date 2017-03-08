@@ -25,3 +25,4 @@ tags
 .info
 *.pretty.go
 *.log
+test-cases/
