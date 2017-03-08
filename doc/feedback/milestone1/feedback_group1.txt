@@ -1,0 +1,46 @@
+Total
+
+	A*5 + B*5 + C*4 + (D0*2.5 + D1*2.5) + (E0*8 + E1*8) + F*5 + G*10
+
+Q1
+--
+
+A. Valid (6/6)
+
+	- Good
+
+B. Invalid (29/30)
+
+	- 'svd2.go' fails ("a, a := 1, 2;" is valid)	
+
+Q2
+--
+
+C. Code review (2/4)
+
+	- Change exit code from 0 to 1 for invalid test cases (maybe not a nice
+	  way: modify src/Scanner.x:301, "alexError" -> "error") (-2)
+	- Parser and scanner look good
+	- Weeder tries to weed some blank identifier cases, but fails  (need to fix)
+	- Need to improve error messages (what "Prelude.read: no parse"?)
+
+D. Scanner 
+
+	- D0. Valid (6/7)
+	- D1. Invalid (21/21)
+
+E. Parser
+
+	- E0. Valid (21/26)
+	- E1. Invalid (167/214)
+
+F. Pretty printer (4/5)
+
+	- "((5 + 5))" -> "(5 + 5)"
+	- "2 + 3 * 5" -> "(2 + (3 * 5))"
+	- Not pretty printing for 'struct's (e.g. 7-4-structs.go) (-1)
+
+Q3
+--
+
+G. See paper (9/10)

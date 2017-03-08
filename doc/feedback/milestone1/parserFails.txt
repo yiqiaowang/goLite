@@ -1,0 +1,98 @@
+Fails from invalid:
+
+WEEDER:
+grading/invalid/parser/8-12-break_continue_statements/continue1.go: [fail] FIXED
+grading/invalid/parser/8-12-break_continue_statements/continue2.go: [fail] FIXED
+grading/invalid/parser/8-12-break_continue_statements/continue3.go: [fail] FIXED
+grading/invalid/parser/8-12-break_continue_statements/break2.go: [fail] FIXED
+grading/invalid/parser/8-12-break_continue_statements/break1.go: [fail] FIXED
+
+grading/invalid/parser/8-5-short_declaration_statements/shortdecstmt5.go: [fail] FIXED
+grading/invalid/parser/8-5-short_declaration_statements/shortdecstmt6.go: [fail] FIXED
+grading/invalid/parser/8-5-short_declaration_statements/shortdecstmt3.go: [fail] FIXED
+grading/invalid/parser/8-5-short_declaration_statements/shortdecstmt2.go: [fail] FIXED
+
+[FIXED ALL]
+grading/invalid/parser/9-2-identifiers/identifiersblank3.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank2.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank24.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank1.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank19.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank5.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank21.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank20.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank4.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank18.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank6.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank22.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank23.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank7.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank12.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank13.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank11.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank10.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank8.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank14.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank15.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank9.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank17.go: [fail]
+grading/invalid/parser/9-2-identifiers/identifiersblank16.go: [fail]
+
+[FIXED ALL]
+grading/invalid/parser/8-3-assignment_statements/assignstmt2.go: [fail]
+grading/invalid/parser/8-3-assignment_statements/assignstmt1.go: [fail]
+
+[FIXED]
+grading/invalid/parser/8-10-switch_statements/switchstmt1.go: [fail]
+
+[FIXED ALL]
+grading/invalid/parser/4-variable_declaration/vardec18.go: [fail]
+grading/invalid/parser/4-variable_declaration/vardec20.go: [fail]
+grading/invalid/parser/4-variable_declaration/vardec21.go: [fail]
+grading/invalid/parser/4-variable_declaration/vardec19.go: [fail]
+
+
+PARSER:
+[FIXED ALL]
+grading/invalid/parser/3-top-level_declaration/tld1.go: [fail]
+grading/invalid/parser/3-top-level_declaration/tld2.go: [fail]
+grading/invalid/parser/3-top-level_declaration/tld3.go: [fail]
+grading/invalid/parser/3-top-level_declaration/tld7.go: [fail]
+grading/invalid/parser/3-top-level_declaration/tld6.go: [fail]
+grading/invalid/parser/3-top-level_declaration/tld5.go: [fail]
+grading/invalid/parser/3-top-level_declaration/tld9.go: [fail]
+grading/invalid/parser/3-top-level_declaration/tld8.go: [fail]
+
+[FIXED ALL]
+grading/invalid/parser/8-2-expression_statements/exprstmt1.go: [fail]
+grading/invalid/parser/8-2-expression_statements/exprstmt2.go: [fail]
+
+[FIXED ALL]
+grading/invalid/parser/8-11-for_statements/forstmt3_10.go: [fail]
+grading/invalid/parser/8-11-for_statements/forstmt3_9.go: [fail]
+grading/invalid/parser/8-11-for_statements/forstmt3_8.go: [fail]
+
+fails from valid:
+ERRORS:
+Empty Statements
+Parentheses around functions
+Prelude.read no parse
+
+
+[FIXED ALL]
+grading/valid/parser/9-6-funccallexprs.go: golite-exe: 17:12: parser error at token 'TokenLParen'
+CallStack (from HasCallStack):
+  error, called at src/Scanner.x:300:3 in golite-0.1.0.0-EDgfQpWYRlF3ynyaBDOM4g:Scanner
+[fail]
+grading/valid/parser/8-1-emptystmts.go: golite-exe: 4:9: parser error at token 'TokenSemicolon'
+CallStack (from HasCallStack):
+  error, called at src/Scanner.x:300:3 in golite-0.1.0.0-EDgfQpWYRlF3ynyaBDOM4g:Scanner
+[fail]
+grading/valid/parser/4-vardecs.go: golite-exe: Prelude.read: no parse
+[fail]
+grading/valid/parser/8-4-decstmts.go: golite-exe: Prelude.read: no parse
+[fail]
+grading/valid/parser/8-9-ifstmts.go: golite-exe: 12:12: parser error at token 'TokenSemicolon'
+CallStack (from HasCallStack):
+  error, called at src/Scanner.x:300:3 in golite-0.1.0.0-EDgfQpWYRlF3ynyaBDOM4g:Scanner
+[fail]
