@@ -319,14 +319,14 @@ typeCheckClauses symtbl (Case exprs stmts:xs) t =
     Left err -> Left err
 
 instance TypeCheckable IfStmt where
-  typeCheck symtbl (IfStmt Nothing expr stmts fac) =
+  typeCheck symtbl (IfStmt EmptyStmt expr stmts fac) =
     case typeCheckElemOf symtbl expr [(Alias "bool")] of
       Right (Nothing, symtbl') ->
         case typeCheckListNewFrame symtbl' stmts of
           Right (_, symtbl'') -> typeCheck symtbl'' fac
           Left err -> Left err
       Left err -> Left err
-  typeCheck symtbl (IfStmt (Just stmt) expr stmts fac) =
+  typeCheck symtbl (IfStmt stmt expr stmts fac) =
     case typeCheck (newFrame symtbl) stmt of
       Right (_, symtbl') ->
         case typeCheckElemOf symtbl' expr [(Alias "bool")] of
