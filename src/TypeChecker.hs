@@ -101,7 +101,7 @@ instance TypeCheckable All where
   typeCheck symtbl (Function iden params ret stmts)
     -- Add the function to the current frame, check for failure
    =
-    case addEntry symtbl iden (Entry CategoryVariable $ Just Func) of
+    case addEntry symtbl (IdOrType iden) (Entry CategoryVariable $ Just Func) of
       Right symtbl'
         -- Create a new frame, and type check the body of the function
         -- with the newly created frame
@@ -134,6 +134,7 @@ typeCheckReturns symtbl (Return (Just expr):xs) t =
         else Just (TypeMismatchError t t')
     Left (err, _) -> Just err
 -- Type check returns for IFs
+
 typeCheckReturns symtbl (If (IfStmt _ _ stmts (IfStmtCont Nothing)):xs) ret =
   case typeCheckList (newFrame symtbl) stmts of
     Right (_, symtbl') ->
@@ -141,6 +142,8 @@ typeCheckReturns symtbl (If (IfStmt _ _ stmts (IfStmtCont Nothing)):xs) ret =
         Nothing -> typeCheckReturns (snd $ popFrame symtbl') xs ret
         Just err -> Just err
     Left (err, _) -> Just err
+
+
 typeCheckReturns symtbl (If (IfStmt _ _ stmts (IfStmtCont (Just (Left ifstmt)))):xs) ret =
   case typeCheckList (newFrame symtbl) stmts of
     Right (_, symtbl') ->
@@ -319,13 +322,11 @@ typeCheckClauses symtbl (Case exprs stmts:xs) t =
     Left err -> Left err
 
 instance TypeCheckable IfStmt where
-  typeCheck symtbl (IfStmt EmptyStmt expr stmts fac) =
-    case typeCheckElemOf symtbl expr [(Alias "bool")] of
-      Right (Nothing, symtbl') ->
-        case typeCheckListNewFrame symtbl' stmts of
-          Right (_, symtbl'') -> typeCheck symtbl'' fac
-          Left err -> Left err
-      Left err -> Left err
+  typeCheck symtbl (IfStmt EmptyStmt expr stmts fac) = do
+   (_,symtbl')  <- typeCheckElemOf symtbl expr [(Alias "bool")]
+   (_,symtbl'') <- typeCheckListNewFrame symtbl' stmts
+   typeCheck symtbl'' fac
+
   typeCheck symtbl (IfStmt stmt expr stmts fac) =
     case typeCheck (newFrame symtbl) stmt of
       Right (_, symtbl') ->
