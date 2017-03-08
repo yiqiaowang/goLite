@@ -15,8 +15,9 @@ data TypeCheckError
   = SymbolTableError { symbolTableError :: SymbolTableError}
   | TypeMismatchError { expectedType :: ExpectedType
                      ,  actualType :: ActualType}
-  | TypeNotPresentError { typeReceived :: Maybe Type
-                       ,  typeOptions :: [Type]}
+  | TypeNotElementOfError { typeReceived :: Maybe Type
+                         ,  typeOptions :: [Type]}
+  | TypeCheckRawError { attemptedRawString :: String}
   deriving (Eq, Show)
 
 -- This typeclass takes something from Lanugage and a SymbolTable and returns either a
@@ -28,17 +29,27 @@ data TypeCheckError
 -- An expression would return Right (Just Type, SymbTbl) on success and Left TypeCheckError on failure.
 -- Since we build up the symbolTable while traversing the AST, we must return the update symbol table.
 class TypeCheckable a where
-  typeCheck :: SymbolTable
-            -> a
-            -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+  typeCheck
+    :: SymbolTable
+    -> a
+    -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
   typeCheck symtbl a = Right (Nothing, symtbl)
-  typeCheckList :: SymbolTable
-                -> [a]
-                -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+  typeCheckList
+    :: SymbolTable
+    -> [a]
+    -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
   typeCheckList symtbl [] = Right (Nothing, symtbl)
   typeCheckList symtbl (x:xs) =
     case typeCheck symtbl x of
       Right (_, symtbl') -> typeCheckList symtbl' xs
+      Left err -> Left err
+  typeCheckListNewFrame
+    :: SymbolTable
+    -> [a]
+    -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+  typeCheckListNewFrame symtbl xs =
+    case typeCheckList (newFrame symtbl) xs of
+      Right (_, symtbl') -> Right (Nothing, snd $ popFrame symtbl')
       Left err -> Left err
   typeCheckElemOf
     :: SymbolTable
@@ -47,11 +58,12 @@ class TypeCheckable a where
     -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
   typeCheckElemOf symtbl a types =
     case typeCheck symtbl a of
-      Right (Nothing, symtbl') -> Left (TypeNotPresentError Nothing types, symtbl')
+      Right (Nothing, symtbl') ->
+        Left (TypeNotElementOfError Nothing types, symtbl')
       Right (Just t, symtbl') ->
         if t `elem` types
-          then Right (Nothing ,symtbl')
-          else Left (TypeNotPresentError (Just t) types, symtbl')
+          then Right (Nothing, symtbl')
+          else Left (TypeNotElementOfError (Just t) types, symtbl')
       Left err -> Left err
   typeCheckListElemOf
     :: SymbolTable
@@ -62,8 +74,15 @@ class TypeCheckable a where
   typeCheckListElemOf symtbl (a:as) types =
     case typeCheckElemOf symtbl a types of
       Right (_, symtbl) -> typeCheckListElemOf symtbl as types
-      Left err -> Left err
-
+      Left err -> Left err -- typeCheckListElemOf
+  --   :: SymbolTable
+  --   -> [a]
+  --   -> [Type]
+  --   -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+  -- typeCheckListElemOf symtbl xs types =
+  --   case typeCheckListElemOf (newFrame symtbl) xs types of
+  --     Right (_, symtbl') -> Right (Nothing, symtbl')
+  --     Left err -> Left err
 
 instance TypeCheckable Program where
   typeCheck symtbl (Program prog alls) =
@@ -114,7 +133,6 @@ typeCheckReturns symtbl (Return (Just expr):xs) t =
         then typeCheckReturns symtbl' xs t
         else Just (TypeMismatchError t t')
     Left (err, _) -> Just err
-
 -- Type check returns for IFs
 typeCheckReturns symtbl (If (IfStmt _ _ stmts (IfStmtCont Nothing)):xs) ret =
   case typeCheckList (newFrame symtbl) stmts of
@@ -122,18 +140,15 @@ typeCheckReturns symtbl (If (IfStmt _ _ stmts (IfStmtCont Nothing)):xs) ret =
       case typeCheckReturns symtbl' stmts ret of
         Nothing -> typeCheckReturns (snd $ popFrame symtbl') xs ret
         Just err -> Just err
-    Left (err, _)-> Just err
- 
+    Left (err, _) -> Just err
 typeCheckReturns symtbl (If (IfStmt _ _ stmts (IfStmtCont (Just (Left ifstmt)))):xs) ret =
   case typeCheckList (newFrame symtbl) stmts of
     Right (_, symtbl') ->
       case typeCheckReturns symtbl' stmts ret of
         Nothing ->
-          typeCheckReturns (snd $ popFrame symtbl') ((If ifstmt):xs) ret
+          typeCheckReturns (snd $ popFrame symtbl') ((If ifstmt) : xs) ret
         Just err -> Just err
-    Left (err, _)-> Just err
-
-  
+    Left (err, _) -> Just err
 typeCheckReturns symtbl (If (IfStmt _ _ stmts (IfStmtCont (Just (Right stmts')))):xs) ret =
   case typeCheckList (newFrame symtbl) stmts of
     Right (_, symtbl') ->
@@ -141,10 +156,9 @@ typeCheckReturns symtbl (If (IfStmt _ _ stmts (IfStmtCont (Just (Right stmts')))
         Nothing ->
           case typeCheckList (newFrame $ snd $ popFrame symtbl') stmts' of
             Right (_, symtbl'') -> Nothing
-            Left (err, _)-> Just err
+            Left (err, _) -> Just err
         Just err -> Just err
-    Left (err, _)-> Just err
-
+    Left (err, _) -> Just err
 -- Type Check returns for Infinite
 typeCheckReturns symtbl ((Infinite stmts):xs) ret =
   case typeCheckReturns (newFrame symtbl) stmts ret of
@@ -198,7 +212,7 @@ instance TypeCheckable Parameter where
       Left err -> Left (SymbolTableError err, symtbl)
 
 symbolTableFuncParam
-  :: Either SymbolTableError SymbolTable 
+  :: Either SymbolTableError SymbolTable
   -> [Identifier]
   -> Type
   -> Either SymbolTableError SymbolTable
@@ -209,8 +223,6 @@ symbolTableFuncParam (Right symtbl) (i:is) t =
     is
     t
 symbolTableFuncParam (Left err) _ _ = (Left err)
-
-
 
 --
 instance TypeCheckable TopLevel where
@@ -246,36 +258,95 @@ instance TypeCheckable Stmt where
   -- Returns are typechecked seperatly in the function typeCheckReturns
   -- which also type checks that the return returns the expected type
   typeCheck symtbl (Return _) = Right (Nothing, symtbl)
-
-
   typeCheck symtbl (Block stmts) =
     case typeCheckList (newFrame symtbl) stmts of
       Right (_, symtbl') -> Right (Nothing, snd $ popFrame symtbl')
       Left err -> Left err
-
   -- Breaks and continues are trivially well typed
   typeCheck symtbl (Break) = Right (Nothing, symtbl)
   typeCheck symtbl (Continue) = Right (Nothing, symtbl)
+  typeCheck symtbl (If ifstmt) = typeCheck symtbl ifstmt
+  -- there is no god, also, looks kind of like node.js
+  typeCheck symtbl (For maybe_ss maybe_expr maybe_ss' stmts) =
+    case typeCheck (newFrame symtbl) maybe_ss of
+      Right (_, symtbl') ->
+        case typeCheckElemOf symtbl' maybe_expr [(Alias "bool")] of
+          Right (_, symtbl'') ->
+            case typeCheck symtbl'' maybe_ss' of
+              Right (_, symtbl''') ->
+                case typeCheckListNewFrame symtbl''' stmts of
+                  Right (_, symtbl'''') -> Right (Nothing, symtbl)
+                  Left err -> Left err
+              Left err -> Left err
+          Left err -> Left err
+      Left err -> Left err
+  typeCheck symtbl (Infinite stmts) = typeCheckListNewFrame symtbl stmts
+  typeCheck symtbl (While expr stmts) =
+    case typeCheckElemOf symtbl expr [(Alias "bool")] of
+      Right (_, symtbl') -> typeCheckListNewFrame symtbl' stmts
+      Left err -> Left err
+  typeCheck symtbl (Switch maybe_ss maybe_expr clauses) =
+    case typeCheck (newFrame symtbl) maybe_ss of
+      Right (_, symtbl') ->
+        case typeCheck symtbl' maybe_expr of
+          Right (Nothing, symtbl'') ->
+            case typeCheckClauses symtbl'' clauses (Alias "bool") of
+              Right (_, symtbl''') -> Right (Nothing, symtbl)
+              Left err -> Left err
+          Right (Just t, symtbl'') ->
+            case typeCheckClauses symtbl'' clauses t of
+              Right (_, symtbl''') -> Right (Nothing, symtbl)
+              Left err -> Left err
+          Left err -> Left err
+      Left err -> Left err
 
+typeCheckClauses
+  :: SymbolTable
+  -> [Clause]
+  -> Type
+  -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+typeCheckClauses symtbl [] _ = Right (Nothing, symtbl)
+typeCheckClauses symtbl (Default stmts:xs) t =
+  case typeCheckListNewFrame symtbl stmts of
+    Right (_, symtbl') -> typeCheckClauses symtbl' xs t
+    Left err -> Left err
+typeCheckClauses symtbl (Case exprs stmts:xs) t =
+  case typeCheckListElemOf symtbl exprs [t] of
+    Right (_, symtbl') ->
+      case typeCheckListNewFrame symtbl' stmts of
+        Right (_, symtbl'') -> typeCheckClauses symtbl'' xs t
+        Left err -> Left err
+    Left err -> Left err
 
-  -- typeCheck symtbl (If ifstmt) = typeCheck symtbl ifstmt
-  -- typeCheck symtbl (For maybe_ss maybe_expr maybe_ss' stmts) =
-  typeCheck symtbl (Infinite stmts) = typeCheckList symtbl stmts
-  -- typeCheck symtbl (While expr stmts) =
-  -- typeCheck symtbl (Switch maybe_ss maybe_expr clauses) =
+instance TypeCheckable IfStmt where
+  typeCheck symtbl (IfStmt Nothing expr stmts fac) =
+    case typeCheckElemOf symtbl expr [(Alias "bool")] of
+      Right (Nothing, symtbl') ->
+        case typeCheckListNewFrame symtbl' stmts of
+          Right (_, symtbl'') -> typeCheck symtbl'' fac
+          Left err -> Left err
+      Left err -> Left err
+  typeCheck symtbl (IfStmt (Just stmt) expr stmts fac) =
+    case typeCheck (newFrame symtbl) stmt of
+      Right (_, symtbl') ->
+        case typeCheckElemOf symtbl' expr [(Alias "bool")] of
+          Right (_, symtbl'') ->
+            case typeCheckListNewFrame symtbl'' stmts of
+              Right (_, symtbl''') ->
+                case typeCheck symtbl''' fac of
+                  Right (_, symtbl'''') -> Right (Nothing, symtbl)
+                  Left err -> Left err
+              Left err -> Left err
+          Left err -> Left err
+      Left err -> Left err
 
--- instance TypeCheckable IfStmt where
---   typeCheck symtbl (IfStmt Nothing expr stmts fac) =
---     case typeCheckElemOf symtbl expr [(Alias "bool")] of
---       Right (Nothing, symtbl') -> case typeCheckList symtbl' stmts of
---                                    Right (_, symtbl'') -> typeCheck symtbl'' fac
---                                    Left err -> Left err
---       Left err -> Left err
-
--- IfStmtCont (Maybe (Either IfStmt [Stmt]))
--- instance TypeCheckable IfStmtCont where
---   typeCheck symtbl ()
-
+instance TypeCheckable IfStmtCont where
+  typeCheck symtbl (IfStmtCont Nothing) = Right (Nothing, symtbl)
+  typeCheck symtbl (IfStmtCont (Just (Right stmts))) =
+    case typeCheckListNewFrame symtbl stmts of
+      Right (_, symtbl') -> Right (Nothing, symtbl')
+      Left err -> Left err
+  typeCheck symtbl (IfStmtCont (Just (Left ifstmt))) = typeCheck symtbl ifstmt
 
 instance TypeCheckable TypeName where
   typeCheck symtbl (TypeName (Alias typename) typeval) =
@@ -299,13 +370,27 @@ instance TypeCheckable Variable where
 --
 instance TypeCheckable SimpleStmt where
   typeCheck symtbl (StmtFuncCall funcCall) = typeCheck symtbl funcCall
-  -- typeCheck symtbl (Incr iden) =
-  -- typeCheck symtbl (Decr iden) =
+  typeCheck symtbl (Incr iden) =
+    case typeCheck symtbl iden of
+      Right (Just t, symtbl) ->
+        if canIncrDecr t
+          then Right (Nothing, symtbl)
+          else Left
+                 ( TypeNotElementOfError
+                     (Just t)
+                     [(Alias "int"), (Alias "float64")]
+                 , symtbl)
+  typeCheck symtbl (Decr iden) = typeCheck symtbl (Incr iden)
+
   -- typeCheck symtbl (Assign idens exprs) =
   -- typeCheck symtbl (ShortBinary op iden expr) =
   -- typeCheck symtbl (ShortVarDec idens exprs) =
 
-
+-- there must be a better way...
+canIncrDecr :: Type -> Bool
+canIncrDecr (Alias "int") = True
+canIncrDecr (Alias "float64") = True
+canIncrDecr _ = False
 
 instance TypeCheckable FunctionCall
 
@@ -319,4 +404,14 @@ instance TypeCheckable Expression where
   -- typeCheck symtbl (Unary op expr) =
   -- typeCheck symtbl (Binary op expr expr') =
 
-instance TypeCheckable Literal
+instance TypeCheckable a =>
+         TypeCheckable (Maybe a) where
+  typeCheck symtbl Nothing = Right (Nothing, symtbl)
+  typeCheck symtbl (Just x) = typeCheck symtbl x
+
+instance TypeCheckable Literal where
+  typeCheck symtbl (Int' _) = Right (Just (Alias "int"), symtbl)
+  typeCheck symtbl (Float64 _) = Right (Just (Alias "float64"), symtbl)
+  typeCheck symtbl (Rune _) = Right (Just (Alias "rune"), symtbl)
+  typeCheck symtbl (String _) = Right (Just (Alias "string"), symtbl)
+  typeCheck symtbl (Raw s) = Left (TypeCheckRawError s, symtbl)
