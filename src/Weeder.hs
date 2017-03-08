@@ -49,7 +49,7 @@ instance Weedable Program where
 --
 instance Weedable All where
   weed (TopDec stmt) = weed stmt
-  weed (Function (IdOrType "main") _ _ stmts) = weedListCtxt [CFunction] stmts
+  weed (Function "main" _ _ stmts) = weedListCtxt [CFunction] stmts
   weed (Function _ _ Nothing stmts) = weedListCtxt [CFunction] stmts
   weed (Function _ _ (Just _) stmts) =
     weedListCtxt [CFunction] stmts -- `mappend` (isTerminating $ last stmts)
@@ -253,7 +253,7 @@ weedBlankIdentifier (Binary _ e1 e2) =
 weedBlankIdentifier (Unary _ e1) = weedBlankIdentifier e1
 weedBlankIdentifier (Append (IdOrType "_") _) = Just [InvalidIdentifier]
 weedBlankIdentifier (Append _ e1) = weedBlankIdentifier e1
-weedBlankIdentifier (ExprFuncCall (FunctionCall (IdOrType "_") _)) =
+weedBlankIdentifier (ExprFuncCall (FunctionCall  "_" _)) =
   Just [InvalidIdentifier]
 weedBlankIdentifier (ExprFuncCall (FunctionCall _ e1)) = weedBlankIdentifiers e1
 weedBlankIdentifier _ = Nothing
