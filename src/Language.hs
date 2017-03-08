@@ -73,15 +73,15 @@ data Stmt
   | Println [Expression]
   | Return (Maybe Expression)
   | If IfStmt
-  | Switch (Maybe SimpleStmt)
+  | Switch SimpleStmt
            (Maybe Expression)
            [Clause]
   | Infinite [Stmt]
   | While Expression
           [Stmt]
-  | For (Maybe SimpleStmt)
+  | For SimpleStmt
         (Maybe Expression)
-        (Maybe SimpleStmt)
+        SimpleStmt
         [Stmt]
   | Block [Stmt]
   | Break
@@ -100,6 +100,7 @@ data SimpleStmt
                 Expression
   | ShortVarDec [Identifier]
                 [Expression]
+  | EmptyStmt
   deriving (Eq, Show)
 
 -- For function calls (can be statements or expressions)
@@ -124,7 +125,7 @@ data BinaryOpEq
 
 -- Recursive If Statement
 data IfStmt =
-  IfStmt (Maybe SimpleStmt)
+  IfStmt SimpleStmt
          Expression
          [Stmt]
          IfStmtCont

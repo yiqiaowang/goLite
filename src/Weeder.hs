@@ -65,7 +65,7 @@ isTerminating ::  Stmt -> Maybe [WeederError]
 isTerminating (Return _) = Nothing
 isTerminating (If (IfStmt _ _ xs (IfStmtCont (Just (Left a))))) = isTerminatingList xs `mappend` isTerminating (If a)
 isTerminating (If (IfStmt _ _ xs (IfStmtCont (Just (Right a))))) = isTerminatingList xs `mappend` isTerminatingList a
-isTerminating (For (Just _) Nothing (Just _) xs) =
+isTerminating (For _ Nothing _ xs) =
   if hasBreak xs
      then Just [MissingReturn]
      else Nothing
@@ -133,7 +133,7 @@ instance Weedable Stmt where
       isDefault (Default _) = True
   weedCtxt ctxt (Infinite stmts) = weedListCtxt (CLoop : ctxt) stmts
   weedCtxt ctxt (While _ stmts) = weedCtxt ctxt (Infinite stmts)
-  weedCtxt ctxt (For _ _ (Just post) stmts) =
+  weedCtxt ctxt (For _ _ post stmts) =
     weedCtxt ctxt (Infinite stmts) `mappend` weedPost post
     where
       weedPost s@(ShortVarDec _ _) = Just [InvalidPostStatement s]
