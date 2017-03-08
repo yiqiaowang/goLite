@@ -13,6 +13,7 @@ import Prelude hiding ( lex )
 import Control.Monad ( liftM )
 import Data.Char (ord)
 import Numeric (readOct, readHex)
+import Data.Char (ord)
 import TokenClass
 }
 
@@ -157,7 +158,7 @@ tokens :-
   \"($string_val|
 	\\$string_escape)*\"       { lex TokenString }
 -- Runes
-  \'($rune_val|\\$rune_escape)\'  { lex (TokenRune . read) }
+  \'($rune_val|\\$rune_escape)\'  { lex (TokenRune . ord . handleRune) }
 
 -- Raw strings
   \`$raw_val*\`			  { lex TokenRaw}
@@ -170,6 +171,10 @@ tokens :-
 
 
 {
+-- Handle runes
+handleRune :: [Char] -> Char
+handleRune (x:y:z) = 'y'
+
 -- Append 0 to the end of a string
 appendZero :: String -> String
 appendZero s = s ++ "0"

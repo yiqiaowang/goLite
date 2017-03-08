@@ -85,7 +85,7 @@ data TokenClass
   | TokenInt IntType
              Int
   | TokenString String
-  | TokenRune Integer
+  | TokenRune Int
   | TokenRaw String
   | TokenEOF
   deriving (Eq, Show)

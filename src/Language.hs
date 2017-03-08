@@ -161,7 +161,7 @@ data Expression
 data Literal
   = Int' Int
   | Float64 Float
-  | Rune Integer
+  | Rune Int
   | String String
   | Raw String
   deriving (Eq, Ord, Show)

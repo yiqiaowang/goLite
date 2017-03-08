@@ -101,7 +101,7 @@ import Scanner
 %left '+' '-' '|' '^' ADD
 %left '*' '/' '%' '<<' '>>' '&' '&^' MULT
 %left UNARY
-
+%right SHIFT
 
 %%
 
@@ -123,11 +123,6 @@ TopLevel
       | var '(' VarDecList ')' ';'                                   { VarDecList $3 }
       | type TypeDec                                                 { TypeDec $2 }
       | type '(' TypeDecList ')' ';'                                 { TypeDecList $3 }
-
-
-
-
-
 
 VarDec
       :: { Variable }
@@ -160,12 +155,6 @@ ParamList
       | Param                             { [$1] }
 
 Param : InstantiationList Type            { Parameter $1 $2 }
-
-
-
-
-
-
 
 Id    :: {Identifier}
       : id_raw				  { IdOrType $1 }	
@@ -205,12 +194,6 @@ Num   :: { Int }
       : int                         { $1 }
       | oct                         { $1 }
       | hex                         { $1 }
-
-
-
-
-
-
 
 Stmts : Stmt Stmts                                                  { $1 : $2 }
       | {- Empty -}                                                 { [] }
@@ -252,6 +235,7 @@ SimpleStmt
 
 FunctionCall
       : Id '(' ExprListEmpty ')'   { FunctionCall  $1 $3 }
+      | '(' Id ')' '(' ExprListEmpty ')'   { FunctionCall  $2 $5 }
 
 VarList :: { [Identifier] }
       : Id ',' VarList              { $1 : $3 }
@@ -280,13 +264,6 @@ Clause
       :: { Clause }
       : case ExprList ':' Stmts       { Case $2 $4 }
       | default ':' Stmts             { Default $3 }
-
-
-
-
-
-
-
 
 ExprList
       :: { [Expression] }
