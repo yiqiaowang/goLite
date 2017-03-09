@@ -6,7 +6,7 @@ import Test.Hspec
 
 import qualified Language.Language as Language
 import qualified Parser
-import qualified Pretty
+import qualified Pretty.Language as Pretty
 
 
 spec :: [(String, String)] -> Spec

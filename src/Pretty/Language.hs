@@ -1,20 +1,17 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Pretty
+module Pretty.Language
   ( pretty
   ) where
 
-import Data.Char (chr)
+
+import Pretty.Pretty
+import Pretty.Common
 import Data.List (intercalate)
 import Language.Language
 import Language.Operators
 import Language.Common
 
-
-class Pretty a where
-  pretty :: a -> Integer -> String
-  prettyList :: [a] -> Integer -> String
-  prettyList ps i = concatMap (`pretty` i) ps
 
 commaSepList :: Pretty a => [a] -> Integer -> String
 commaSepList string i = intercalate ", " (map (`pretty` i) string)
@@ -122,7 +119,7 @@ instance Pretty Variable where
       , ";\n"
       ]
   pretty (Variable var Nothing expr) i =
-    concat [spacePrint i, commaSepList var i, " = ", commaSepList expr i, ";\n"]     
+    concat [spacePrint i, commaSepList var i, " = ", commaSepList expr i, ";\n"]
 
 instance Pretty TypeName where
   pretty (TypeName ident t) i =
@@ -213,7 +210,7 @@ instance Pretty Stmt where
       ]
   pretty (Block xs) i = concat [spacePrint i, "{\n", prettyList xs (i+1), spacePrint i, "};\n"]
   pretty Break i = concat [spacePrint i, "break;\n"]
-  pretty Continue i = concat [spacePrint i, "continue;\n"]   
+  pretty Continue i = concat [spacePrint i, "continue;\n"]
 
 instance Pretty SimpleStmt where
   pretty (StmtFuncCall func) i = (pretty func i)
@@ -342,13 +339,6 @@ instance Pretty Expression where
   pretty (Append ident expr) i =
     concat ["append(", pretty ident i, ", ", pretty expr i, ")"]
 
-instance Pretty Literal where
-  pretty (Int' i) _ = show i
-  pretty (Float64 f) _ = show f
-  pretty (Rune i) _ = (show . chr . fromIntegral) i
-  pretty (String s) _ = s
-  pretty (Raw s) _ = s
-
 instance Pretty (Maybe Expression) where
   pretty Nothing i = ""
   pretty (Just e) i = pretty e i
@@ -358,4 +348,3 @@ instance Pretty Integer where
 
 instance Pretty Int where
   pretty int _ = (show int)
-

@@ -9,11 +9,13 @@ library
   exposed-modules:     GoLite
                      , Scanner
                      , Parser
-                     , Pretty
                      , TokenClass
                      , Weeder
                      , TypeChecker
                      , SymbolTable
+                     , Pretty.Pretty
+                     , Pretty.Common
+                     , Pretty.Language
                      , Language.Common
                      , Language.Language
                      , Language.Operators

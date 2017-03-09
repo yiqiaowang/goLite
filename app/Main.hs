@@ -3,7 +3,7 @@ module Main where
 import Control.Monad (when)
 import qualified GoLite
 import qualified Parser
-import qualified Pretty
+import qualified Pretty.Language as Pretty
 import System.Console.ArgParser
 import System.FilePath
 import qualified Text.Show.Pretty as Pr
