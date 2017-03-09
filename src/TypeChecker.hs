@@ -380,9 +380,14 @@ instance TypeCheckable Variable where
       (Just _) ->
         case typeCheck symtbl e of
           Right (t, symtbl') ->
-            case assertTypeEqual maybe_type t of
-              True -> typeCheck symtbl' (Variable is maybe_type es)
-              False -> Left (TypeMismatchError maybe_type t, symtbl')
+            case typeCheck symtbl' maybe_type of
+              Right (t', symtbl'') ->
+                case assertTypeEqual t t' of
+                True -> case addEntry symtbl' i (Entry CategoryVariable t') of
+                    Right symtbl'' -> typeCheck symtbl'' (Variable is maybe_type es)
+                    Left err -> Left (SymbolTableError err, symtbl')
+                False -> Left (TypeMismatchError t' t, symtbl')
+              Left err -> Left err
           Left err -> Left err
       Nothing ->
         case typeCheck symtbl e of
@@ -396,8 +401,18 @@ instance TypeCheckable Variable where
 instance TypeCheckable Type where
   typeCheck symtbl (Alias s) =
     case lookupIdentifier symtbl (IdOrType s) of
-      Right e -> Right (dataType e, symtbl)
+      Right e -> if dataType e `elem` [ Just (Alias "int")
+                                      , Just (Alias "float64")
+                                      , Just (Alias "bool")
+                                      , Just (Alias "string")
+                                      , Just (Alias "rune")
+                                      ]
+                    then Right (dataType e, symtbl)
+                    else typeCheck symtbl $ dataType e
       Left err -> Left (SymbolTableError err, symtbl)
+
+
+  
   typeCheck symtbl (Array t i) =
     case typeCheck symtbl t of
       Right (Just t', symtbl') -> Right (Just (Array t' i), symtbl')
