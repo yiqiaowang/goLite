@@ -5,8 +5,9 @@ module Parser
   ( parse
   ) where
 
-import Language
-import Operators
+import Language.Language
+import Language.Operators
+import Language.Common
 import Scanner
 
 }

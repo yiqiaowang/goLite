@@ -4,7 +4,7 @@ module Spec.Pretty where
 import Control.Monad(forM_)
 import Test.Hspec
 
-import qualified Language
+import qualified Language.Language as Language
 import qualified Parser
 import qualified Pretty
 

@@ -4,7 +4,7 @@ module Weeder
   ) where
 
 import Data.List (group)
-import Language
+import Language.Language
 
 --
 data WeederError

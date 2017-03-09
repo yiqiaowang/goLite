@@ -5,7 +5,8 @@ module TypeChecker
   ) where
 
 import Data.Map.Strict (keys)
-import Language
+import Language.Language
+import Language.Common
 import SymbolTable
 
 type ExpectedType = Maybe Type

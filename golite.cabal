@@ -9,13 +9,15 @@ library
   exposed-modules:     GoLite
                      , Scanner
                      , Parser
-                     , Language
-                     , Operators
                      , Pretty
                      , TokenClass
                      , Weeder
                      , TypeChecker
                      , SymbolTable
+                     , Language.Common
+                     , Language.Language
+                     , Language.Operators
+                     , Language.TypedLanguage
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , array

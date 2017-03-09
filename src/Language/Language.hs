@@ -1,18 +1,14 @@
-module Language where
+module Language.Language where
 
 
-import Operators
+import Language.Operators
+import Language.Common
 
 
 -- The layout of the entire program
 data Program =
-  Program Package
-          [All]
+  Program Package [All]
   deriving (Eq, Show)
-
--- Packages, Identifiers, and Types are all strings
-type Package = String
-type FunctionName = String
 
 -- All Statements
 data All
@@ -40,34 +36,30 @@ data Variable =
 
 -- Type aliasing
 data TypeName =
-  TypeName Type
-           Type
+  TypeName Type Type
   deriving (Eq, Show)
 
 -- Where the First Type is the variable name and the second
 -- Type is the Associated Type
 data Identifier
   = IdOrType String
-  | IdArray String
-            [Expression]
+  | IdArray String [Expression]
   | IdField [Identifier]
   deriving (Eq, Ord, Show)
 
 data Type
   = Alias String
-  | Array Type
-          Int
+  | Array Type Int
   | Slice Type
   | Struct [([Identifier], Type)]
   -- TODO: should we add the input types -> output type into the func constructor
   | Func
   | Bool
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 -- Parameter data type (List of identifiers with an associated type)
 data Parameter =
-  Parameter [Identifier]
-            Type
+  Parameter [Identifier] Type
   deriving (Eq, Show)
 
 -- Statements that can be declared inside blocks
@@ -82,8 +74,7 @@ data Stmt
            (Maybe Expression)
            [Clause]
   | Infinite [Stmt]
-  | While Expression
-          [Stmt]
+  | While Expression [Stmt]
   | For SimpleStmt
         (Maybe Expression)
         SimpleStmt
@@ -98,20 +89,15 @@ data SimpleStmt
   = StmtFuncCall FunctionCall
   | Incr Identifier
   | Decr Identifier
-  | Assign [Identifier]
-           [Expression]
-  | ShortBinary BinaryOpEq
-                Identifier
-                Expression
-  | ShortVarDec [Identifier]
-                [Expression]
+  | Assign [Identifier] [Expression]
+  | ShortBinary BinaryOpEq Identifier Expression
+  | ShortVarDec [Identifier] [Expression]
   | EmptyStmt
   deriving (Eq, Show)
 
 -- For function calls (can be statements or expressions)
 data FunctionCall =
-  FunctionCall FunctionName
-               [Expression]
+  FunctionCall FunctionName [Expression]
   deriving (Eq, Ord, Show)
 
 -- Recursive If Statement
@@ -128,8 +114,7 @@ data IfStmtCont =
 
 -- Clauses in Switch statment
 data Clause
-  = Case [Expression]
-         [Stmt]
+  = Case [Expression] [Stmt]
   | Default [Stmt]
   deriving (Eq, Show)
 
@@ -139,20 +124,7 @@ data Expression
   | Id Identifier
   | Literal Literal
   | ExprFuncCall FunctionCall
-  | Append Identifier
-           Expression
-  | Unary UnaryOp
-          Expression
-  | Binary BinaryOp
-           Expression
-           Expression
-  deriving (Eq, Ord, Show)
-
--- Literal values
-data Literal
-  = Int' Int
-  | Float64 Float
-  | Rune Int
-  | String String
-  | Raw String
+  | Append Identifier Expression
+  | Unary UnaryOp Expression
+  | Binary BinaryOp Expression Expression
   deriving (Eq, Ord, Show)

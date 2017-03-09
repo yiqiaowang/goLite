@@ -18,7 +18,7 @@ module SymbolTable
 import Data.Map.Strict
        (Map, adjust, insert, lookup, member, toList, fromList)
 import qualified Data.Map.Strict as Map
-import Language
+import Language.Language
 
 data SymbolTableError
   = DuplicateIdentifier { duplicateIdentifier :: Identifier }

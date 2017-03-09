@@ -4,7 +4,7 @@ module GoLite
   , typeCheck
   ) where
 
-import qualified Language
+import qualified Language.Language as Language
 import qualified Parser
 import qualified Scanner
 import qualified Weeder

@@ -1,4 +1,4 @@
-module Operators where
+module Language.Operators where
 
 
 data UnaryOp
