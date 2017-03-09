@@ -6,6 +6,7 @@ module Parser
   ) where
 
 import Language
+import Operators
 import Scanner
 
 }

@@ -10,6 +10,7 @@ library
                      , Scanner
                      , Parser
                      , Language
+                     , Operators
                      , Pretty
                      , TokenClass
                      , Weeder

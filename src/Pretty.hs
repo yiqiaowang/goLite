@@ -7,6 +7,7 @@ module Pretty
 import Data.Char (chr)
 import Data.List (intercalate)
 import Language
+import Operators
 
 class Pretty a where
   pretty :: a -> Integer -> String

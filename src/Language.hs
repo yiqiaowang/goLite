@@ -1,5 +1,9 @@
 module Language where
 
+
+import Operators
+
+
 -- The layout of the entire program
 data Program =
   Program Package
@@ -110,20 +114,6 @@ data FunctionCall =
                [Expression]
   deriving (Eq, Ord, Show)
 
-data BinaryOpEq
-  = PlusEq
-  | MinusEq
-  | MulEq
-  | DivEq
-  | ModEq
-  | BitAndEq
-  | BitOrEq
-  | BitXorEq
-  | BitLShiftEq
-  | BitRShiftEq
-  | BitClearEq
-  deriving (Eq, Show)
-
 -- Recursive If Statement
 data IfStmt =
   IfStmt SimpleStmt
@@ -165,33 +155,4 @@ data Literal
   | Rune Int
   | String String
   | Raw String
-  deriving (Eq, Ord, Show)
-
-data UnaryOp
-  = Pos
-  | Neg
-  | BoolNot
-  | BitComplement
-  deriving (Eq, Ord, Show)
-
-data BinaryOp
-  = Or
-  | And
-  | Equals
-  | NotEquals
-  | LThan
-  | LEThan
-  | GThan
-  | GEThan
-  | Add
-  | Sub
-  | Mult
-  | Div
-  | Mod
-  | BitAnd
-  | BitOr
-  | BitXor
-  | BitLShift
-  | BitRShift
-  | BitClear
   deriving (Eq, Ord, Show)
