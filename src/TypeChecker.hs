@@ -235,6 +235,7 @@ instance TypeCheckable TopLevel where
 
 --
 instance TypeCheckable Stmt where
+  typeCheck symtbl (StmtDec dec) = typeCheck symtbl dec
   typeCheck symtbl (SimpleStmt ss) = typeCheck symtbl ss
   -- Base types for all expressions must be one of the primative types
   typeCheck symtbl (Print exprs) =
@@ -287,8 +288,8 @@ instance TypeCheckable Stmt where
     case typeCheckElemOf symtbl expr [(Alias "bool")] of
       Right (_, symtbl') -> typeCheckListNewFrame symtbl' stmts
       Left err -> Left err
-  typeCheck symtbl (Switch maybe_ss maybe_expr clauses) =
-    case typeCheck (newFrame symtbl) maybe_ss of
+  typeCheck symtbl (Switch ss maybe_expr clauses) =
+    case typeCheck (newFrame symtbl) ss of
       Right (_, symtbl') ->
         case typeCheck symtbl' maybe_expr of
           Right (Nothing, symtbl'') ->
@@ -360,11 +361,58 @@ instance TypeCheckable Identifier where
       Left err -> Left (SymbolTableError err, symtbl)
 
 instance TypeCheckable Variable where
-  typeCheck symtbl (Variable [] maybe_type []) = Right (Nothing, symtbl)
+  typeCheck symtbl (Variable [] _ []) = Right (Nothing, symtbl)
+  typeCheck symtbl (Variable (i:is) maybe_type []) =
+    case maybe_type of
+      Nothing ->
+        case addEntry symtbl i (Entry CategoryVariable maybe_type) of
+          Right symtbl' -> typeCheck symtbl' (Variable is maybe_type [])
+          Left err -> Left (SymbolTableError err, symtbl)
+      Just t ->
+        case typeCheck symtbl t of
+          Right (t, symtbl') ->
+            case addEntry symtbl i (Entry CategoryVariable t) of
+              Right symtbl' -> typeCheck symtbl' (Variable is maybe_type [])
+              Left err -> Left (SymbolTableError err, symtbl)
+          Left err -> Left err
   typeCheck symtbl (Variable (i:is) maybe_type (e:es)) =
-    case addEntry symtbl i (Entry CategoryVariable maybe_type) of
-      Right symtbl' -> typeCheck symtbl' (Variable is maybe_type es)
+    case maybe_type of
+      (Just _) ->
+        case typeCheck symtbl e of
+          Right (t, symtbl') ->
+            case assertTypeEqual maybe_type t of
+              True -> typeCheck symtbl' (Variable is maybe_type es)
+              False -> Left (TypeMismatchError maybe_type t, symtbl')
+          Left err -> Left err
+      Nothing ->
+        case typeCheck symtbl e of
+          Right (t, symtbl') ->
+            case addEntry symtbl' i (Entry CategoryVariable t) of
+              Right symtbl'' -> typeCheck symtbl'' (Variable is maybe_type es)
+              Left err -> Left (SymbolTableError err, symtbl')
+          Left err -> Left err
+
+--
+instance TypeCheckable Type where
+  typeCheck symtbl (Alias s) =
+    case lookupIdentifier symtbl (IdOrType s) of
+      Right e -> Right (dataType e, symtbl)
       Left err -> Left (SymbolTableError err, symtbl)
+  typeCheck symtbl (Array t i) =
+    case typeCheck symtbl t of
+      Right (Just t', symtbl') -> Right (Just (Array t' i), symtbl')
+      Right (Nothing, symtbl') ->
+        Left (TypeMismatchError (Just t) Nothing, symtbl')
+      Left err -> Left err
+  typeCheck symtbl (Slice t) =
+    case typeCheck symtbl t of
+      Right (Just t', symtbl') -> Right (Just (Slice t'), symtbl')
+      Right (Nothing, symtbl') ->
+        Left (TypeMismatchError (Just t) Nothing, symtbl')
+      Left err -> Left err
+  -- typeCheck symtbl (Struct) =
+  -- typeCheck symtbl (Func a r) =
+  -- typeCheck symtbl (Bool a) =
 
 --
 instance TypeCheckable SimpleStmt where
@@ -383,14 +431,17 @@ instance TypeCheckable SimpleStmt where
   typeCheck symtbl (Assign idens exprs) =
     case typeCheckAssignList symtbl idens exprs of
       Nothing -> Right (Nothing, symtbl)
+      Just err -> Left (err, symtbl) 
   -- typeCheck symtbl (ShortBinary op iden expr) =
   typeCheck symtbl (ShortVarDec idens exprs) =
     case typeCheckList symtbl exprs of
-      Right (_, symtbl') -> case svdIdenHelper symtbl' idens of
-                              True -> case svdAssignHelper symtbl' idens exprs of
-                                        Nothing -> Right (Nothing, symtbl')
-                                        Just err -> Left (err, symtbl')
-                              False -> Left (NoNewIdentifierError, symtbl')
+      Right (_, symtbl') ->
+        case svdIdenHelper symtbl' idens of
+          True ->
+            case svdAssignHelper symtbl' idens exprs of
+              Nothing -> Right (Nothing, symtbl')
+              Just err -> Left (err, symtbl')
+          False -> Left (NoNewIdentifierError, symtbl')
       Left err -> Left err
 
 -- Function that checks that at least one identifier is not declared in the current scope
