@@ -48,7 +48,7 @@ processFile options = do
       when (typeCheck options) $
         case GoLite.typeCheck program of
           Right _ -> putStrLn "OK"
-          Left typeError -> putStrLn "FAIL"
+          Left (GoLite.TypeCheckerError (err, symtbl)) -> putStrLn ("FAIL\n" ++ Pr.ppShow err)
       -- Dump symboltable
       when (dumpSymbolTable options) $
         case GoLite.typeCheck program of
