@@ -2,4 +2,4 @@ package type_dclrs
 
 type t rune
 var x t
-var y t = "string"
+var y t = 's'

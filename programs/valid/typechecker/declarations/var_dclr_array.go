@@ -1,3 +1,3 @@
 package var_dclrs
 
-var x int[1]
+var x [1]int
