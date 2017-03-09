@@ -5,15 +5,14 @@ module Pretty.Language
   ) where
 
 
+import Data.List (intercalate)
 import Pretty.Util
 import Pretty.Operators
 import Pretty.Pretty
 import Pretty.Common
-import Data.List (intercalate)
 import Language.Language
 import Language.Operators
 import Language.Common
-
 
 
 structList :: ([Identifier], Type) -> Integer -> String

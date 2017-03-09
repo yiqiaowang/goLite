@@ -7,12 +7,12 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     GoLite
-                     , Scanner
-                     , Parser
-                     , TokenClass
-                     , Weeder
-                     , TypeChecker
-                     , SymbolTable
+                     , Parser.Scanner
+                     , Parser.Parser
+                     , Parser.TokenClass
+                     , Parser.Weeder
+                     , TypeChecker.TypeChecker
+                     , TypeChecker.SymbolTable
                      , Pretty.Pretty
                      , Pretty.Common
                      , Pretty.Language

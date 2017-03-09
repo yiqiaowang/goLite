@@ -10,7 +10,7 @@ import System.FilePath(takeExtension)
 import System.Directory(getDirectoryContents)
 
 
-import Parser
+import qualified Parser.Parser as Parser
 
 
 spec :: [(String, String)] -> [(String, String)] -> Spec

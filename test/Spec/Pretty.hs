@@ -5,7 +5,7 @@ import Control.Monad(forM_)
 import Test.Hspec
 
 import qualified Language.Language as Language
-import qualified Parser
+import qualified Parser.Parser as Parser
 import qualified Pretty.Language as Pretty
 
 

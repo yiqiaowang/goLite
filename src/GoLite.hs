@@ -5,11 +5,12 @@ module GoLite
   ) where
 
 import qualified Language.Language as Language
-import qualified Parser
-import qualified Scanner
-import qualified Weeder
-import qualified TypeChecker
-import qualified SymbolTable (initSymbolTable, SymbolTable)
+import qualified Parser.Parser as Parser
+import qualified Parser.Scanner as Scanner
+import qualified Parser.Weeder as Weeder
+import qualified TypeChecker.TypeChecker as TypeChecker
+import qualified TypeChecker.SymbolTable as SymbolTable
+  (initSymbolTable, SymbolTable)
 
 
 --

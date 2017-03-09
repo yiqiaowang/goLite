@@ -1,4 +1,4 @@
-module TokenClass
+module Parser.TokenClass
   ( TokenClass(..)
   , IntType(..)
   ) where

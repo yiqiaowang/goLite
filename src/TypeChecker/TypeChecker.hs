@@ -1,4 +1,4 @@
-module TypeChecker
+module TypeChecker.TypeChecker
   ( TypeCheckError(..)
   , typeCheck
   , typeCheckList
@@ -7,7 +7,7 @@ module TypeChecker
 import Data.Map.Strict (keys)
 import Language.Language
 import Language.Common
-import SymbolTable
+import TypeChecker.SymbolTable
 
 type ExpectedType = Maybe Type
 

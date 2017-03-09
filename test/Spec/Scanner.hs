@@ -4,7 +4,7 @@ module Spec.Scanner where
 import Data.Char(digitToInt)
 import Control.Monad(forM_)
 import Test.Hspec
-import Scanner
+import Parser.Scanner
 
 
 spec :: Spec

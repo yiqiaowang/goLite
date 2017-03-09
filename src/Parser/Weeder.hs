@@ -1,4 +1,4 @@
-module Weeder
+module Parser.Weeder
   ( WeederError(..)
   , weed
   ) where
@@ -124,7 +124,7 @@ hasDefault (_:xs) = hasDefault xs
 instance Weedable Stmt where
   weedCtxt ctxt (If i) = weedCtxt ctxt i
   weedCtxt ctxt (Switch _ maybe_expr clauses) =
-    weedListCtxt ctxt' clauses `mappend` 
+    weedListCtxt ctxt' clauses `mappend`
     let n = length $ filter isDefault clauses
     in if n > 1
          then Just [MultipleDefaultsInSwitch n]

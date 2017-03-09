@@ -1,5 +1,5 @@
 {
-module Scanner
+module Parser.Scanner
   ( Token(..)
   , TokenClass(..)
   , IntType(..)
@@ -14,7 +14,7 @@ import Control.Monad ( liftM )
 import Data.Char (ord)
 import Numeric (readOct, readHex)
 import Data.Char (ord)
-import TokenClass
+import Parser.TokenClass
 }
 
 %wrapper "monadUserState"

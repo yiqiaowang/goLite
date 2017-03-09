@@ -7,7 +7,6 @@ import System.FilePath(takeExtension)
 import System.Directory(getDirectoryContents)
 import System.Exit(exitSuccess, exitFailure)
 
-import qualified Parser
 import qualified Spec.Scanner
 import qualified Spec.Parser
 import qualified Spec.Pretty

@@ -1,14 +1,14 @@
 {
 {-# OPTIONS -w #-}
 
-module Parser
+module Parser.Parser
   ( parse
   ) where
 
 import Language.Language
 import Language.Operators
 import Language.Common
-import Scanner
+import Parser.Scanner
 
 }
 
@@ -147,32 +147,32 @@ TypeDecList :: { [TypeName] }
       : TypeDec TypeDecList               { $1 : $2 }
       | {- Empty -}                       { [] }
 
-ParamListEmpty 
+ParamListEmpty
       : Param ',' ParamList               { $1 : $3 }
       | Param                             { [$1] }
       | {- Empty -}                       { [] }
 
-ParamList 
+ParamList
       : Param ',' ParamList               { $1 : $3 }
       | Param                             { [$1] }
 
 Param : InstantiationList Type            { Parameter $1 $2 }
 
 Id    :: {Identifier}
-      : id_raw				  { IdOrType $1 }	
+      : id_raw				  { IdOrType $1 }
       | id_raw ArrayAccess            { IdArray $1 $2 }
-      | FieldList 	    	   	  { IdField $1 }  
+      | FieldList 	    	   	  { IdField $1 }
 
-ArrayAccess 
+ArrayAccess
       : '[' Expr ']' ArrayAccess      { $2:$4 }
-      | '[' Expr ']'                  { [$2] }                
+      | '[' Expr ']'                  { [$2] }
 
-FieldList 
+FieldList
       :: { [Identifier] }
       : IdField '.' FieldList         { $1 : $3 }
       | IdField '.' IdField           { $1 : [$3] }
 
-IdField    
+IdField
       :: { Identifier }
 	: id_raw			        { IdOrType $1 }
       | id_raw ArrayAccess 	        { IdArray $1 $2 }
@@ -261,7 +261,7 @@ ClauseList
       :: { [Clause] }
       : Clause ClauseList             { $1 : $2 }
       | {- Empty -}                   { [] }
-      
+
 Clause
       :: { Clause }
       : case ExprList ':' Stmts       { Case $2 $4 }
@@ -271,7 +271,7 @@ ExprList
       :: { [Expression] }
       : Expr ',' ExprList              { $1 : $3 }
       | Expr                           { [$1] }
-      
+
 
 ExprListEmpty
       :: { [Expression] }
@@ -292,7 +292,7 @@ UnaryExpr
       : UnaryOp UnaryExpr              { Unary $1 $2 }
       | PrimaryExpr                    { $1 }
 
-UnaryOp      
+UnaryOp
       : '+'  %prec UNARY               { Pos }
       | '-'  %prec UNARY               { Neg }
       | '!'  %prec UNARY               { BoolNot }
@@ -313,7 +313,7 @@ Lit   :: { Literal }
       | string                         { String $1 }
       | raw                            { Raw $1 }
 
-Append 
+Append
       : append '(' Id ',' Expr ')'     { Append $3 $5 }
 
 RelOp	: '=='		               { Equals }
@@ -328,7 +328,7 @@ AddOp	: '+'		                     { Add }
 	| '|'		                     { BitOr }
 	| '^'		                     { BitXor }
 
-MultOp	 
+MultOp
       : '*'		                     { Mult }
 	| '/'		                     { Div }
 	| '%'		                     { Mod }

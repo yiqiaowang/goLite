@@ -1,5 +1,5 @@
 -- A symbol table is a stack of stack frames
-module SymbolTable
+module TypeChecker.SymbolTable
   ( SymbolTable
   , SymbolTableError
   , Entry (..)
@@ -35,7 +35,7 @@ data Entry = Entry
 
 data TypeCategory
   = CategoryVariable
-  | CategoryType 
+  | CategoryType
   deriving (Eq, Show)
 
 
@@ -57,7 +57,7 @@ initMap = fromList[(IdOrType "true", Entry CategoryVariable $ Just Bool)
                   ,(IdOrType "println", Entry CategoryVariable $ Just (Func))
                   ,(IdOrType "append", Entry CategoryVariable $ Just (Func))]
 
-  
+
 -- Check if an idname is in the symbol table
 hasKey :: SymMap -> Identifier -> Bool
 hasKey map key = Map.member key map
@@ -127,8 +127,8 @@ topFrame (SymbolTable s) =
 -- Adds an entry to the top frame
 addEntry :: SymbolTable
          -> Identifier
-         -> Entry 
-         -> Either SymbolTableError SymbolTable 
+         -> Entry
+         -> Either SymbolTableError SymbolTable
 addEntry s i e =
   if hasKey (getMap $ fst $ popFrame s) i
     then Left (DuplicateIdentifier i)
@@ -141,11 +141,11 @@ addEntry s i e =
 -- Lookup an entry in the symbol table
 lookupIdentifier :: SymbolTable
                  -> Identifier
-                 -> Either SymbolTableError Entry 
+                 -> Either SymbolTableError Entry
 lookupIdentifier s i =
   if isEmpty $ getStack s
     then Left $ NotFoundIdentifier i
-    else if hasKey (getMap t) i 
+    else if hasKey (getMap t) i
            then case (getSym i (getMap t)) of
                  (Nothing) -> Left InconsistentTable
                  (Just e) -> Right e

@@ -2,7 +2,7 @@ module Main where
 
 import Control.Monad (when)
 import qualified GoLite
-import qualified Parser
+import qualified Parser.Parser as Parser
 import qualified Pretty.Language as Pretty
 import System.Console.ArgParser
 import System.FilePath
