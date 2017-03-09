@@ -172,7 +172,7 @@ instance Pretty Stmt where
   pretty (Switch stmt (Just expr) c) i =
     concat
       [ spacePrint i
-      , "switch"
+      , "switch "
       , pretty stmt 0
       , "; "
       , pretty expr 0
