@@ -11,6 +11,8 @@ module SymbolTable
   , topFrame
   , addEntry
   , lookupIdentifier
+  , hasKey
+  , getMap
   ) where
 
 import Data.Map.Strict
@@ -57,20 +59,21 @@ initMap = fromList[(IdOrType "true", Entry CategoryVariable $ Just Bool)
 
   
 -- Check if an idname is in the symbol table
-hasKey :: Identifier -> SymMap -> Bool
-hasKey key map = Map.member key map
+hasKey :: SymMap -> Identifier -> Bool
+hasKey map key = Map.member key map
 
 -- -- Add new entry to symbol table
 addSym :: Identifier -> Entry -> SymMap -> SymMap
 addSym id entry map = Map.insert id entry map
 
--- -- Get an entry from the symbol table
+-- -- Get an entry from SymMap
 getSym :: Identifier -> SymMap -> Maybe Entry
 getSym name map = Map.lookup name map
 
 newtype Frame =
   Frame SymMap
   deriving (Eq, Show)
+
 
 -- Stack to hold the frames
 newtype Stack =
@@ -127,7 +130,7 @@ addEntry :: SymbolTable
          -> Entry 
          -> Either SymbolTableError SymbolTable 
 addEntry s i e =
-  if hasKey i (getMap $ fst $ popFrame s)
+  if hasKey (getMap $ fst $ popFrame s) i
     then Left (DuplicateIdentifier i)
     else Right s'
   where
@@ -142,7 +145,7 @@ lookupIdentifier :: SymbolTable
 lookupIdentifier s i =
   if isEmpty $ getStack s
     then Left $ NotFoundIdentifier i
-    else if hasKey i (getMap t)
+    else if hasKey (getMap t) i 
            then case (getSym i (getMap t)) of
                  (Nothing) -> Left InconsistentTable
                  (Just e) -> Right e
