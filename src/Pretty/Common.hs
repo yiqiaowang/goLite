@@ -1,9 +1,15 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Pretty.Common where
 
 
 import Pretty.Pretty
 import Language.Common
 import Data.Char (chr)
+
+
+instance Pretty String where
+  pretty s _ = s
 
 --
 instance Pretty Literal where

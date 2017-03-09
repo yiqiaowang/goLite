@@ -6,6 +6,7 @@ module Pretty.Language
 
 
 import Pretty.Pretty
+import Pretty.Util
 import Pretty.Common
 import Data.List (intercalate)
 import Language.Language
@@ -13,36 +14,11 @@ import Language.Operators
 import Language.Common
 
 
-commaSepList :: Pretty a => [a] -> Integer -> String
-commaSepList string i = intercalate ", " (map (`pretty` i) string)
 
 structList :: ([Identifier], Type) -> Integer -> String
 structList (idList, t) i =
   concat [spacePrint i, commaSepList idList i, " ", pretty t i, ";\n"]
 
-spacePrint :: Integer -> String
-spacePrint x =
-  case x <= 0 of
-    True -> ""
-    False -> concat ["\t", spacePrint (x - 1)]
-
-wrapSquare :: String -> String
-wrapSquare s = "[" ++ s ++ "]"
-
-wrapSquareList :: Pretty a => [a] -> Integer -> String
-wrapSquareList xs i = concatMap wrapSquare (map (`pretty` i) xs)
-
-dotSepList :: [String] -> String
-dotSepList string = intercalate "." string
-
-
-
-
-
-
-
-instance Pretty String where
-  pretty s _ = s
 
 instance Pretty Program where
   pretty (Program package alls) _ =
