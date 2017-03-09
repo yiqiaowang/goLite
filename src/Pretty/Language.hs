@@ -5,8 +5,9 @@ module Pretty.Language
   ) where
 
 
-import Pretty.Pretty
 import Pretty.Util
+import Pretty.Operators
+import Pretty.Pretty
 import Pretty.Common
 import Data.List (intercalate)
 import Language.Language
@@ -194,22 +195,7 @@ instance Pretty SimpleStmt where
   pretty (Decr ident) i = concat [pretty ident i, "--"]
   pretty (Assign idList exprList) i =
     concat [commaSepList idList i, " = ", commaSepList exprList i]
-  pretty (ShortBinary PlusEq ident expr) i = concat [pretty ident i, " += ", pretty expr i]
-  pretty (ShortBinary MinusEq ident expr) i = concat [pretty ident i, " -= ", pretty expr i]
-  pretty (ShortBinary MulEq ident expr) i = concat [pretty ident i, " *= ", pretty expr i]
-  pretty (ShortBinary DivEq ident expr) i = concat [pretty ident i, " /= ", pretty expr i]
-  pretty (ShortBinary ModEq ident expr) i = concat [pretty ident i, " %= ", pretty expr i]
-  pretty (ShortBinary BitAndEq ident expr) i =
-    concat [pretty ident i, " &= ", pretty expr i]
-  pretty (ShortBinary BitOrEq ident expr) i = concat [pretty ident i, " |= ", pretty expr i]
-  pretty (ShortBinary BitXorEq ident expr) i =
-    concat [pretty ident i, " ^= ", pretty expr i]
-  pretty (ShortBinary BitLShiftEq ident expr) i =
-    concat [pretty ident i, " <<= ", pretty expr i]
-  pretty (ShortBinary BitRShiftEq ident expr) i =
-    concat [pretty ident i, " >>= ", pretty expr i]
-  pretty (ShortBinary BitClearEq ident expr) i =
-    concat [pretty ident i, " &^= ", pretty expr i]
+  pretty (ShortBinary opEq ident expr) i = concat [pretty ident i, " ", pretty opEq i, " ", pretty expr i]
   pretty (ShortVarDec idList exprList) i =
     concat [commaSepList idList i, " := ", commaSepList exprList i]
   pretty (EmptyStmt) i = ""
@@ -281,36 +267,8 @@ instance Pretty Expression where
   pretty (Brack expr) i = concat ["(", pretty expr i, ")"]
   pretty (Id ident) i = pretty ident i
   pretty (Literal lit) i = pretty lit i
-  pretty (Unary Pos expr) i = concat ["+", pretty expr i]
-  pretty (Unary Neg expr) i = concat ["-", pretty expr i]
-  pretty (Unary BoolNot expr) i = concat ["!", pretty expr i]
-  pretty (Unary BitComplement expr) i = concat ["^", pretty expr i]
-  pretty (Binary Or expr1 expr2) i = concat [pretty expr1 i, " || ", pretty expr2 i]
-  pretty (Binary And expr1 expr2) i = concat [pretty expr1 i, " && ", pretty expr2 i]
-  pretty (Binary Equals expr1 expr2) i =
-    concat [pretty expr1 i, " == ", pretty expr2 i]
-  pretty (Binary NotEquals expr1 expr2) i =
-    concat [pretty expr1 i, " != ", pretty expr2 i]
-  pretty (Binary LThan expr1 expr2) i = concat [pretty expr1 i, " < ", pretty expr2 i]
-  pretty (Binary LEThan expr1 expr2) i =
-    concat [pretty expr1 i, " <= ", pretty expr2 i]
-  pretty (Binary GThan expr1 expr2) i = concat [pretty expr1 i, " > ", pretty expr2 i]
-  pretty (Binary GEThan expr1 expr2) i =
-    concat [pretty expr1 i, " >= ", pretty expr2 i]
-  pretty (Binary Add expr1 expr2) i = concat [pretty expr1 i, " + ", pretty expr2 i]
-  pretty (Binary Sub expr1 expr2) i = concat [pretty expr1 i, " - ", pretty expr2 i]
-  pretty (Binary Mult expr1 expr2) i = concat [pretty expr1 i, " * ", pretty expr2 i]
-  pretty (Binary Div expr1 expr2) i = concat [pretty expr1 i, " / ", pretty expr2 i]
-  pretty (Binary Mod expr1 expr2) i = concat [pretty expr1 i, " % ", pretty expr2 i]
-  pretty (Binary BitAnd expr1 expr2) i = concat [pretty expr1 i, " & ", pretty expr2 i]
-  pretty (Binary BitOr expr1 expr2) i = concat [pretty expr1 i, " | ", pretty expr2 i]
-  pretty (Binary BitXor expr1 expr2) i = concat [pretty expr1 i, " ^ ", pretty expr2 i]
-  pretty (Binary BitLShift expr1 expr2) i =
-    concat [pretty expr1 i, " << ", pretty expr2 i]
-  pretty (Binary BitRShift expr1 expr2) i =
-    concat [pretty expr1 i, " >> ", pretty expr2 i]
-  pretty (Binary BitClear expr1 expr2) i =
-    concat [pretty expr1 i, " &^ ", pretty expr2 i]
+  pretty (Unary op expr) i = concat [pretty op i, pretty expr i]
+  pretty (Binary op expr1 expr2) i = concat [pretty expr1 i, " ", pretty op i, " ", pretty expr2 i]
   pretty (ExprFuncCall func) i = pretty func i
   pretty (Append ident expr) i =
     concat ["append(", pretty ident i, ", ", pretty expr i, ")"]
@@ -318,9 +276,3 @@ instance Pretty Expression where
 instance Pretty (Maybe Expression) where
   pretty Nothing i = ""
   pretty (Just e) i = pretty e i
-
-instance Pretty Integer where
-  pretty int _ = (show int)
-
-instance Pretty Int where
-  pretty int _ = (show int)

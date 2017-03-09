@@ -16,6 +16,7 @@ library
                      , Pretty.Pretty
                      , Pretty.Common
                      , Pretty.Language
+                     , Pretty.Operators
                      , Pretty.Util
                      , Language.Common
                      , Language.Language
