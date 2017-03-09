@@ -30,6 +30,7 @@ executable golite-exe
                      , argparser
                      , filepath >= 1.0
                      , golite
+                     , pretty-show
   default-language:    Haskell2010
 
 test-suite golite-test

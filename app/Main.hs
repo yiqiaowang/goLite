@@ -6,7 +6,7 @@ import qualified Parser
 import qualified Pretty
 import System.Console.ArgParser
 import System.FilePath
-
+import qualified Text.Show.Pretty as Pr
 --
 data GoLiteOptions = GoLiteOptions
   { filename :: String
@@ -52,12 +52,12 @@ processFile options = do
       -- Dump symboltable
       when (dumpSymbolTable options) $
         case GoLite.typeCheck program of
-          Right (_, symtbl) -> putStrLn $ show symtbl
-          Left (GoLite.TypeCheckerError (_, symtbl)) -> putStrLn $ show symtbl
+          Right (_, symtbl) -> putStrLn $ Pr.ppShow symtbl
+          Left (GoLite.TypeCheckerError (_, symtbl)) -> putStrLn $ Pr.ppShow symtbl
       -- Dump ast
       when (dumpAST options) $
-        putStrLn $ show program
-    Left parseError -> errorWithoutStackTrace $ show parseError
+        putStrLn $ Pr.ppShow program
+    Left parseError -> errorWithoutStackTrace $ Pr.ppShow parseError
   where
     goLiteFile = filename options
     prettyFile = replaceExtension goLiteFile ".pretty.go"
