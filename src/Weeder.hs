@@ -52,7 +52,7 @@ instance Weedable All where
   weed (Function "main" _ _ stmts) = weedListCtxt [CFunction] stmts
   weed (Function _ _ Nothing stmts) = weedListCtxt [CFunction] stmts
   weed (Function _ _ (Just _) stmts) =
-    weedListCtxt [CFunction] stmts -- `mappend` (isTerminating $ last stmts)
+    weedListCtxt [CFunction] stmts `mappend` (isTerminating $ last stmts)
 
 instance Weedable TopLevel where
   weed (VarDec var) = weed var
