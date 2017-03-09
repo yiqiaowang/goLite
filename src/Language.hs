@@ -57,7 +57,6 @@ data Type
   | Struct [([Identifier], Type)]
   -- TODO: should we add the input types -> output type into the func constructor
   | Func
-  | Bool
   deriving (Eq, Show)
 
 -- Parameter data type (List of identifiers with an associated type)
