@@ -130,12 +130,12 @@ addEntry :: SymbolTable
          -> Entry 
          -> Either SymbolTableError SymbolTable 
 addEntry s i e =
-  if hasKey (getMap $ fst $ popFrame s) i
+  if hasKey f i
     then Left (DuplicateIdentifier i)
     else Right s'
   where
-    s' = pushFrame p (Frame $ addSym i e (getMap f))
-    f = fst $ popFrame s
+    s' = pushFrame p (Frame $ addSym i e f)
+    f = getMap $ fst $ popFrame s
     p = snd $ popFrame s
 
 -- Lookup an entry in the symbol table
