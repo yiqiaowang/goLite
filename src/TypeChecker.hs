@@ -18,6 +18,7 @@ data TypeCheckError
   | TypeNotElementOfError { typeReceived :: Maybe Type
                          ,  typeOptions :: [Type]}
   | TypeCheckRawError { attemptedRawString :: String}
+  | AppendNotSliceError
   deriving (Eq, Show)
 
 -- This typeclass takes something from Lanugage and a SymbolTable and returns either a
@@ -393,17 +394,51 @@ canIncrDecr (Alias "int") = True
 canIncrDecr (Alias "float64") = True
 canIncrDecr _ = False
 
-instance TypeCheckable FunctionCall
+instance TypeCheckable FunctionCall 
 
 --
 instance TypeCheckable Expression where
   typeCheck symtbl (Id i) = typeCheck symtbl i
   typeCheck symtbl (Brack expr) = typeCheck symtbl expr
   typeCheck symtbl (Literal lit) = typeCheck symtbl lit
+  typeCheck symtbl (Append ident expr) = 
+    case typeCheck symtbl ident of
+      Right(Just (Slice t), symtbl') -> case typeCheck symtbl' expr of
+              Right(Just t2, symtbl'') ->  case assertTypeEqual (Just t) (Just t2) of
+                            True -> Right(Just (Slice t), symtbl'')
+                            False -> Left(TypeMismatchError (Just t) (Just t2), symtbl'')
+              Right(Nothing, symtbl'') -> Left(TypeMismatchError (Just t) Nothing, symtbl'')
+              Left(err) -> Left(err)
+      Right(_, symtbl') -> Left(AppendNotSliceError, symtbl')
+      Left(err) -> Left(err)
+  typeCheck symtbl (Unary a expr) = 
+    case typeCheck symtbl expr of
+      Right(t, symtbl') -> unaryCheck (unaryList a) t symtbl'
+      Left(err) -> Left(err)
+
   -- typeCheck symtbl (FuncCall iden exprs) =
   -- typeCheck symtbl (Append iden expr) =
   -- typeCheck symtbl (Unary op expr) =
   -- typeCheck symtbl (Binary op expr expr') =
+
+unaryList :: UnaryOp -> [Type]
+unaryList Pos = [(Alias "int"), (Alias "float64"), (Alias "rune")]
+unaryList Neg = [(Alias "int"), (Alias "float64"), (Alias "rune")]
+unaryList BoolNot = [Bool]
+unaryList BitComplement = [(Alias "int"), (Alias "rune")]
+
+unaryCheck :: [Type] 
+           -> (Maybe Type) 
+           -> SymbolTable 
+           -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+unaryCheck tList (Just t) symtbl = case t `elem` tList of
+        True -> Right(Just t, symtbl)
+        False -> Left(TypeNotElementOfError (Just t) tList, symtbl)
+unaryCheck tList Nothing symtbl = Left(TypeNotElementOfError Nothing tList, symtbl)
+
+--binaryList :: BinaryOp -> [(Type, Type)]
+
+--binaryCheck :: [(Type, Type)] -> Type -> Type -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
 
 instance TypeCheckable a =>
          TypeCheckable (Maybe a) where
