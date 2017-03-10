@@ -39,6 +39,7 @@ main = do
   validTypeChecker <- mconcat
     [ loadPrograms "programs/valid/typechecker/declarations"
     , loadPrograms "programs/valid/typechecker/statements"
+    , loadPrograms "programs/valid/typechecker/expressions"
     ]
   invalidTypeChecker <- loadPrograms "programs/invalid/typechecker"
 
