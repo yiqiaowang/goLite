@@ -23,7 +23,7 @@ data TypeCheckError
                           ,  typeRight :: Maybe Type}
   | NoNewIdentifierError
   | AppendNotSliceError
-  | StructsNotSameError
+  | StructsNotComparableError
   | DefinitionNotFoundError
   | FuncCallArgNumError { expectedArgs :: [Type]
                        ,  receivedArgs :: [Expression]}
@@ -685,17 +685,18 @@ binaryList a =
       [ (Alias "int", Alias "int")
       , (Alias "float64", Alias "float64")
       , (Alias "string", Alias "string")
+      , (Alias "rune", Alias "rune")
       ]
-    Sub -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64")]
-    Mult -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64")]
-    Div -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64")]
-    Mod -> [(Alias "int", Alias "int")]
-    BitClear -> [(Alias "int", Alias "int")]
-    BitRShift -> [(Alias "int", Alias "int")]
-    BitLShift -> [(Alias "int", Alias "int")]
-    BitXor -> [(Alias "int", Alias "int")]
-    BitOr -> [(Alias "int", Alias "int")]
-    BitAnd -> [(Alias "int", Alias "int")]
+    Sub -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64"), (Alias "rune", Alias "rune")]
+    Mult -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64"), (Alias "rune", Alias "rune")]
+    Div -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64"), (Alias "rune", Alias "rune")]
+    Mod -> [(Alias "int", Alias "int"), (Alias "rune", Alias "rune")]
+    BitClear -> [(Alias "int", Alias "int"), (Alias "rune", Alias "rune")]
+    BitRShift -> [(Alias "int", Alias "int"), (Alias "rune", Alias "rune")]
+    BitLShift -> [(Alias "int", Alias "int"), (Alias "rune", Alias "rune")]
+    BitXor -> [(Alias "int", Alias "int"), (Alias "rune", Alias "rune")]
+    BitOr -> [(Alias "int", Alias "int"), (Alias "rune", Alias "rune")]
+    BitAnd -> [(Alias "int", Alias "int"), (Alias "rune", Alias "rune")]
 
 binaryCheck
   :: [(Type, Type)]
@@ -716,7 +717,7 @@ binaryCheck tList ExpComparable (Just t1) (Just t2) symtbl =
         False -> Left (TypeNotCompatableError (Just t1) (Just t2), symtbl)
     (Array s1 _, Array s2 _) ->
       binaryCheck tList ExpComparable (Just s1) (Just s2) symtbl
-    (Struct s1, Struct s2) -> structListCheck tList ExpComparable s1 s2 symtbl
+    (Struct s1, Struct s2) -> structListCheck s1 symtbl
     (s1, s2) -> Left (TypeNotCompatableError (Just s1) (Just s2), symtbl)
 binaryCheck tList ExpOrdered (Just t1) (Just t2) symtbl =
   case (t1, t2) of
@@ -735,44 +736,31 @@ binaryCheck tList _ (Just t1) (Just t2) symtbl =
 binaryCheck tList _ t1 t2 symtbl = Left (TypeNotCompatableError t1 t2, symtbl)
 
 -- Type check two structs for comparison
-structElementCheck
-  :: [(Type, Type)]
-  -> ExpressionCategory
-  -> ([Identifier], Type)
-  -> ([Identifier], Type)
+comparableCheck
+  :: Type
   -> SymbolTable
   -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
-structElementCheck tList ExpComparable (_, t1) (_, t2) symtbl =
-  case (t1, t2) of
-    (Alias s1, Alias s2) ->
-      case (Alias s1, Alias s2) `elem` tList of
+comparableCheck t1 symtbl =
+  case t1 of
+    (Alias s1) ->
+      case (Alias s1, Alias s1) `elem` (binaryList Equals) of
         True -> Right (Just (Alias "bool"), symtbl)
-        False -> Left (TypeNotCompatableError (Just t1) (Just t2), symtbl)
-    (Array s1 _, Array s2 _) ->
-      binaryCheck tList ExpComparable (Just s1) (Just s2) symtbl
-    (Struct s1, Struct s2) -> structListCheck tList ExpComparable s1 s2 symtbl
-    (s1, s2) -> Left (TypeNotCompatableError (Just s1) (Just s2), symtbl)
-structElementCheck tList _ (_, t1) (_, t2) symtbl =
-  Left (TypeNotCompatableError (Just t1) (Just t2), symtbl)
+        False -> Left (StructsNotComparableError, symtbl)
+    (Array s1 _) -> comparableCheck s1 symtbl
+    (Struct s1) -> structListCheck s1 symtbl
+    s1 -> Left (StructsNotComparableError, symtbl)
 
 structListCheck
-  :: [(Type, Type)]
-  -> ExpressionCategory
-  -> [([Identifier], Type)]
-  -> [([Identifier], Type)]
+  :: [([Identifier], Type)]
   -> SymbolTable
   -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
-structListCheck tList ExpComparable [] [] symtbl =
+structListCheck [] symtbl =
   Right (Just (Alias "bool"), symtbl)
-structListCheck tList ExpComparable [] _ symtbl =
-  Left (StructsNotSameError, symtbl)
-structListCheck tList ExpComparable _ [] symtbl =
-  Left (StructsNotSameError, symtbl)
-structListCheck tList ExpComparable (x1:xs1) (x2:xs2) symtbl =
-  case structElementCheck tList ExpComparable x1 x2 symtbl of
-    Right (_, symtbl') -> structListCheck tList ExpComparable xs1 xs2 symtbl'
+structListCheck ((_, t):xs) symtbl =
+  case comparableCheck t symtbl of
+    Right (_, symtbl') -> structListCheck xs symtbl'
     Left (err) -> Left (err)
-structListCheck tList _ _ _ symtbl = Left (StructsNotSameError, symtbl)
+structListCheck _ symtbl = Left (StructsNotComparableError, symtbl)
 
 -- Different expression categories for types
 data ExpressionCategory
@@ -828,4 +816,4 @@ instance TypeCheckable Literal where
   typeCheck symtbl (Float64 _) = Right (Just (Alias "float64"), symtbl)
   typeCheck symtbl (Rune _) = Right (Just (Alias "rune"), symtbl)
   typeCheck symtbl (String _) = Right (Just (Alias "string"), symtbl)
-  typeCheck symtbl (Raw s) = Left (TypeCheckRawError s, symtbl)
+  typeCheck symtbl (Raw s) = Right (Just (Alias "string"), symtbl)
