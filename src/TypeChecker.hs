@@ -29,6 +29,9 @@ data TypeCheckError
                        ,  receivedArgs :: [Expression]}
   | FuncCallArgTypeError { expectedArgType :: Type
                         ,  receivedArgType :: Maybe Type}
+  | IllegalCastError { toType :: Type
+                    ,  fromType :: Type}
+  | EmptyCastError
   deriving (Eq, Show)
 
 -- This typeclass takes something from Lanugage and a SymbolTable and returns either a
@@ -405,12 +408,9 @@ instance TypeCheckable Variable where
           Right symtbl' -> typeCheck symtbl' (Variable is maybe_type [])
           Left err -> Left (SymbolTableError err, symtbl)
       Just t ->
-        case typeCheck symtbl t of
-          Right (t, symtbl') ->
-            case addEntry symtbl i (Entry CategoryVariable t) of
-              Right symtbl' -> typeCheck symtbl' (Variable is maybe_type [])
-              Left err -> Left (SymbolTableError err, symtbl)
-          Left err -> Left err
+        case addEntry symtbl i (Entry CategoryVariable (Just t)) of
+          Right symtbl' -> typeCheck symtbl' (Variable is maybe_type [])
+          Left err -> Left (SymbolTableError err, symtbl)
   typeCheck symtbl (Variable (i:is) maybe_type (e:es)) =
     case maybe_type of
       (Just _) ->
@@ -436,20 +436,28 @@ instance TypeCheckable Variable where
           Left err -> Left err
 
 --
+getBaseType
+  :: SymbolTable
+  -> Identifier
+  -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+getBaseType symtbl s =
+  case lookupIdentifier symtbl s of
+    Right e ->
+      if dataType e `elem`
+         [ Just (Alias "int")
+         , Just (Alias "float64")
+         , Just (Alias "bool")
+         , Just (Alias "string")
+         , Just (Alias "rune")
+         ]
+        then Right (dataType e, symtbl)
+        else case dataType e of
+               Just (Alias s) -> getBaseType symtbl (IdOrType s)
+    Left err -> Left (SymbolTableError err, symtbl)
+
+--
 instance TypeCheckable Type where
-  typeCheck symtbl (Alias s) =
-    case lookupIdentifier symtbl (IdOrType s) of
-      Right e ->
-        if dataType e `elem`
-           [ Just (Alias "int")
-           , Just (Alias "float64")
-           , Just (Alias "bool")
-           , Just (Alias "string")
-           , Just (Alias "rune")
-           ]
-          then Right (dataType e, symtbl)
-          else typeCheck symtbl $ dataType e
-      Left err -> Left (SymbolTableError err, symtbl)
+  typeCheck symtbl (Alias s) = Right (Just (Alias s), symtbl)
   typeCheck symtbl (Array t i) =
     case typeCheck symtbl t of
       Right (Just t', symtbl') -> Right (Just (Array t' i), symtbl')
@@ -462,9 +470,6 @@ instance TypeCheckable Type where
       Right (Nothing, symtbl') ->
         Left (TypeMismatchError (Just t) Nothing, symtbl')
       Left err -> Left err
-  -- typeCheck symtbl (Struct) =
-  -- typeCheck symtbl (Func a r) =
-  -- typeCheck symtbl (Bool a) =
 
 --
 instance TypeCheckable SimpleStmt where
@@ -560,7 +565,11 @@ canIncrDecr _ = False
 instance TypeCheckable FunctionCall where
   typeCheck symtbl (FunctionCall funcName exprs) =
     case lookupIdentifier symtbl (IdOrType funcName) of
-      Right (Entry _ (Just (Func ts ret))) ->
+      Right (Entry CategoryType (Just (t))) ->
+        if length exprs /= 1
+          then Left (EmptyCastError, symtbl)
+          else typeCheckCast symtbl t (head exprs)
+      Right (Entry CategoryVariable (Just (Func ts ret))) ->
         if length ts == length exprs
           then case functionCallHelper symtbl ts exprs of
                  Nothing -> Right (ret, symtbl)
@@ -569,8 +578,39 @@ instance TypeCheckable FunctionCall where
       Right (Entry _ Nothing) -> Left (DefinitionNotFoundError, symtbl)
       Left err -> Left (SymbolTableError err, symtbl)
 
--- Type Cast helper, determines if a function call is a type cast.
--- IF it is, pass it to typechecking function for type casting.
+-- Type Checks a cast. make sure the cast can be made.
+typeCheckCast
+  :: SymbolTable
+  -> Type
+  -> Expression
+  -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+typeCheckCast symtbl t e =
+  case typeCheck symtbl e of
+    Right (Just x, symtbl') ->
+      case (t, x) of
+        (Alias "int", Alias "int") -> Right (Just (Alias "int"), symtbl')
+        (Alias "int", Alias "float64") -> Right (Just (Alias "int"), symtbl')
+        (Alias "int", Alias "rune") -> Right (Just (Alias "int"), symtbl')
+        (Alias "int", Alias "bool") -> Right (Just (Alias "int"), symtbl')
+        (Alias "bool", Alias "bool") -> Right (Just (Alias "bool"), symtbl')
+        (Alias "bool", Alias "int") -> Right (Just (Alias "bool"), symtbl')
+        (Alias "bool", Alias "float64") -> Right (Just (Alias "bool"), symtbl')
+        (Alias "bool", Alias "rune") -> Right (Just (Alias "bool"), symtbl')
+        (Alias "float64", Alias "float64") ->
+          Right (Just (Alias "float64"), symtbl')
+        (Alias "float64", Alias "int") ->
+          Right (Just (Alias "float64"), symtbl')
+        (Alias "float64", Alias "bool") ->
+          Right (Just (Alias "float64"), symtbl')
+        (Alias "float64", Alias "runes") ->
+          Right (Just (Alias "float64"), symtbl')
+        (Alias "rune", Alias "rune") -> Right (Just (Alias "rune"), symtbl')
+        (Alias "rune", Alias "int") -> Right (Just (Alias "rune"), symtbl')
+        (Alias "rune", Alias "float64") -> Right (Just (Alias "rune"), symtbl')
+        (Alias "rune", Alias "bool") -> Right (Just (Alias "rune"), symtbl')
+        _ -> Left (IllegalCastError t x, symtbl')
+    Left err -> Left err
+
 -- Takes in a list of types, and a list of expressions, and makes sure they match up
 -- this also type checks the expressions, as it must
 functionCallHelper :: SymbolTable
