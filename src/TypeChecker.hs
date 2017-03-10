@@ -408,12 +408,9 @@ instance TypeCheckable Variable where
           Right symtbl' -> typeCheck symtbl' (Variable is maybe_type [])
           Left err -> Left (SymbolTableError err, symtbl)
       Just t ->
-        case typeCheck symtbl t of
-          Right (t, symtbl') ->
-            case addEntry symtbl i (Entry CategoryVariable t) of
-              Right symtbl' -> typeCheck symtbl' (Variable is maybe_type [])
-              Left err -> Left (SymbolTableError err, symtbl)
-          Left err -> Left err
+        case addEntry symtbl i (Entry CategoryVariable (Just t)) of
+          Right symtbl' -> typeCheck symtbl' (Variable is maybe_type [])
+          Left err -> Left (SymbolTableError err, symtbl)
   typeCheck symtbl (Variable (i:is) maybe_type (e:es)) =
     case maybe_type of
       (Just _) ->
@@ -439,20 +436,28 @@ instance TypeCheckable Variable where
           Left err -> Left err
 
 --
+getBaseType
+  :: SymbolTable
+  -> Identifier
+  -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+getBaseType symtbl s =
+  case lookupIdentifier symtbl s of
+    Right e ->
+      if dataType e `elem`
+         [ Just (Alias "int")
+         , Just (Alias "float64")
+         , Just (Alias "bool")
+         , Just (Alias "string")
+         , Just (Alias "rune")
+         ]
+        then Right (dataType e, symtbl)
+        else case dataType e of
+               Just (Alias s) -> getBaseType symtbl (IdOrType s)
+    Left err -> Left (SymbolTableError err, symtbl)
+
+--
 instance TypeCheckable Type where
-  typeCheck symtbl (Alias s) =
-    case lookupIdentifier symtbl (IdOrType s) of
-      Right e ->
-        if dataType e `elem`
-           [ Just (Alias "int")
-           , Just (Alias "float64")
-           , Just (Alias "bool")
-           , Just (Alias "string")
-           , Just (Alias "rune")
-           ]
-          then Right (dataType e, symtbl)
-          else typeCheck symtbl $ dataType e
-      Left err -> Left (SymbolTableError err, symtbl)
+  typeCheck symtbl (Alias s) = Right (Just (Alias s), symtbl)
   typeCheck symtbl (Array t i) =
     case typeCheck symtbl t of
       Right (Just t', symtbl') -> Right (Just (Array t' i), symtbl')
