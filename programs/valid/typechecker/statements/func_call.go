@@ -1,5 +1,7 @@
 package statements
 
+func nothing() {}
+
 func main() {
-  if true {}
+  nothing()
 }
