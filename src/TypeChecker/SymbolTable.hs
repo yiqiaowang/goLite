@@ -46,8 +46,8 @@ newMap = Map.empty :: SymMap
 
 -- Initial symbol table mapping
 initMap :: SymMap
-initMap = fromList[(IdOrType "true", Entry CategoryVariable $ Just Bool)
-                  ,(IdOrType "false", Entry CategoryVariable $ Just Bool)
+initMap = fromList[(IdOrType "true", Entry CategoryVariable $ Just (Alias "bool"))
+                  ,(IdOrType "false", Entry CategoryVariable $ Just (Alias "bool"))
                   ,(IdOrType "int", Entry CategoryType $ Just (Alias "int"))
                   ,(IdOrType "float64", Entry CategoryType $ Just (Alias "float64"))
                   ,(IdOrType "rune", Entry CategoryType $ Just (Alias "rune"))
@@ -130,12 +130,12 @@ addEntry :: SymbolTable
          -> Entry
          -> Either SymbolTableError SymbolTable
 addEntry s i e =
-  if hasKey (getMap $ fst $ popFrame s) i
+  if hasKey f i
     then Left (DuplicateIdentifier i)
     else Right s'
   where
-    s' = pushFrame p (Frame $ addSym i e (getMap f))
-    f = fst $ popFrame s
+    s' = pushFrame p (Frame $ addSym i e f)
+    f = getMap $ fst $ popFrame s
     p = snd $ popFrame s
 
 -- Lookup an entry in the symbol table
