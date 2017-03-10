@@ -27,17 +27,33 @@ loadPrograms directory = do
 -- not needed for automatic spec discovery.
 main :: IO ()
 main = do
-  validSyntax <- loadPrograms "programs/valid/syntax" `mappend` loadPrograms "programs/valid" `mappend` loadPrograms "programs/valid/classvalid"
-  invalidParser <- loadPrograms "programs/invalid/parser" `mappend` loadPrograms "programs/invalid/classinvalid"
+  --load syntax programs
+  validSyntax <- mconcat
+    [ loadPrograms "programs/valid"
+    , loadPrograms "programs/valid/syntax"
+    ]
+  invalidParser <- loadPrograms "programs/invalid/parser"
   invalidWeeder <- loadPrograms "programs/invalid/weeder"
 
-  scannerSummary <- hspecResult Spec.Scanner.spec
-  -- parserSummary <- hspecResult $ Spec.Parser.spec validSyntax invalidParserSyntax
-  parserSummary <- hspecResult $
-    Spec.GoLite.spec invalidParser invalidWeeder validSyntax
-  prettySummary <- hspecResult $ Spec.Pretty.spec validSyntax
+  --load typechecker programs
+  validTypeChecker <- mconcat
+    [ loadPrograms "programs/valid/typechecker/declarations"
+    , loadPrograms "programs/valid/typechecker/statements"
+    ]
+  invalidTypeChecker <- loadPrograms "programs/invalid/typechecker"
 
-  if any (not . isSuccess) [scannerSummary, parserSummary, prettySummary]
+  --execute tests
+  scannerSummary <- hspecResult Spec.Scanner.spec
+  prettySummary <- hspecResult $ Spec.Pretty.spec validSyntax
+  goLiteSummary <- hspecResult $
+    Spec.GoLite.spec
+      invalidParser
+      invalidWeeder
+      validSyntax
+      invalidTypeChecker
+      validTypeChecker
+
+  if any (not . isSuccess) [scannerSummary, prettySummary, goLiteSummary]
     then exitFailure
     else exitSuccess
 
