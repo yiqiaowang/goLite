@@ -55,7 +55,10 @@ class TypeCheckable a where
     -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
   typeCheckListNewFrame symtbl xs =
     case typeCheckList (newFrame symtbl) xs of
-      Right (_, symtbl') -> Right (Nothing, snd $ popFrame symtbl')
+      Right (_, symtbl') ->
+        case popFrame symtbl' of
+          Right (f, ps) -> Right (Nothing, ps)
+          Left err -> Left (SymbolTableError err, symtbl')
       Left err -> Left err
   typeCheckElemOf
     :: SymbolTable
@@ -107,7 +110,11 @@ instance TypeCheckable All where
   typeCheck symtbl (Function iden params ret stmts)
     -- Add the function to the current frame, check for failure
    =
-    case addEntry symtbl (IdOrType iden) (Entry CategoryVariable $ Just Func) of
+    case addEntry
+           symtbl
+           (IdOrType iden)
+           (Entry CategoryVariable $
+            Just (Func (functionParamHelper params) ret)) of
       Right symtbl'
         -- Create a new frame, and type check the body of the function
         -- with the newly created frame
@@ -118,10 +125,19 @@ instance TypeCheckable All where
             -- If so, pop the stack frame, and return a new one
            ->
             case typeCheckReturns symtbl'' stmts ret of
-              Nothing -> Right (Nothing, snd $ popFrame symtbl'')
+              Nothing ->
+                case popFrame symtbl'' of
+                  Right (f, ps) -> Right (Nothing, ps)
+                  Left err -> Left (SymbolTableError err, symtbl'')
               Just err -> Left (err, symtbl'')
           Left err -> Left err
       Left err -> Left (SymbolTableError err, symtbl)
+
+-- Function that takes in a list of parameters and returns a list of types
+functionParamHelper :: [Parameter] -> [Type]
+functionParamHelper [] = []
+functionParamHelper (Parameter ids t:ps) =
+  [t | _ <- ids] ++ functionParamHelper ps
 
 -- Type check returns on a block of statements. only checks outer-most return statements.
 -- The behaviour on empty list may change depending on how we interpret
@@ -144,7 +160,10 @@ typeCheckReturns symtbl (If (IfStmt _ _ stmts (IfStmtCont Nothing)):xs) ret =
   case typeCheckList (newFrame symtbl) stmts of
     Right (_, symtbl') ->
       case typeCheckReturns symtbl' stmts ret of
-        Nothing -> typeCheckReturns (snd $ popFrame symtbl') xs ret
+        Nothing ->
+          case popFrame symtbl' of
+            Right (f, ps) -> typeCheckReturns ps xs ret
+            Left err -> Just (SymbolTableError err)
         Just err -> Just err
     Left (err, _) -> Just err
 typeCheckReturns symtbl (If (IfStmt _ _ stmts (IfStmtCont (Just (Left ifstmt)))):xs) ret =
@@ -152,7 +171,9 @@ typeCheckReturns symtbl (If (IfStmt _ _ stmts (IfStmtCont (Just (Left ifstmt))))
     Right (_, symtbl') ->
       case typeCheckReturns symtbl' stmts ret of
         Nothing ->
-          typeCheckReturns (snd $ popFrame symtbl') ((If ifstmt) : xs) ret
+          case popFrame symtbl' of
+            Right (f, ps) -> typeCheckReturns ps ((If ifstmt) : xs) ret
+            Left err -> Just (SymbolTableError err)
         Just err -> Just err
     Left (err, _) -> Just err
 typeCheckReturns symtbl (If (IfStmt _ _ stmts (IfStmtCont (Just (Right stmts')))):xs) ret =
@@ -160,9 +181,12 @@ typeCheckReturns symtbl (If (IfStmt _ _ stmts (IfStmtCont (Just (Right stmts')))
     Right (_, symtbl') ->
       case typeCheckReturns symtbl' stmts ret of
         Nothing ->
-          case typeCheckList (newFrame $ snd $ popFrame symtbl') stmts' of
-            Right (_, symtbl'') -> Nothing
-            Left (err, _) -> Just err
+          case popFrame symtbl' of
+            Right (f, ps) ->
+              case typeCheckList (newFrame $ ps) stmts' of
+                Right (_, symtbl'') -> Nothing
+                Left (err, _) -> Just err
+            Left err -> Just (SymbolTableError err)
         Just err -> Just err
     Left (err, _) -> Just err
 -- Type Check returns for Infinite
@@ -267,7 +291,10 @@ instance TypeCheckable Stmt where
   typeCheck symtbl (Return _) = Right (Nothing, symtbl)
   typeCheck symtbl (Block stmts) =
     case typeCheckList (newFrame symtbl) stmts of
-      Right (_, symtbl') -> Right (Nothing, snd $ popFrame symtbl')
+      Right (_, symtbl') ->
+        case popFrame symtbl' of
+          Right (f, ps) -> Right (Nothing, ps)
+          Left err -> Left (SymbolTableError err, symtbl')
       Left err -> Left err
   -- Breaks and continues are trivially well typed
   typeCheck symtbl (Break) = Right (Nothing, symtbl)
@@ -387,10 +414,12 @@ instance TypeCheckable Variable where
             case typeCheck symtbl' maybe_type of
               Right (t', symtbl'') ->
                 case assertTypeEqual t t' of
-                True -> case addEntry symtbl' i (Entry CategoryVariable t') of
-                    Right symtbl'' -> typeCheck symtbl'' (Variable is maybe_type es)
-                    Left err -> Left (SymbolTableError err, symtbl')
-                False -> Left (TypeMismatchError t' t, symtbl')
+                  True ->
+                    case addEntry symtbl' i (Entry CategoryVariable t') of
+                      Right symtbl'' ->
+                        typeCheck symtbl'' (Variable is maybe_type es)
+                      Left err -> Left (SymbolTableError err, symtbl')
+                  False -> Left (TypeMismatchError t' t, symtbl')
               Left err -> Left err
           Left err -> Left err
       Nothing ->
@@ -405,18 +434,17 @@ instance TypeCheckable Variable where
 instance TypeCheckable Type where
   typeCheck symtbl (Alias s) =
     case lookupIdentifier symtbl (IdOrType s) of
-      Right e -> if dataType e `elem` [ Just (Alias "int")
-                                      , Just (Alias "float64")
-                                      , Just (Alias "bool")
-                                      , Just (Alias "string")
-                                      , Just (Alias "rune")
-                                      ]
-                    then Right (dataType e, symtbl)
-                    else typeCheck symtbl $ dataType e
+      Right e ->
+        if dataType e `elem`
+           [ Just (Alias "int")
+           , Just (Alias "float64")
+           , Just (Alias "bool")
+           , Just (Alias "string")
+           , Just (Alias "rune")
+           ]
+          then Right (dataType e, symtbl)
+          else typeCheck symtbl $ dataType e
       Left err -> Left (SymbolTableError err, symtbl)
-
-
-  
   typeCheck symtbl (Array t i) =
     case typeCheck symtbl t of
       Right (Just t', symtbl') -> Right (Just (Array t' i), symtbl')
@@ -450,24 +478,26 @@ instance TypeCheckable SimpleStmt where
   typeCheck symtbl (Assign idens exprs) =
     case typeCheckAssignList symtbl idens exprs of
       Nothing -> Right (Nothing, symtbl)
-      Just err -> Left (err, symtbl) 
+      Just err -> Left (err, symtbl)
   -- typeCheck symtbl (ShortBinary op iden expr) =
   typeCheck symtbl (ShortVarDec idens exprs) =
     case typeCheckList symtbl exprs of
       Right (_, symtbl') ->
         case svdIdenHelper symtbl' idens of
-          True ->
+          Right True ->
             case svdAssignHelper symtbl' idens exprs of
               Nothing -> Right (Nothing, symtbl')
               Just err -> Left (err, symtbl')
-          False -> Left (NoNewIdentifierError, symtbl')
+          Right False -> Left (NoNewIdentifierError, symtbl')
+          Left err -> Left (err, symtbl')
       Left err -> Left err
 
 -- Function that checks that at least one identifier is not declared in the current scope
-svdIdenHelper :: SymbolTable -> [Identifier] -> Bool
-svdIdenHelper symtbl idens = False `elem` fmap (hasKey symMap) idens
-  where
-    symMap = getMap $ fst $ popFrame symtbl
+svdIdenHelper :: SymbolTable -> [Identifier] -> Either TypeCheckError Bool
+svdIdenHelper symtbl idens =
+  case popFrame symtbl of
+    Right (f, ps) -> Right (False `elem` fmap (hasKey $ getMap f) idens)
+    Left err -> Left (SymbolTableError err)
 
 svdAssignHelper :: SymbolTable
                 -> [Identifier]
@@ -475,20 +505,21 @@ svdAssignHelper :: SymbolTable
                 -> Maybe TypeCheckError
 svdAssignHelper _ [] [] = Nothing
 svdAssignHelper symtbl (iden:idens) (expr:exprs) =
-  case hasKey symMap iden of
-    False -> svdAssignHelper symtbl idens exprs
-    True ->
-      case typeCheck symtbl iden of
-        Right (t, symtbl') ->
-          case typeCheck symtbl' expr of
-            Right (t', symtbl'') ->
-              case assertTypeEqual t t' of
-                True -> svdAssignHelper symtbl'' idens exprs
-                False -> Just (TypeMismatchError t t')
+  case popFrame symtbl of
+    Right (f, ps) ->
+      case hasKey (getMap f) iden of
+        False -> svdAssignHelper symtbl idens exprs
+        True ->
+          case typeCheck symtbl iden of
+            Right (t, symtbl') ->
+              case typeCheck symtbl' expr of
+                Right (t', symtbl'') ->
+                  case assertTypeEqual t t' of
+                    True -> svdAssignHelper symtbl'' idens exprs
+                    False -> Just (TypeMismatchError t t')
+                Left (err, _) -> Just err
             Left (err, _) -> Just err
-        Left (err, _) -> Just err
-  where
-    symMap = getMap $ fst $ popFrame symtbl
+    Left err -> Just (SymbolTableError err)
 
 typeCheckAssignList :: SymbolTable
                     -> [Identifier]
@@ -528,26 +559,31 @@ instance TypeCheckable Expression where
   typeCheck symtbl (Id i) = typeCheck symtbl i
   typeCheck symtbl (Brack expr) = typeCheck symtbl expr
   typeCheck symtbl (Literal lit) = typeCheck symtbl lit
-  typeCheck symtbl (Append ident expr) = 
+  typeCheck symtbl (Append ident expr) =
     case typeCheck symtbl ident of
-      Right(Just (Slice t), symtbl') -> case typeCheck symtbl' expr of
-              Right(Just t2, symtbl'') ->  case assertTypeEqual (Just t) (Just t2) of
-                            True -> Right(Just (Slice t), symtbl'')
-                            False -> Left(TypeMismatchError (Just t) (Just t2), symtbl'')
-              Right(Nothing, symtbl'') -> Left(TypeMismatchError (Just t) Nothing, symtbl'')
-              Left(err) -> Left(err)
-      Right(_, symtbl') -> Left(AppendNotSliceError, symtbl')
-      Left(err) -> Left(err)
-  typeCheck symtbl (Unary a expr) = 
+      Right (Just (Slice t), symtbl') ->
+        case typeCheck symtbl' expr of
+          Right (Just t2, symtbl'') ->
+            case assertTypeEqual (Just t) (Just t2) of
+              True -> Right (Just (Slice t), symtbl'')
+              False -> Left (TypeMismatchError (Just t) (Just t2), symtbl'')
+          Right (Nothing, symtbl'') ->
+            Left (TypeMismatchError (Just t) Nothing, symtbl'')
+          Left (err) -> Left (err)
+      Right (_, symtbl') -> Left (AppendNotSliceError, symtbl')
+      Left (err) -> Left (err)
+  typeCheck symtbl (Unary a expr) =
     case typeCheck symtbl expr of
-      Right(t, symtbl') -> unaryCheck (unaryList a) t symtbl'
-      Left(err) -> Left(err)
+      Right (t, symtbl') -> unaryCheck (unaryList a) t symtbl'
+      Left (err) -> Left (err)
   typeCheck symtbl (Binary a expr1 expr2) =
     case typeCheck symtbl expr1 of
-      Right(t, symtbl') -> case typeCheck symtbl' expr2 of
-          Right(t2, symtbl'') -> binaryCheck (binaryList a) (opToCategory a) t t2 symtbl''
-          Left(err) -> Left(err)
-      Left(err) -> Left(err)
+      Right (t, symtbl') ->
+        case typeCheck symtbl' expr2 of
+          Right (t2, symtbl'') ->
+            binaryCheck (binaryList a) (opToCategory a) t t2 symtbl''
+          Left (err) -> Left (err)
+      Left (err) -> Left (err)
 
 -- Check if a unary expression is correctly typed
 unaryList :: UnaryOp -> [Type]
@@ -556,144 +592,212 @@ unaryList Neg = [(Alias "int"), (Alias "float64"), (Alias "rune")]
 unaryList BoolNot = [(Alias "bool")]
 unaryList BitComplement = [(Alias "int"), (Alias "rune")]
 
-unaryCheck :: [Type] 
-           -> (Maybe Type) 
-           -> SymbolTable 
-           -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
-unaryCheck tList (Just t) symtbl = case t `elem` tList of
-        True -> Right(Just t, symtbl)
-        False -> Left(TypeNotElementOfError (Just t) tList, symtbl)
-unaryCheck tList Nothing symtbl = Left(TypeNotElementOfError Nothing tList, symtbl)
+unaryCheck
+  :: [Type]
+  -> (Maybe Type)
+  -> SymbolTable
+  -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+unaryCheck tList (Just t) symtbl =
+  case t `elem` tList of
+    True -> Right (Just t, symtbl)
+    False -> Left (TypeNotElementOfError (Just t) tList, symtbl)
+unaryCheck tList Nothing symtbl =
+  Left (TypeNotElementOfError Nothing tList, symtbl)
 
 -- Check if a binary expression is correctly typed
 binaryList :: BinaryOp -> [(Type, Type)]
-binaryList a = case a of
-       Or -> [(Alias "bool", Alias "bool")]
-       And -> [(Alias "bool", Alias "bool")]
-       Equals -> [(Alias "bool", Alias "bool"), (Alias "rune", Alias "rune"), (Alias "int", Alias "int"),
-                               (Alias "float64", Alias "float64"), (Alias "string", Alias "string")]
-       NotEquals -> [(Alias "bool", Alias "bool"), (Alias "rune", Alias "rune"), (Alias "int", Alias "int"),
-                               (Alias "float64", Alias "float64"), (Alias "string", Alias "string")]
-       LThan -> [(Alias "rune", Alias "rune"), (Alias "int", Alias "int"),
-                               (Alias "float64", Alias "float64"), (Alias "string", Alias "string"),
-                               (Alias "int", Alias "float64"), (Alias "float64", Alias "int")]
-       LEThan -> [(Alias "rune", Alias "rune"), (Alias "int", Alias "int"),
-                               (Alias "float64", Alias "float64"), (Alias "string", Alias "string"),
-                               (Alias "int", Alias "float64"), (Alias "float64", Alias "int")]
-       GThan -> [(Alias "rune", Alias "rune"), (Alias "int", Alias "int"),
-                               (Alias "float64", Alias "float64"), (Alias "string", Alias "string"),
-                               (Alias "int", Alias "float64"), (Alias "float64", Alias "int")]
-       GEThan -> [(Alias "rune", Alias "rune"), (Alias "int", Alias "int"),
-                               (Alias "float64", Alias "float64"), (Alias "string", Alias "string"),
-                               (Alias "int", Alias "float64"), (Alias "float64", Alias "int")]                       
-       Add -> [(Alias "int", Alias "int"), (Alias "int", Alias "string"), (Alias "string", Alias "int"),
-                               (Alias "float64", Alias "float64"), (Alias "string", Alias "string"),
-                               (Alias "int", Alias "float64"), (Alias "float64", Alias "int")]
-       Sub -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64"), 
-                              (Alias "int", Alias "float64"), (Alias "float64", Alias "int")]
-       Mult -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64"), 
-                              (Alias "int", Alias "float64"), (Alias "float64", Alias "int")]
-       Div -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64"), 
-                              (Alias "int", Alias "float64"), (Alias "float64", Alias "int")]
-       BitClear -> [(Alias "int", Alias "int")]
-       BitRShift -> [(Alias "int", Alias "int")]
-       BitLShift -> [(Alias "int", Alias "int")]
-       BitXor -> [(Alias "int", Alias "int")]
-       BitOr -> [(Alias "int", Alias "int")]
-       BitAnd -> [(Alias "int", Alias "int")]
+binaryList a =
+  case a of
+    Or -> [(Alias "bool", Alias "bool")]
+    And -> [(Alias "bool", Alias "bool")]
+    Equals ->
+      [ (Alias "bool", Alias "bool")
+      , (Alias "rune", Alias "rune")
+      , (Alias "int", Alias "int")
+      , (Alias "float64", Alias "float64")
+      , (Alias "string", Alias "string")
+      ]
+    NotEquals ->
+      [ (Alias "bool", Alias "bool")
+      , (Alias "rune", Alias "rune")
+      , (Alias "int", Alias "int")
+      , (Alias "float64", Alias "float64")
+      , (Alias "string", Alias "string")
+      ]
+    LThan ->
+      [ (Alias "rune", Alias "rune")
+      , (Alias "int", Alias "int")
+      , (Alias "float64", Alias "float64")
+      , (Alias "string", Alias "string")
+      , (Alias "int", Alias "float64")
+      , (Alias "float64", Alias "int")
+      ]
+    LEThan ->
+      [ (Alias "rune", Alias "rune")
+      , (Alias "int", Alias "int")
+      , (Alias "float64", Alias "float64")
+      , (Alias "string", Alias "string")
+      , (Alias "int", Alias "float64")
+      , (Alias "float64", Alias "int")
+      ]
+    GThan ->
+      [ (Alias "rune", Alias "rune")
+      , (Alias "int", Alias "int")
+      , (Alias "float64", Alias "float64")
+      , (Alias "string", Alias "string")
+      , (Alias "int", Alias "float64")
+      , (Alias "float64", Alias "int")
+      ]
+    GEThan ->
+      [ (Alias "rune", Alias "rune")
+      , (Alias "int", Alias "int")
+      , (Alias "float64", Alias "float64")
+      , (Alias "string", Alias "string")
+      , (Alias "int", Alias "float64")
+      , (Alias "float64", Alias "int")
+      ]
+    Add ->
+      [ (Alias "int", Alias "int")
+      , (Alias "int", Alias "string")
+      , (Alias "string", Alias "int")
+      , (Alias "float64", Alias "float64")
+      , (Alias "string", Alias "string")
+      , (Alias "int", Alias "float64")
+      , (Alias "float64", Alias "int")
+      ]
+    Sub ->
+      [ (Alias "int", Alias "int")
+      , (Alias "float64", Alias "float64")
+      , (Alias "int", Alias "float64")
+      , (Alias "float64", Alias "int")
+      ]
+    Mult ->
+      [ (Alias "int", Alias "int")
+      , (Alias "float64", Alias "float64")
+      , (Alias "int", Alias "float64")
+      , (Alias "float64", Alias "int")
+      ]
+    Div ->
+      [ (Alias "int", Alias "int")
+      , (Alias "float64", Alias "float64")
+      , (Alias "int", Alias "float64")
+      , (Alias "float64", Alias "int")
+      ]
+    BitClear -> [(Alias "int", Alias "int")]
+    BitRShift -> [(Alias "int", Alias "int")]
+    BitLShift -> [(Alias "int", Alias "int")]
+    BitXor -> [(Alias "int", Alias "int")]
+    BitOr -> [(Alias "int", Alias "int")]
+    BitAnd -> [(Alias "int", Alias "int")]
 
-binaryCheck :: [(Type, Type)] 
-             -> ExpressionCategory
-             -> (Maybe Type) 
-             -> (Maybe Type)
-             -> SymbolTable 
-             -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
-
-binaryCheck tList ExpBoolean (Just t1) (Just t2) symtbl = case (t1, t2) `elem` tList of
-                    True -> Right(Just (Alias "bool"), symtbl)
-                    False -> Left(TypeNotCompatableError (Just t1) (Just t2), symtbl)
-binaryCheck tList ExpComparable (Just t1) (Just t2) symtbl = case (t1, t2) of
-      (Alias s1, Alias s2) -> case (Alias s1, Alias s2) `elem` tList of
-                    True -> Right(Just (Alias "bool"), symtbl)
-                    False -> Left(TypeNotCompatableError (Just t1) (Just t2), symtbl)
-      (Array s1 _, Array s2 _) -> binaryCheck tList ExpComparable (Just s1) (Just s2) symtbl
-      (Struct s1, Struct s2) -> structListCheck tList ExpComparable s1 s2 symtbl
-      (s1, s2) -> Left (TypeNotCompatableError (Just s1) (Just s2), symtbl)
-binaryCheck tList ExpOrdered (Just t1) (Just t2) symtbl = case (t1, t2) of
-      (Alias s1, Alias s2) -> case (Alias s1, Alias s2) `elem` tList of
-                    True -> Right(Just (Alias "bool"), symtbl)
-                    False -> Left(TypeNotCompatableError (Just t1) (Just t2), symtbl)
-      (s1, s2) -> Left (TypeNotCompatableError (Just s1) (Just s2), symtbl)
-binaryCheck tList _ (Just t1) (Just t2) symtbl = case (t1, t2) of
-      (Alias s1, Alias s2) -> case (Alias s1, Alias s2) `elem` tList of
-                    True -> Right(Just (Alias (doubleConvert (s1, s2))), symtbl)
-                    False -> Left(TypeNotCompatableError (Just t1) (Just t2), symtbl)
-      (s1, s2) -> Left (TypeNotCompatableError (Just s1) (Just s2), symtbl)
-binaryCheck tList _ t1 t2 symtbl = Left(TypeNotCompatableError t1 t2, symtbl)
+binaryCheck
+  :: [(Type, Type)]
+  -> ExpressionCategory
+  -> (Maybe Type)
+  -> (Maybe Type)
+  -> SymbolTable
+  -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+binaryCheck tList ExpBoolean (Just t1) (Just t2) symtbl =
+  case (t1, t2) `elem` tList of
+    True -> Right (Just (Alias "bool"), symtbl)
+    False -> Left (TypeNotCompatableError (Just t1) (Just t2), symtbl)
+binaryCheck tList ExpComparable (Just t1) (Just t2) symtbl =
+  case (t1, t2) of
+    (Alias s1, Alias s2) ->
+      case (Alias s1, Alias s2) `elem` tList of
+        True -> Right (Just (Alias "bool"), symtbl)
+        False -> Left (TypeNotCompatableError (Just t1) (Just t2), symtbl)
+    (Array s1 _, Array s2 _) ->
+      binaryCheck tList ExpComparable (Just s1) (Just s2) symtbl
+    (Struct s1, Struct s2) -> structListCheck tList ExpComparable s1 s2 symtbl
+    (s1, s2) -> Left (TypeNotCompatableError (Just s1) (Just s2), symtbl)
+binaryCheck tList ExpOrdered (Just t1) (Just t2) symtbl =
+  case (t1, t2) of
+    (Alias s1, Alias s2) ->
+      case (Alias s1, Alias s2) `elem` tList of
+        True -> Right (Just (Alias "bool"), symtbl)
+        False -> Left (TypeNotCompatableError (Just t1) (Just t2), symtbl)
+    (s1, s2) -> Left (TypeNotCompatableError (Just s1) (Just s2), symtbl)
+binaryCheck tList _ (Just t1) (Just t2) symtbl =
+  case (t1, t2) of
+    (Alias s1, Alias s2) ->
+      case (Alias s1, Alias s2) `elem` tList of
+        True -> Right (Just (Alias (doubleConvert (s1, s2))), symtbl)
+        False -> Left (TypeNotCompatableError (Just t1) (Just t2), symtbl)
+    (s1, s2) -> Left (TypeNotCompatableError (Just s1) (Just s2), symtbl)
+binaryCheck tList _ t1 t2 symtbl = Left (TypeNotCompatableError t1 t2, symtbl)
 
 -- Type check two structs for comparison
-structElementCheck :: [(Type, Type)] 
-             -> ExpressionCategory
-             -> ([Identifier], Type) 
-             -> ([Identifier], Type)
-             -> SymbolTable 
-             -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+structElementCheck
+  :: [(Type, Type)]
+  -> ExpressionCategory
+  -> ([Identifier], Type)
+  -> ([Identifier], Type)
+  -> SymbolTable
+  -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+structElementCheck tList ExpComparable (_, t1) (_, t2) symtbl =
+  case (t1, t2) of
+    (Alias s1, Alias s2) ->
+      case (Alias s1, Alias s2) `elem` tList of
+        True -> Right (Just (Alias "bool"), symtbl)
+        False -> Left (TypeNotCompatableError (Just t1) (Just t2), symtbl)
+    (Array s1 _, Array s2 _) ->
+      binaryCheck tList ExpComparable (Just s1) (Just s2) symtbl
+    (Struct s1, Struct s2) -> structListCheck tList ExpComparable s1 s2 symtbl
+    (s1, s2) -> Left (TypeNotCompatableError (Just s1) (Just s2), symtbl)
+structElementCheck tList _ (_, t1) (_, t2) symtbl =
+  Left (TypeNotCompatableError (Just t1) (Just t2), symtbl)
 
-structElementCheck tList ExpComparable (_, t1) (_, t2) symtbl = case (t1, t2) of
-      (Alias s1, Alias s2) -> case (Alias s1, Alias s2) `elem` tList of
-                    True -> Right(Just (Alias "bool"), symtbl)
-                    False -> Left(TypeNotCompatableError (Just t1) (Just t2), symtbl)
-      (Array s1 _, Array s2 _) -> binaryCheck tList ExpComparable (Just s1) (Just s2) symtbl
-      (Struct s1, Struct s2) -> structListCheck tList ExpComparable s1 s2 symtbl
-      (s1, s2) -> Left (TypeNotCompatableError (Just s1) (Just s2), symtbl)
-structElementCheck tList _ (_, t1) (_, t2) symtbl = Left(TypeNotCompatableError (Just t1) (Just t2), symtbl)
-
-structListCheck :: [(Type, Type)] 
-             -> ExpressionCategory
-             -> [([Identifier], Type)] 
-             -> [([Identifier], Type)]
-             -> SymbolTable 
-             -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
-
-structListCheck tList ExpComparable [] [] symtbl = Right(Just (Alias "bool"), symtbl)
-structListCheck tList ExpComparable [] _ symtbl = Left(StructsNotSameError, symtbl)
-structListCheck tList ExpComparable _ [] symtbl = Left(StructsNotSameError, symtbl)
-structListCheck tList ExpComparable (x1:xs1) (x2:xs2) symtbl = 
-   case structElementCheck tList ExpComparable x1 x2 symtbl of
-      Right(_, symtbl') -> structListCheck tList ExpComparable xs1 xs2 symtbl'
-      Left(err) -> Left(err)
-structListCheck tList _ _ _ symtbl = Left(StructsNotSameError, symtbl)
+structListCheck
+  :: [(Type, Type)]
+  -> ExpressionCategory
+  -> [([Identifier], Type)]
+  -> [([Identifier], Type)]
+  -> SymbolTable
+  -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+structListCheck tList ExpComparable [] [] symtbl =
+  Right (Just (Alias "bool"), symtbl)
+structListCheck tList ExpComparable [] _ symtbl =
+  Left (StructsNotSameError, symtbl)
+structListCheck tList ExpComparable _ [] symtbl =
+  Left (StructsNotSameError, symtbl)
+structListCheck tList ExpComparable (x1:xs1) (x2:xs2) symtbl =
+  case structElementCheck tList ExpComparable x1 x2 symtbl of
+    Right (_, symtbl') -> structListCheck tList ExpComparable xs1 xs2 symtbl'
+    Left (err) -> Left (err)
+structListCheck tList _ _ _ symtbl = Left (StructsNotSameError, symtbl)
 
 -- Different expression categories for types
-data ExpressionCategory 
-            = ExpBoolean
-            | ExpComparable
-            | ExpOrdered
-            | ExpAdd
-            | ExpNumeric
-            | ExpInteger
+data ExpressionCategory
+  = ExpBoolean
+  | ExpComparable
+  | ExpOrdered
+  | ExpAdd
+  | ExpNumeric
+  | ExpInteger
 
 -- Convert a binary operation to its expression category
 opToCategory :: BinaryOp -> ExpressionCategory
-opToCategory a = case a of
-   Or -> ExpBoolean
-   And -> ExpBoolean
-   Equals -> ExpComparable
-   NotEquals -> ExpComparable
-   LThan -> ExpOrdered
-   LEThan -> ExpOrdered
-   GThan -> ExpOrdered
-   GEThan -> ExpOrdered
-   Add -> ExpAdd
-   Sub -> ExpNumeric
-   Div -> ExpNumeric
-   Mult -> ExpNumeric
-   BitAnd -> ExpInteger
-   BitOr -> ExpInteger
-   BitXor -> ExpInteger
-   BitLShift -> ExpInteger
-   BitRShift -> ExpInteger
-   BitClear -> ExpInteger
+opToCategory a =
+  case a of
+    Or -> ExpBoolean
+    And -> ExpBoolean
+    Equals -> ExpComparable
+    NotEquals -> ExpComparable
+    LThan -> ExpOrdered
+    LEThan -> ExpOrdered
+    GThan -> ExpOrdered
+    GEThan -> ExpOrdered
+    Add -> ExpAdd
+    Sub -> ExpNumeric
+    Div -> ExpNumeric
+    Mult -> ExpNumeric
+    BitAnd -> ExpInteger
+    BitOr -> ExpInteger
+    BitXor -> ExpInteger
+    BitLShift -> ExpInteger
+    BitRShift -> ExpInteger
+    BitClear -> ExpInteger
 
 -- Convert a tuple of types to the proper type
 doubleConvert :: (String, String) -> String

@@ -24,6 +24,7 @@ data SymbolTableError
   = DuplicateIdentifier { duplicateIdentifier :: Identifier }
   | NotFoundIdentifier { notFoundIdentifier :: Identifier }
   | InconsistentTable
+  | PopEmptyStackError
   deriving (Eq, Show)
 
 type SymMap = Map Identifier Entry
@@ -53,9 +54,9 @@ initMap = fromList[(IdOrType "true", Entry CategoryVariable $ Just (Alias "bool"
                   ,(IdOrType "rune", Entry CategoryType $ Just (Alias "rune"))
                   ,(IdOrType "bool", Entry CategoryType $ Just (Alias "bool"))
                   ,(IdOrType "string", Entry CategoryType $ Just (Alias "string"))
-                  ,(IdOrType "print", Entry CategoryVariable $ Just (Func))
-                  ,(IdOrType "println", Entry CategoryVariable $ Just (Func))
-                  ,(IdOrType "append", Entry CategoryVariable $ Just (Func))]
+                  ,(IdOrType "print", Entry CategoryVariable $ Just (BuiltIn))
+                  ,(IdOrType "println", Entry CategoryVariable $ Just (BuiltIn))
+                  ,(IdOrType "append", Entry CategoryVariable $ Just (BuiltIn))]
 
   
 -- Check if an idname is in the symbol table
@@ -92,8 +93,9 @@ push f (Stack fs) = Stack (f : fs)
 top :: Stack -> Frame
 top (Stack s) = head s
 
-pop :: Stack -> (Frame, Stack)
-pop (Stack (s:ss)) = (s, Stack ss)
+pop :: Stack -> Either SymbolTableError (Frame, Stack)
+pop (Stack []) = Left PopEmptyStackError
+pop (Stack (s:ss)) = Right (s, Stack ss)
 
 getMap :: Frame -> SymMap
 getMap (Frame m) = m
@@ -112,8 +114,11 @@ initSymbolTable = pushFrame emptySymbolTable (Frame initMap) :: SymbolTable
 newFrame :: SymbolTable -> SymbolTable
 newFrame (SymbolTable s) = SymbolTable (push (Frame newMap) s)
 
-popFrame :: SymbolTable -> (Frame, SymbolTable)
-popFrame (SymbolTable s) = (fst $ pop s, SymbolTable (snd $ pop s))
+popFrame :: SymbolTable -> Either SymbolTableError (Frame, SymbolTable)
+popFrame (SymbolTable s) =
+  case pop s of
+    Right s' -> Right (fst s', SymbolTable (snd s'))
+    Left err -> Left err
 
 pushFrame :: SymbolTable -> Frame -> SymbolTable
 pushFrame (SymbolTable s) f = SymbolTable (push f s)
@@ -130,13 +135,14 @@ addEntry :: SymbolTable
          -> Entry 
          -> Either SymbolTableError SymbolTable 
 addEntry s i e =
-  if hasKey f i
-    then Left (DuplicateIdentifier i)
-    else Right s'
+  case x of
+    Right (f, symtbl) -> if hasKey m i
+                         then Left (DuplicateIdentifier i)
+                         else Right (pushFrame symtbl (Frame $ addSym i e m))
+                              where m = getMap f
+    Left err -> Left err
   where
-    s' = pushFrame p (Frame $ addSym i e f)
-    f = getMap $ fst $ popFrame s
-    p = snd $ popFrame s
+    x = popFrame s
 
 -- Lookup an entry in the symbol table
 lookupIdentifier :: SymbolTable
@@ -145,11 +151,10 @@ lookupIdentifier :: SymbolTable
 lookupIdentifier s i =
   if isEmpty $ getStack s
     then Left $ NotFoundIdentifier i
-    else if hasKey (getMap t) i 
-           then case (getSym i (getMap t)) of
+    else case  popFrame s  of
+           Right (f,symtbl) -> if hasKey (getMap f) i
+             then case (getSym i (getMap f)) of
                  (Nothing) -> Left InconsistentTable
                  (Just e) -> Right e
-           else lookupIdentifier s' i
-  where
-    t = fst $ popFrame s
-    s' = snd $ popFrame s
+             else lookupIdentifier symtbl i
+           Left err -> Left err
