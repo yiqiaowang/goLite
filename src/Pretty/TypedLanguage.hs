@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Pretty.Language
+module Pretty.TypedLanguage
   ( pretty
   ) where
 
@@ -10,23 +10,27 @@ import Pretty.Util
 import Pretty.Operators
 import Pretty.Pretty
 import Pretty.Common
-import Language.Language
+import Language.TypedLanguage
 import Language.Operators
 import Language.Common
 
 
-structList :: ([Identifier], Type) -> Integer -> String
+--
+structList :: ([TIdentifier], TType) -> Integer -> String
 structList (idList, t) i =
   concat [spacePrint i, commaSepList idList i, " ", pretty t i, ";\n"]
 
+-- Used to comment types while pretty printing.
+blockComment :: TType -> String
+blockComment p = "/*" ++ pretty p ++ "*/"
 
-instance Pretty Program where
-  pretty (Program package alls) _ =
+instance Pretty TProgram where
+  pretty (TProgram package alls) _ =
     concat ["package ", package, ";\n", "\n", prettyList alls 0]
 
-instance Pretty All where
-  pretty (TopDec dec) _ = pretty dec 0
-  pretty (Function name params Nothing stmts) _ =
+instance Pretty TAll where
+  pretty (TTopDec dec) _ = pretty dec 0
+  pretty (TFunction name params Nothing stmts) _ =
     concat
       [ "func "
       , pretty name 0
@@ -36,7 +40,7 @@ instance Pretty All where
       , prettyList stmts 1
       , "}\n\n"
       ]
-  pretty (Function name params (Just t) stmts) _ =
+  pretty (TFunction name params (Just t) stmts) _ =
     concat
       [ "func "
       , pretty name 0
@@ -49,10 +53,10 @@ instance Pretty All where
       , "}\n\n"
       ]
 
-instance Pretty TopLevel where
-  pretty (VarDec (Variable var (Just t) [])) i =
+instance Pretty TTopLevel where
+  pretty (TVarDec (TVariable var (Just t) [])) i =
     concat [spacePrint i, "var ", commaSepList var i, " ", pretty t i, ";\n"]
-  pretty (VarDec (Variable var (Just t) expr)) i =
+  pretty (TVarDec (TVariable var (Just t) expr)) i =
     concat
       [ spacePrint i
       , "var "
@@ -63,7 +67,7 @@ instance Pretty TopLevel where
       , commaSepList expr i
       , ";\n"
       ]
-  pretty (VarDec (Variable var Nothing expr)) i =
+  pretty (TVarDec (TVariable var Nothing expr)) i =
     concat
       [ spacePrint i
       , "var "
@@ -72,19 +76,19 @@ instance Pretty TopLevel where
       , commaSepList expr i
       , ";\n"
       ]
-  pretty (VarDecList vList) i =
+  pretty (TVarDecList vList) i =
     concat
       [spacePrint i, "var (\n", prettyList vList (i + 1), spacePrint i, ");\n"]
-  pretty (TypeDec (TypeName ident t)) i =
+  pretty (TTypeDec (TTypeName ident t)) i =
     concat [spacePrint i, "type ", pretty ident i, " ", pretty t i, ";\n"]
-  pretty (TypeDecList tList) i =
+  pretty (TTypeDecList tList) i =
     concat
       [spacePrint i, "type (\n", prettyList tList (i + 1), spacePrint i, ");\n"]
 
-instance Pretty Variable where
-  pretty (Variable var (Just t) []) i =
+instance Pretty TVariable where
+  pretty (TVariable var (Just t) []) i =
     concat [spacePrint i, commaSepList var i, " ", pretty t i, ";\n"]
-  pretty (Variable var (Just t) expr) i =
+  pretty (TVariable var (Just t) expr) i =
     concat
       [ spacePrint i
       , commaSepList var i
@@ -94,41 +98,41 @@ instance Pretty Variable where
       , commaSepList expr i
       , ";\n"
       ]
-  pretty (Variable var Nothing expr) i =
+  pretty (TVariable var Nothing expr) i =
     concat [spacePrint i, commaSepList var i, " = ", commaSepList expr i, ";\n"]
 
-instance Pretty TypeName where
-  pretty (TypeName ident t) i =
+instance Pretty TTypeName where
+  pretty (TTypeName ident t) i =
     concat [spacePrint i, pretty ident i, " ", pretty t i, ";\n"]
 
-instance Pretty Identifier where
-  pretty (IdOrType s) i = s
-  pretty (IdArray s xs) i = concat [s, wrapSquareList (map (`pretty` 0) xs) i]
-  pretty (IdField xs) i = intercalate "." $ map (`pretty` i) xs
+instance Pretty TIdentifier where
+  pretty (TIdOrType s) i = s
+  pretty (TIdArray s xs) i = concat [s, wrapSquareList (map (`pretty` 0) xs) i]
+  pretty (TIdField xs) i = intercalate "." $ map (`pretty` i) xs
 
-instance Pretty Type where
-  pretty (Alias s) _ = s
-  pretty (Array t expr) _ = concat ["[", pretty expr 0, "]", pretty t 0]
-  pretty (Slice t) _ = concat ["[]", pretty t 0]
-  pretty (Struct list) i =
+instance Pretty TType where
+  pretty (TAlias s) _ = s
+  pretty (TArray t expr) _ = concat ["[", pretty expr 0, "]", pretty t 0]
+  pretty (TSlice t) _ = concat ["[]", pretty t 0]
+  pretty (TStruct list) i =
     concat ["struct {\n", concatMap (`structList` (i + 1)) list, "}"]
 
-instance Pretty Parameter where
-  pretty (Parameter idList t) i =
+instance Pretty TParameter where
+  pretty (TParameter idList t) i =
     concat [commaSepList idList i, " ", pretty t 0]
 
-instance Pretty Stmt where
-  pretty (StmtDec dec) i = pretty dec i
-  pretty (SimpleStmt simp) i = concat [spacePrint i, pretty simp i, ";\n"]
-  pretty (Print expr) i =
+instance Pretty TStmt where
+  pretty (TStmtDec dec) i = pretty dec i
+  pretty (TSimpleStmt simp) i = concat [spacePrint i, pretty simp i, ";\n"]
+  pretty (TPrint expr) i =
     concat [spacePrint i, "print(", commaSepList expr i, ");\n"]
-  pretty (Println expr) i =
+  pretty (TPrintln expr) i =
     concat [spacePrint i, "println(", commaSepList expr i, ");\n"]
-  pretty (Return Nothing) i = concat [spacePrint i, "return;\n"]
-  pretty (Return (Just expr)) i =
+  pretty (TReturn Nothing) i = concat [spacePrint i, "return;\n"]
+  pretty (TReturn (Just expr)) i =
     concat [spacePrint i, "return ", pretty expr 0, ";\n"]
-  pretty (If ifstmt) i = concat [spacePrint i, pretty ifstmt i]
-  pretty (Switch stmt Nothing c) i =
+  pretty (TIf ifstmt) i = concat [spacePrint i, pretty ifstmt i]
+  pretty (TSwitch stmt Nothing c) i =
     concat
       [ spacePrint i
       , "switch "
@@ -138,7 +142,7 @@ instance Pretty Stmt where
       , spacePrint i
       , "}\n"
       ]
-  pretty (Switch stmt (Just expr) c) i =
+  pretty (TSwitch stmt (Just expr) c) i =
     concat
       [ spacePrint i
       , "switch"
@@ -150,10 +154,10 @@ instance Pretty Stmt where
       , spacePrint i
       , "}\n"
       ]
-  pretty (Infinite stmts) i =
+  pretty (TInfinite stmts) i =
     concat
       [spacePrint i, "for {\n", prettyList stmts (i + 1), spacePrint i, "}\n"]
-  pretty (While expr stmts) i =
+  pretty (TWhile expr stmts) i =
     concat
       [ spacePrint i
       , "for "
@@ -163,7 +167,7 @@ instance Pretty Stmt where
       , spacePrint i
       , "}\n"
       ]
-  pretty (For simp1 expr simp2 stmts) i =
+  pretty (TFor simp1 expr simp2 stmts) i =
     concat
       [ spacePrint i
       , "for "
@@ -177,27 +181,27 @@ instance Pretty Stmt where
       , spacePrint i
       , "}\n"
       ]
-  pretty (Block xs) i = concat [spacePrint i, "{\n", prettyList xs (i+1), spacePrint i, "};\n"]
-  pretty Break i = concat [spacePrint i, "break;\n"]
-  pretty Continue i = concat [spacePrint i, "continue;\n"]
+  pretty (TBlock xs) i = concat [spacePrint i, "{\n", prettyList xs (i+1), spacePrint i, "};\n"]
+  pretty TBreak i = concat [spacePrint i, "break;\n"]
+  pretty TContinue i = concat [spacePrint i, "continue;\n"]
 
-instance Pretty SimpleStmt where
-  pretty (StmtFuncCall func) i = (pretty func i)
-  pretty (Incr ident) i = concat [pretty ident i, "++"]
-  pretty (Decr ident) i = concat [pretty ident i, "--"]
-  pretty (Assign idList exprList) i =
+instance Pretty TSimpleStmt where
+  pretty (TStmtFuncCall func) i = (pretty func i)
+  pretty (TIncr ident) i = concat [pretty ident i, "++"]
+  pretty (TDecr ident) i = concat [pretty ident i, "--"]
+  pretty (TAssign idList exprList) i =
     concat [commaSepList idList i, " = ", commaSepList exprList i]
-  pretty (ShortBinary opEq ident expr) i = concat [pretty ident i, " ", pretty opEq i, " ", pretty expr i]
-  pretty (ShortVarDec idList exprList) i =
+  pretty (TShortBinary opEq ident expr) i = concat [pretty ident i, " ", pretty opEq i, " ", pretty expr i]
+  pretty (TShortVarDec idList exprList) i =
     concat [commaSepList idList i, " := ", commaSepList exprList i]
-  pretty (EmptyStmt) i = ""
+  pretty (TEmptyStmt) i = ""
 
-instance Pretty FunctionCall where
-  pretty (FunctionCall ident exprList) i =
+instance Pretty TFunctionCall where
+  pretty (TFunctionCall ident exprList) i =
     concat [pretty ident i, "(", commaSepList exprList i, ")"]
 
-instance Pretty IfStmt where
-  pretty (IfStmt st expr stList (IfStmtCont Nothing)) i =
+instance Pretty TIfStmt where
+  pretty (TIfStmt st expr stList (TIfStmtCont Nothing)) i =
     concat
       [ "if "
       , pretty st 0
@@ -208,7 +212,7 @@ instance Pretty IfStmt where
       , spacePrint i
       , "}\n"
       ]
-  pretty (IfStmt st expr stList (IfStmtCont (Just (Right elseStmt)))) i =
+  pretty (TIfStmt st expr stList (TIfStmtCont (Just (Right elseStmt)))) i =
     concat
       [ "if "
       , pretty st 0
@@ -222,7 +226,7 @@ instance Pretty IfStmt where
       , spacePrint i
       , "}\n"
       ]
-  pretty (IfStmt st expr stList (IfStmtCont (Just (Left ifStmt)))) i =
+  pretty (TIfStmt st expr stList (TIfStmtCont (Just (Left ifStmt)))) i =
     concat
       [ "if "
       , pretty st 0
@@ -235,8 +239,8 @@ instance Pretty IfStmt where
       , pretty ifStmt i
       ]
 
-instance Pretty Clause where
-  pretty (Case exList stList) i =
+instance Pretty TClause where
+  pretty (TCase exList stList) i =
     concat
       [ spacePrint i
       , "case "
@@ -244,19 +248,21 @@ instance Pretty Clause where
       , ":\n"
       , prettyList stList (i + 1)
       ]
-  pretty (Default stList) i =
+  pretty (TDefault stList) i =
     concat [spacePrint i, "default:\n", prettyList stList (i + 1)]
 
-instance Pretty Expression where
-  pretty (Brack expr) i = concat ["(", pretty expr i, ")"]
-  pretty (Id ident) i = pretty ident i
-  pretty (Literal lit) i = pretty lit i
-  pretty (Unary op expr) i = concat [pretty op i, pretty expr i]
-  pretty (Binary op expr1 expr2) i = concat [pretty expr1 i, " ", pretty op i, " ", pretty expr2 i]
-  pretty (ExprFuncCall func) i = pretty func i
-  pretty (Append ident expr) i =
-    concat ["append(", pretty ident i, ", ", pretty expr i, ")"]
+instance Pretty TExpression where
+  pretty ((TBrack expr), type') i = concat ["(", pretty expr i, ")"]
+  pretty ((TId ident), type') i = pretty ident i ++ blockComment type'
+  pretty ((TLiteral lit), type') i = pretty lit i ++ blockComment type'
+  pretty ((TUnary op expr), type') i =
+    concat [pretty op i, pretty expr i, blockComment type']
+  pretty ((TBinary op expr1 expr2), type') i =
+    concat [pretty expr1 i, " ", pretty op i, " ", pretty expr2 i, blockComment type']
+  pretty ((TExprFuncCall func), type') i = pretty func i ++ blockComment type'
+  pretty ((TAppend ident expr), type') i =
+    concat ["append(", pretty ident i, ", ", pretty expr i, ")", blockComment type']
 
-instance Pretty (Maybe Expression) where
+instance Pretty (Maybe TExpression) where
   pretty Nothing i = ""
-  pretty (Just e) i = pretty e i
+  pretty (Just (expr, type')) i = pretty expr i ++ blockComment type'

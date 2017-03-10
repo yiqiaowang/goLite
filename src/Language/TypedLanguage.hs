@@ -49,7 +49,7 @@ data TTypeName =
 -- Type is the Associated Type
 data TIdentifier
   = TIdOrType String
-  | IdArray String [TExpression]
+  | TIdArray String [TExpression]
   | TIdField [TIdentifier]
   deriving (Eq, Ord, Show)
 
