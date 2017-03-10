@@ -24,6 +24,11 @@ data TypeCheckError
   | NoNewIdentifierError
   | AppendNotSliceError
   | StructsNotSameError
+  | DefinitionNotFoundError
+  | FuncCallArgNumError { expectedArgs :: [Type]
+                       ,  receivedArgs :: [Expression]}
+  | FuncCallArgTypeError { expectedArgType :: Type
+                        ,  receivedArgType :: Maybe Type}
   deriving (Eq, Show)
 
 -- This typeclass takes something from Lanugage and a SymbolTable and returns either a
@@ -552,7 +557,34 @@ canIncrDecr (Alias "int") = True
 canIncrDecr (Alias "float64") = True
 canIncrDecr _ = False
 
-instance TypeCheckable FunctionCall
+instance TypeCheckable FunctionCall where
+  typeCheck symtbl (FunctionCall funcName exprs) =
+    case lookupIdentifier symtbl (IdOrType funcName) of
+      Right (Entry _ (Just (Func ts ret))) ->
+        if length ts == length exprs
+          then case functionCallHelper symtbl ts exprs of
+                 Nothing -> Right (ret, symtbl)
+                 Just err -> Left err
+          else Left (FuncCallArgNumError ts exprs, symtbl)
+      Right (Entry _ Nothing) -> Left (DefinitionNotFoundError, symtbl)
+      Left err -> Left (SymbolTableError err, symtbl)
+
+-- Type Cast helper, determines if a function call is a type cast.
+-- IF it is, pass it to typechecking function for type casting.
+-- Takes in a list of types, and a list of expressions, and makes sure they match up
+-- this also type checks the expressions, as it must
+functionCallHelper :: SymbolTable
+                   -> [Type]
+                   -> [Expression]
+                   -> Maybe (TypeCheckError, SymbolTable)
+functionCallHelper _ [] [] = Nothing
+functionCallHelper symtbl (t:ts) (e:es) =
+  case typeCheck symtbl e of
+    Right (x, symtbl') ->
+      if assertTypeEqual (Just t) x
+        then functionCallHelper symtbl' ts es
+        else Just (FuncCallArgTypeError t x, symtbl')
+    Left err -> Just err
 
 --
 instance TypeCheckable Expression where
@@ -584,6 +616,7 @@ instance TypeCheckable Expression where
             binaryCheck (binaryList a) (opToCategory a) t t2 symtbl''
           Left (err) -> Left (err)
       Left (err) -> Left (err)
+  typeCheck symtbl (ExprFuncCall funcCall) = typeCheck symtbl funcCall
 
 -- Check if a unary expression is correctly typed
 unaryList :: UnaryOp -> [Type]
@@ -629,60 +662,34 @@ binaryList a =
       , (Alias "int", Alias "int")
       , (Alias "float64", Alias "float64")
       , (Alias "string", Alias "string")
-      , (Alias "int", Alias "float64")
-      , (Alias "float64", Alias "int")
       ]
     LEThan ->
       [ (Alias "rune", Alias "rune")
       , (Alias "int", Alias "int")
       , (Alias "float64", Alias "float64")
       , (Alias "string", Alias "string")
-      , (Alias "int", Alias "float64")
-      , (Alias "float64", Alias "int")
       ]
     GThan ->
       [ (Alias "rune", Alias "rune")
       , (Alias "int", Alias "int")
       , (Alias "float64", Alias "float64")
       , (Alias "string", Alias "string")
-      , (Alias "int", Alias "float64")
-      , (Alias "float64", Alias "int")
       ]
     GEThan ->
       [ (Alias "rune", Alias "rune")
       , (Alias "int", Alias "int")
       , (Alias "float64", Alias "float64")
       , (Alias "string", Alias "string")
-      , (Alias "int", Alias "float64")
-      , (Alias "float64", Alias "int")
       ]
     Add ->
       [ (Alias "int", Alias "int")
-      , (Alias "int", Alias "string")
-      , (Alias "string", Alias "int")
       , (Alias "float64", Alias "float64")
       , (Alias "string", Alias "string")
-      , (Alias "int", Alias "float64")
-      , (Alias "float64", Alias "int")
       ]
-    Sub ->
-      [ (Alias "int", Alias "int")
-      , (Alias "float64", Alias "float64")
-      , (Alias "int", Alias "float64")
-      , (Alias "float64", Alias "int")
-      ]
-    Mult ->
-      [ (Alias "int", Alias "int")
-      , (Alias "float64", Alias "float64")
-      , (Alias "int", Alias "float64")
-      , (Alias "float64", Alias "int")
-      ]
-    Div ->
-      [ (Alias "int", Alias "int")
-      , (Alias "float64", Alias "float64")
-      , (Alias "int", Alias "float64")
-      , (Alias "float64", Alias "int")
-      ]
+    Sub -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64")]
+    Mult -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64")]
+    Div -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64")]
+    Mod -> [(Alias "int", Alias "int")]
     BitClear -> [(Alias "int", Alias "int")]
     BitRShift -> [(Alias "int", Alias "int")]
     BitLShift -> [(Alias "int", Alias "int")]
@@ -792,6 +799,7 @@ opToCategory a =
     Sub -> ExpNumeric
     Div -> ExpNumeric
     Mult -> ExpNumeric
+    Mod -> ExpInteger
     BitAnd -> ExpInteger
     BitOr -> ExpInteger
     BitXor -> ExpInteger
