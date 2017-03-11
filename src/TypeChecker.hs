@@ -20,6 +20,7 @@ data TypeCheckError
                          ,  typeOptions :: [Type]}
   | TypeNotCompatableError { typeLeft :: Maybe Type
                           ,  typeRight :: Maybe Type}
+  | InvalidInitStatement
   | NoNewIdentifierError
   | AppendNotSliceError
   | ElementsNotComparableError
@@ -360,6 +361,7 @@ typeCheckClauses symtbl (Case exprs stmts:xs) t = do
   (_, symtbl'') <- typeCheckListNewFrame symtbl' stmts
   typeCheckClauses symtbl'' xs t
 
+--
 instance TypeCheckable IfStmt where
   typeCheck symtbl (IfStmt EmptyStmt expr stmts fac) = do
     (_, symtbl') <- typeCheckElemOf symtbl expr [Alias "bool"]
@@ -370,8 +372,19 @@ instance TypeCheckable IfStmt where
     (_, symtbl'') <- typeCheckElemOf symtbl' expr [Alias "bool"]
     (_, symtbl''') <- typeCheckListNewFrame symtbl'' stmts
     (_, symtbl'''') <- typeCheck symtbl''' fac
-    Right (Nothing, symtbl)
+    Right (Nothing, symtbl')
+--     typeCheckIfHelper symtbl' expr stmts fac
+--   typeCheck symtbl (IfStmt a@(Assign _ _ ) expr stmts fac) = do
+--     (_, symtbl') <- typeCheck (newFrame symtbl) a
+--     typeCheckIfHelper symtbl' expr stmts fac
+--   typeCheck symtbl _ = Left (InvalidInitStatement, symtbl)
+--
+-- -- Type checks if statements that contain an init svd/assignment
+-- -- statement equivalently
+-- typeCheckIfHelper symtbl expr stmts fac = do
 
+
+--
 instance TypeCheckable IfStmtCont where
   typeCheck symtbl (IfStmtCont Nothing) = Right (Nothing, symtbl)
   typeCheck symtbl (IfStmtCont (Just (Right stmts))) = do
