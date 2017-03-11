@@ -348,43 +348,31 @@ typeCheckClauses
   -> Type
   -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
 typeCheckClauses symtbl [] _ = Right (Nothing, symtbl)
-typeCheckClauses symtbl (Default stmts:xs) t =
-  case typeCheckListNewFrame symtbl stmts of
-    Right (_, symtbl') -> typeCheckClauses symtbl' xs t
-    Left err -> Left err
-typeCheckClauses symtbl (Case exprs stmts:xs) t =
-  case typeCheckListElemOf symtbl exprs [t] of
-    Right (_, symtbl') ->
-      case typeCheckListNewFrame symtbl' stmts of
-        Right (_, symtbl'') -> typeCheckClauses symtbl'' xs t
-        Left err -> Left err
-    Left err -> Left err
+typeCheckClauses symtbl (Default stmts:xs) t = do
+  (_, symtbl') <- typeCheckListNewFrame symtbl stmts
+  typeCheckClauses symtbl' xs t
+typeCheckClauses symtbl (Case exprs stmts:xs) t = do
+  (_, symtbl') <- typeCheckListElemOf symtbl exprs [t]
+  (_, symtbl'') <- typeCheckListNewFrame symtbl' stmts
+  typeCheckClauses symtbl'' xs t
 
 instance TypeCheckable IfStmt where
   typeCheck symtbl (IfStmt EmptyStmt expr stmts fac) = do
-    (_, symtbl') <- typeCheckElemOf symtbl expr [(Alias "bool")]
+    (_, symtbl') <- typeCheckElemOf symtbl expr [Alias "bool"]
     (_, symtbl'') <- typeCheckListNewFrame symtbl' stmts
     typeCheck symtbl'' fac
-  typeCheck symtbl (IfStmt stmt expr stmts fac) =
-    case typeCheck (newFrame symtbl) stmt of
-      Right (_, symtbl') ->
-        case typeCheckElemOf symtbl' expr [(Alias "bool")] of
-          Right (_, symtbl'') ->
-            case typeCheckListNewFrame symtbl'' stmts of
-              Right (_, symtbl''') ->
-                case typeCheck symtbl''' fac of
-                  Right (_, symtbl'''') -> Right (Nothing, symtbl)
-                  Left err -> Left err
-              Left err -> Left err
-          Left err -> Left err
-      Left err -> Left err
+  typeCheck symtbl (IfStmt stmt expr stmts fac) = do
+    (_, symtbl') <- typeCheck (newFrame symtbl) stmt
+    (_, symtbl'') <- typeCheckElemOf symtbl' expr [Alias "bool"]
+    (_, symtbl''') <- typeCheckListNewFrame symtbl'' stmts
+    (_, symtbl'''') <- typeCheck symtbl''' fac
+    Right (Nothing, symtbl)
 
 instance TypeCheckable IfStmtCont where
   typeCheck symtbl (IfStmtCont Nothing) = Right (Nothing, symtbl)
-  typeCheck symtbl (IfStmtCont (Just (Right stmts))) =
-    case typeCheckListNewFrame symtbl stmts of
-      Right (_, symtbl') -> Right (Nothing, symtbl')
-      Left err -> Left err
+  typeCheck symtbl (IfStmtCont (Just (Right stmts))) = do
+    (_, symtbl') <- typeCheckListNewFrame symtbl stmts
+    Right (Nothing, symtbl')
   typeCheck symtbl (IfStmtCont (Just (Left ifstmt))) = typeCheck symtbl ifstmt
 
 instance TypeCheckable TypeName where
