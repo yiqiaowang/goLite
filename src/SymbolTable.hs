@@ -37,6 +37,7 @@ data Entry = Entry
 data TypeCategory
   = CategoryVariable
   | CategoryType 
+  | CategoryAlias
   deriving (Eq, Show)
 
 
