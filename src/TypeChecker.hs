@@ -390,7 +390,10 @@ instance TypeCheckable IfStmtCont where
 
 instance TypeCheckable TypeName where
   typeCheck symtbl (TypeName (Alias typename) typeval) =
-    case addEntry symtbl (IdOrType typename) (Entry CategoryType $ Just typeval) of
+    case addEntry
+           symtbl
+           (IdOrType typename)
+           (Entry CategoryAlias $ Just typeval) of
       Right symtbl' -> Right (Nothing, symtbl')
       Left err -> Left (SymbolTableError err, symtbl)
 
@@ -444,17 +447,15 @@ getBaseType
 getBaseType symtbl s =
   case lookupIdentifier symtbl s of
     Right e ->
-      if dataType e `elem`
-         [ Just (Alias "int")
-         , Just (Alias "float64")
-         , Just (Alias "bool")
-         , Just (Alias "string")
-         , Just (Alias "rune")
-         ]
+      if (typeCategory e == CategoryType) || isStruct (dataType e)
         then Right (dataType e, symtbl)
         else case dataType e of
                Just (Alias s) -> getBaseType symtbl (IdOrType s)
     Left err -> Left (SymbolTableError err, symtbl)
+
+isStruct :: Maybe Type -> Bool
+isStruct (Just (Struct _)) = True
+isStruct _ = False
 
 --
 instance TypeCheckable Type where
