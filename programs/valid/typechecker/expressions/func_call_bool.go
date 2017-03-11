@@ -1,6 +1,6 @@
 package expressions
 
-func f_bool(a, b bool) rune {
+func f_bool(a, b bool) bool{
   return true
 }
 

@@ -5,5 +5,6 @@ func main() {
   var b string = `raw string`
 
   var x string = a
-  var y bool = b
+  var y string = b
+  return
 }
