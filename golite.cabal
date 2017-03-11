@@ -13,6 +13,7 @@ library
                      , Parser.Weeder
                      , TypeChecker.TypeChecker
                      , TypeChecker.SymbolTable
+                     , TypeChecker.TypeCheckerError
                      , Pretty.Pretty
                      , Pretty.Common
                      , Pretty.Language

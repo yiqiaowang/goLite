@@ -6,41 +6,12 @@ module TypeChecker.TypeChecker
 
 import Data.Map.Strict (keys)
 import Language.Language
+import Language.TypedLanguage
 import Language.Operators
 import Language.Common
 import TypeChecker.SymbolTable
+import TypeChecker.TypeCheckerError
 
-type ExpectedType = Maybe Type
-
-type ActualType = Maybe Type
-
-data TypeCheckError
-  = SymbolTableError { symbolTableError :: SymbolTableError}
-  | TypeMismatchError { expectedType :: ExpectedType
-                     ,  actualType :: ActualType}
-  | TypeNotElementOfError { typeReceived :: Maybe Type
-                         ,  typeOptions :: [Type]}
-  | TypeNotCompatableError { typeLeft :: Maybe Type
-                          ,  typeRight :: Maybe Type}
-  | InvalidInitStatement
-  | NoNewIdentifierError
-  | AppendNotSliceError
-  | ElementsNotComparableError
-  | DefinitionNotFoundError
-  | FuncCallArgNumError { expectedArgs :: [Type]
-                       ,  receivedArgs :: [Expression]}
-  | FuncCallArgTypeError { expectedArgType :: Type
-                        ,  receivedArgType :: Maybe Type}
-  | IllegalCastError { toType :: Type
-                    ,  fromType :: Type}
-  | EmptyCastError
-  | InvalidTypeForOpError { invalidType :: Maybe Type}
-  | UndefinedTypeError { undefinedType :: String}
-  | VariableAsTypeError { variableAsTypeError :: String}
-  | VariableDecError
-  | DebugError
-  | StructAccessError
-  deriving (Eq, Show)
 
 -- This typeclass takes something from Lanugage and a SymbolTable and returns either a
 -- (Maybe Type, SymbolTable) or a TypeCheckError. This is done so that all language data types can
@@ -55,16 +26,16 @@ class TypeCheckable a where
     :: SymbolTable
     -> a
     -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
-  typeCheck symtbl a = Right (Nothing, symtbl)
+
   typeCheckList
     :: SymbolTable
     -> [a]
     -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
   typeCheckList symtbl [] = Right (Nothing, symtbl)
-  typeCheckList symtbl (x:xs) =
-    case typeCheck symtbl x of
-      Right (_, symtbl') -> typeCheckList symtbl' xs
-      Left err -> Left err
+  typeCheckList symtbl (x:xs) = do
+    (_, symtbl') <- typeCheck symtbl x
+    typeCheckList symtbl' xs
+
   typeCheckListNewFrame
     :: SymbolTable
     -> [a]
@@ -76,6 +47,7 @@ class TypeCheckable a where
           Right (f, ps) -> Right (Nothing, ps)
           Left err -> Left (SymbolTableError err, symtbl')
       Left err -> Left err
+
   typeCheckElemOf
     :: SymbolTable
     -> a
@@ -90,24 +62,16 @@ class TypeCheckable a where
           then Right (Nothing, symtbl')
           else Left (TypeNotElementOfError (Just t) types, symtbl')
       Left err -> Left err
+
   typeCheckListElemOf
     :: SymbolTable
     -> [a]
     -> [Type]
     -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
   typeCheckListElemOf symtbl [] _ = Right (Nothing, symtbl)
-  typeCheckListElemOf symtbl (a:as) types =
-    case typeCheckElemOf symtbl a types of
-      Right (_, symtbl') -> typeCheckListElemOf symtbl' as types
-      Left err -> Left err -- typeCheckListElemOf
-  --   :: SymbolTable
-  --   -> [a]
-  --   -> [Type]
-  --   -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
-  -- typeCheckListElemOf symtbl xs types =
-  --   case typeCheckListElemOf (newFrame symtbl) xs types of
-  --     Right (_, symtbl') -> Right (Nothing, symtbl')
-  --     Left err -> Left err
+  typeCheckListElemOf symtbl (a:as) types = do
+    (_, symtbl') <- typeCheckElemOf symtbl a types
+    typeCheckListElemOf symtbl' as types
 
 instance TypeCheckable Program where
   typeCheck symtbl (Program _ alls) = do
