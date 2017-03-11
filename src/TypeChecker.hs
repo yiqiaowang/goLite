@@ -32,6 +32,7 @@ data TypeCheckError
   | IllegalCastError { toType :: Type
                     ,  fromType :: Type}
   | EmptyCastError
+  | InvalidTypeForOpError { invalidType :: Maybe Type}
   deriving (Eq, Show)
 
 -- This typeclass takes something from Lanugage and a SymbolTable and returns either a
@@ -670,7 +671,7 @@ instance TypeCheckable Expression where
       Right (t, symtbl') ->
         case typeCheck symtbl' expr2 of
           Right (t2, symtbl'') -> case assertTypeEqual t t2 of
-                True -> binaryCheck (binaryList a) (opToCategory a) t t2 symtbl''
+                True -> binaryCheck (binaryList a) (opToCategory a) t symtbl''
                 False -> Left(TypeMismatchError t t2, symtbl'')
           Left (err) -> Left (err)
       Left (err) -> Left (err)
@@ -779,42 +780,41 @@ binaryCheck
   :: [(Type, Type)]
   -> ExpressionCategory
   -> (Maybe Type)
-  -> (Maybe Type)
   -> SymbolTable
   -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
-binaryCheck tList ExpBoolean (Just (Alias str1)) (Just (Alias str2)) symtbl =
-  case (getBaseType symtbl (IdOrType str1), getBaseType symtbl (IdOrType str2)) of
-    (Right (Just t1', symtbl1), Right (Just t2', symtbl2)) -> case (t1', t2') `elem` tList of
+binaryCheck tList ExpBoolean (Just (Alias str1)) symtbl =
+  case getBaseType symtbl (IdOrType str1) of
+    Right (Just t1', symtbl1) -> case (t1', t1') `elem` tList of
                             True -> Right (Just (Alias "bool"), symtbl1)
-                            False -> Left (TypeNotCompatableError (Just (Alias str1)) (Just (Alias str2)), symtbl1)
-    (_, _) -> Left(DefinitionNotFoundError, symtbl)
-binaryCheck tList ExpComparable (Just t1) (Just t2) symtbl =
-  case (t1, t2) of
-        (Alias s1, Alias s2) -> case (getBaseType symtbl (IdOrType s1), getBaseType symtbl (IdOrType s2)) of
-                  (Right (Just (Alias s1), symtbl1), Right (Just (Alias s2), symtbl2)) ->
-                           case (Alias s1, Alias s2) `elem` tList of
+                            False -> Left (InvalidTypeForOpError (Just (Alias str1)), symtbl1)
+    _ -> Left(DefinitionNotFoundError, symtbl)
+binaryCheck tList ExpComparable (Just t1) symtbl =
+  case t1 of
+        (Alias s1) -> case getBaseType symtbl (IdOrType s1) of
+                  (Right (Just (Alias s1), symtbl1)) ->
+                           case (Alias s1, Alias s1) `elem` tList of
                               True -> Right (Just (Alias "bool"), symtbl)
-                              False -> Left (TypeNotCompatableError (Just t1) (Just t2), symtbl)
-        (Array s1 _, Array s2 _) -> comparableCheck s1 symtbl
-        (Struct s1, Struct s2) -> structListCheck s1 symtbl
-        (_, _) -> Left(DefinitionNotFoundError, symtbl) 
-binaryCheck tList ExpOrdered (Just t1) (Just t2) symtbl =
-  case (t1, t2) of
-        (Alias s1, Alias s2) -> case (getBaseType symtbl (IdOrType s1), getBaseType symtbl (IdOrType s2)) of
-                  (Right (Just (Alias s1), symtbl1), Right (Just (Alias s2), symtbl2)) ->
-                           case (Alias s1, Alias s2) `elem` tList of
+                              False -> Left (InvalidTypeForOpError (Just t1), symtbl)
+        (Array s1 _) -> comparableCheck s1 symtbl
+        (Struct s1) -> structListCheck s1 symtbl
+        _ -> Left(DefinitionNotFoundError, symtbl) 
+binaryCheck tList ExpOrdered (Just t1) symtbl =
+  case t1 of
+        (Alias s1) -> case getBaseType symtbl (IdOrType s1) of
+                  (Right (Just (Alias s1), symtbl1)) ->
+                           case (Alias s1, Alias s1) `elem` tList of
                               True -> Right (Just (Alias "bool"), symtbl)
-                              False -> Left (TypeNotCompatableError (Just t1) (Just t2), symtbl)
-        (_, _) -> Left(DefinitionNotFoundError, symtbl) 
-binaryCheck tList _ (Just t1) (Just t2) symtbl =
-  case (t1, t2) of
-        (Alias s1, Alias s2) -> case (getBaseType symtbl (IdOrType s1), getBaseType symtbl (IdOrType s2)) of
-                  (Right (Just (Alias s1), symtbl1), Right (Just (Alias s2), symtbl2)) ->
-                           case (Alias s1, Alias s2) `elem` tList of
-                              True -> Right (Just (Alias (doubleConvert (s1, s2))), symtbl)
-                              False -> Left (TypeNotCompatableError (Just t1) (Just t2), symtbl)
-        (_, _) -> Left(DefinitionNotFoundError, symtbl) 
-binaryCheck tList _ t1 t2 symtbl = Left (TypeNotCompatableError t1 t2, symtbl)
+                              False -> Left (InvalidTypeForOpError (Just t1), symtbl)
+        _ -> Left(DefinitionNotFoundError, symtbl) 
+binaryCheck tList _ (Just t1) symtbl =
+  case t1 of
+        (Alias s1) -> case getBaseType symtbl (IdOrType s1) of
+                  (Right (Just (Alias s1), symtbl1)) ->
+                           case (Alias s1, Alias s1) `elem` tList of
+                              True -> Right (Just (Alias s1), symtbl)
+                              False -> Left (InvalidTypeForOpError (Just t1), symtbl)
+        _ -> Left(DefinitionNotFoundError, symtbl) 
+binaryCheck tList _ t1 symtbl = Left (InvalidTypeForOpError t1, symtbl)
 
 -- Type check two structs for comparison
 comparableCheck
@@ -875,17 +875,6 @@ opToCategory a =
     BitLShift -> ExpInteger
     BitRShift -> ExpInteger
     BitClear -> ExpInteger
-
--- Convert a tuple of types to the proper type
-doubleConvert :: (String, String) -> String
-doubleConvert ("int", "int") = "int"
-doubleConvert ("float64", "int") = "int"
-doubleConvert ("int", "float64") = "int"
-doubleConvert ("float64", "float64") = "float64"
-doubleConvert ("int", "string") = "string"
-doubleConvert ("string", "string") = "string"
-doubleConvert ("string", "int") = "string"
-doubleConvert _ = "none"
 
 instance TypeCheckable a =>
          TypeCheckable (Maybe a) where
