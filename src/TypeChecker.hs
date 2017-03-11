@@ -374,6 +374,7 @@ instance TypeCheckable IfStmt where
     (_, symtbl''') <- typeCheckListNewFrame symtbl'' stmts
     (_, symtbl'''') <- typeCheck symtbl''' fac
     Right (Nothing, symtbl')
+
 --     typeCheckIfHelper symtbl' expr stmts fac
 --   typeCheck symtbl (IfStmt a@(Assign _ _ ) expr stmts fac) = do
 --     (_, symtbl') <- typeCheck (newFrame symtbl) a
@@ -383,8 +384,6 @@ instance TypeCheckable IfStmt where
 -- -- Type checks if statements that contain an init svd/assignment
 -- -- statement equivalently
 -- typeCheckIfHelper symtbl expr stmts fac = do
-
-
 --
 instance TypeCheckable IfStmtCont where
   typeCheck symtbl (IfStmtCont Nothing) = Right (Nothing, symtbl)
@@ -416,72 +415,52 @@ instance TypeCheckable Identifier where
     case structHelper symtbl is of
       Right t -> Right (Just t, symtbl)
       Left err -> Left (err, symtbl)
-
     -- case lookupIdentifier symtbl (last is) of
     --   Right (Entry CategoryType t) -> Right (t, symtbl)
     --   Right (Entry CategoryVariable t) -> typeCheck symtbl t
     --   Left err -> Left (SymbolTableError err, symtbl)
 
-
-
 -- Get struct internals
-getStructInternal :: SymbolTable -> Identifier -> Either TypeCheckError [([Identifier], Type)]
+getStructInternal :: SymbolTable
+                  -> Identifier
+                  -> Either TypeCheckError [([Identifier], Type)]
 getStructInternal symtbl i =
   case lookupIdentifier symtbl i of
     Left err -> Left (SymbolTableError err)
-    Right (Entry CategoryVariable (Just (Alias k))) -> getStructInternal symtbl (IdOrType k)
-    Right (Entry CategoryType (Just (Struct k))) -> Right k
+    Right (Entry CategoryVariable (Just (Alias k))) ->
+      getStructInternal symtbl (IdOrType k)
+    Right (Entry CategoryAlias (Just (Alias k))) ->
+      getStructInternal symtbl (IdOrType k)
+    Right (Entry CategoryAlias (Just (Struct k))) -> Right k
     Right _ -> Left StructAccessError
-
-
 
 -- Struct helper
 structHelper :: SymbolTable -> [Identifier] -> Either TypeCheckError Type
-structHelper symtbl [i,j] =
+structHelper symtbl [i, j] =
   case getStructInternal symtbl i of
-    Right k -> structFieldHelper k i
+    Right k -> structFieldHelper k j
     Left err -> Left err
-
-structHelper symtbl (i:j:js) =
+structHelper symtbl (i:(j:js)) =
   case getStructInternal symtbl i of
-    Right k -> case structFieldHelper k j of
-                 Right (Alias t) -> structHelper symtbl ((IdOrType t):js)
+    Right k ->
+      case structFieldHelper k j of
+        Right (Alias t) -> structHelper symtbl ((IdOrType t) : js)
     Left err -> Left err
-  
-
--- Helper for type checking struct identifiers
--- structIdHelper :: SymbolTable -> [Identifier] -> Either TypeCheckError Type
-
--- structIdHelper symtbl [i,j] =
---   case lookupIdentifier symtbl i of
---     Right (Entry CategoryAlias (Just (Struct js))) ->
---       case structFieldHelper js j of
---         Left err -> Left err
---         Right t -> Right t
---     Right (Entry CategoryVariable (Just (Alias k))) ->
---       structIdHelper symtbl [(IdOrType k), j]
---     Left err -> Left (SymbolTableError err)
-
--- structIdHelper symtbl (i:j:js) =
---   case lookupIdentifier symtbl i of
---     Right (Entry CategoryAlias (Just (Struct k))) ->
---       case structFieldHelper k j of
---         Left err -> Left err
---         Right t -> structIdHelper symtbl (j:js) 
---     Right (Entry CategoryAlias (Just (Alias k))) ->
---       structIdHelper symtbl ((IdOrType k):(j:js))
---     Right (Entry CategoryVariable (Just (Alias k))) ->
---       structIdHelper symtbl ((IdOrType k):(j:js))
---     Left err -> Left (SymbolTableError err)
 
 structFieldHelper :: [([Identifier], Type)]
                   -> Identifier
                   -> Either TypeCheckError Type
 structFieldHelper [] _ = Left StructAccessError
-structFieldHelper (x:xs) i =
-  if i `elem` (fst $ x)
-    then Right (snd $ x)
-    else structFieldHelper xs i
+structFieldHelper (x:xs) (IdArray s k) =
+  if (IdOrType s) `elem` (fst x)
+    then case snd x of
+           Slice t -> Right t
+           Array t _ -> Right t
+    else structFieldHelper xs (IdArray s k)
+structFieldHelper (x:xs) (IdOrType i) =
+  if (IdOrType i) `elem` (fst x)
+    then Right (snd x)
+    else structFieldHelper xs (IdOrType i)
 
 instance TypeCheckable Variable where
   typeCheck symtbl (Variable [] _ []) = Right (Nothing, symtbl)
