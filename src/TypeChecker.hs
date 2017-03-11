@@ -489,7 +489,24 @@ instance TypeCheckable SimpleStmt where
     case typeCheckAssignList symtbl idens exprs of
       Nothing -> Right (Nothing, symtbl)
       Just err -> Left (err, symtbl)
-  -- typeCheck symtbl (ShortBinary op iden expr) =
+  typeCheck symtbl (ShortBinary op iden expr) =
+    case op of
+      PlusEq -> typeCheck symtbl (Assign [iden] [Binary Add (Id iden) expr])
+      MinusEq -> typeCheck symtbl (Assign [iden] [Binary Sub (Id iden) expr])
+      MulEq -> typeCheck symtbl (Assign [iden] [Binary Mult (Id iden) expr])
+      DivEq -> typeCheck symtbl (Assign [iden] [Binary Div (Id iden) expr])
+      ModEq -> typeCheck symtbl (Assign [iden] [Binary Mod (Id iden) expr])
+      BitAndEq ->
+        typeCheck symtbl (Assign [iden] [Binary BitAnd (Id iden) expr])
+      BitOrEq -> typeCheck symtbl (Assign [iden] [Binary BitOr (Id iden) expr])
+      BitXorEq ->
+        typeCheck symtbl (Assign [iden] [Binary BitXor (Id iden) expr])
+      BitLShiftEq ->
+        typeCheck symtbl (Assign [iden] [Binary BitLShift (Id iden) expr])
+      BitRShiftEq ->
+        typeCheck symtbl (Assign [iden] [Binary BitRShift (Id iden) expr])
+      BitClearEq ->
+        typeCheck symtbl (Assign [iden] [Binary BitClear (Id iden) expr])
   typeCheck symtbl (ShortVarDec idens exprs) =
     case typeCheckList symtbl exprs of
       Right (_, symtbl') ->
@@ -727,9 +744,21 @@ binaryList a =
       , (Alias "string", Alias "string")
       , (Alias "rune", Alias "rune")
       ]
-    Sub -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64"), (Alias "rune", Alias "rune")]
-    Mult -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64"), (Alias "rune", Alias "rune")]
-    Div -> [(Alias "int", Alias "int"), (Alias "float64", Alias "float64"), (Alias "rune", Alias "rune")]
+    Sub ->
+      [ (Alias "int", Alias "int")
+      , (Alias "float64", Alias "float64")
+      , (Alias "rune", Alias "rune")
+      ]
+    Mult ->
+      [ (Alias "int", Alias "int")
+      , (Alias "float64", Alias "float64")
+      , (Alias "rune", Alias "rune")
+      ]
+    Div ->
+      [ (Alias "int", Alias "int")
+      , (Alias "float64", Alias "float64")
+      , (Alias "rune", Alias "rune")
+      ]
     Mod -> [(Alias "int", Alias "int"), (Alias "rune", Alias "rune")]
     BitClear -> [(Alias "int", Alias "int"), (Alias "rune", Alias "rune")]
     BitRShift -> [(Alias "int", Alias "int"), (Alias "rune", Alias "rune")]
@@ -794,13 +823,11 @@ structListCheck
   :: [([Identifier], Type)]
   -> SymbolTable
   -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
-structListCheck [] symtbl =
-  Right (Just (Alias "bool"), symtbl)
+structListCheck [] symtbl = Right (Just (Alias "bool"), symtbl)
 structListCheck ((_, t):xs) symtbl =
   case comparableCheck t symtbl of
     Right (_, symtbl') -> structListCheck xs symtbl'
     Left (err) -> Left (err)
-structListCheck _ symtbl = Left (StructsNotComparableError, symtbl)
 
 -- Different expression categories for types
 data ExpressionCategory
