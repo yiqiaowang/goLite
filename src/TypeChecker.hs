@@ -506,19 +506,6 @@ instance TypeCheckable Variable where
           Left err -> Left err
 
 -- Gets checks if the type being assigned to a variable is valid
--- varDecHelper :: SymbolTable -> Maybe Type -> Either TypeCheckError (Maybe Type)
--- varDecHelper symtbl (Just (Alias s)) =
---   case lookupIdentifier symtbl (IdOrType s) of
---     Right e ->
---       case e of
---         Entry _ Nothing -> Left (UndefinedTypeError s)
---         Entry CategoryVariable _ -> Left (VariableAsTypeError s)
---         Entry CategoryAlias t -> Right t
---         Entry CategoryType t -> Right t
---     Left err -> Left (SymbolTableError err)
--- varDecHelper symtbl (Just (Array t _)) = varDecHelper symtbl (Just t)
--- varDecHelper symtbl (Just (Slice t)) = varDecHelper symtbl (Just t)
--- varDecHelper _ _ = Left VariableDecError
 varDecHelper :: SymbolTable -> Maybe Type -> Maybe TypeCheckError
 varDecHelper symtbl (Just (Alias s)) =
   case lookupIdentifier symtbl (IdOrType s) of
@@ -559,17 +546,7 @@ instance TypeCheckable Type
                                                          where
   typeCheck symtbl (Alias s) = Right (Just (Alias s), symtbl)
   typeCheck symtbl (Array t i) = typeCheck symtbl t
-    -- case typeCheck symtbl t of
-    --   Right (Just t', symtbl') -> Right (Just (Array t' i), symtbl')
-    --   Right (Nothing, symtbl') ->
-    --     Left (TypeMismatchError (Just t) Nothing, symtbl')
-    --   Left err -> Left err
   typeCheck symtbl (Slice t) = typeCheck symtbl t
-    -- case typeCheck symtbl t of
-    --   Right (Just t', symtbl') -> Right (Just (Slice t'), symtbl')
-    --   Right (Nothing, symtbl') ->
-    --     Left (TypeMismatchError (Just t) Nothing, symtbl')
-    --   Left err -> Left err
 
 --
 instance TypeCheckable SimpleStmt where
