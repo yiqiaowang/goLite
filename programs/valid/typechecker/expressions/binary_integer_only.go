@@ -1,7 +1,7 @@
 package expressions
 
 func main() {
-  var i1, i2 int = 0, 1
+  var a1, a2 int = 0, 1
 
   var a int = a1 % a2
   var b int = a1 | a2
