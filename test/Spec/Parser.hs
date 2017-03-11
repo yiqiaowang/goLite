@@ -4,22 +4,28 @@ module Spec.Parser where
 import Control.Monad(forM_)
 import Test.Hspec
 import Test.Hspec.Core.Runner(hspecResult)
-import Data.Either(isLeft, isRight)
-import Control.Monad(forM_)
-import System.FilePath(takeExtension)
-import System.Directory(getDirectoryContents)
+import Data.Either(isRight)
 
 
-import qualified Parser.Parser as Parser
+import GoLite
 
 
-spec :: [(String, String)] -> [(String, String)] -> Spec
-spec valid invalid =
-  describe "Parser" $ do
-    forM_ valid $ \(file, text) ->
-      it ("correctly parses : " ++ file) $
-        Parser.parse file text `shouldSatisfy` isRight
+spec :: [(String, String)] -> [(String, String)] -> [(String, String)] -> Spec
+spec invalidParser invalidWeeder validSyntax = do
+  forM_ invalidParser $ \(file, text) ->
+    it ("fails with a parser error : " ++ file) $
+      GoLite.parse file text `shouldSatisfy` isParserError
 
-    forM_ invalid $ \(file, text) ->
-      it ("fails to parse : " ++ file) $
-        Parser.parse file text `shouldSatisfy` isLeft
+  forM_ invalidWeeder $ \(file, text) ->
+    it ("correctly parses but fails with a weeder error : " ++ file) $
+      GoLite.parse file text `shouldSatisfy` isWeederError
+
+  forM_ validSyntax $ \(file, text) ->
+    it ("correctly parses and weeds : " ++ file) $
+      GoLite.parse file text `shouldSatisfy` isRight
+
+  where
+    isParserError (Left (ParserError _)) = True
+    isParserError _ = False
+    isWeederError (Left (WeederError _)) = True
+    isWeederError _ = False
