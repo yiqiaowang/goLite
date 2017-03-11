@@ -2,6 +2,7 @@ module TypeChecker.TypeCheckerError where
 
 
 import Language.Language
+import Language.Common
 import TypeChecker.SymbolTable
 
 

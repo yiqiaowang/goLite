@@ -7,7 +7,7 @@ import Language.Common
 
 -- TExpression couples an expression with its evaluated type.
 -- The type information will be used in the later phases of the compiler.
-type TExpression = (TExpression', TType)
+type TExpression = (TExpression', Type)
 
 
 -- The layout of the entire program
@@ -20,8 +20,8 @@ data TProgram =
 data TAll
   = TTopDec TTopLevel
   | TFunction FunctionName
-             [TParameter]
-             (Maybe TType)
+             [Parameter]
+             (Maybe Type)
              [TStmt]
   deriving (Eq, Show)
 
@@ -29,43 +29,15 @@ data TAll
 data TTopLevel
   = TVarDec TVariable
   | TVarDecList [TVariable]
-  | TTypeDec TTypeName
-  | TTypeDecList [TTypeName]
+  | TTypeDec TypeName
+  | TTypeDecList [TypeName]
   deriving (Eq, Show)
 
 -- Variable declaration
 data TVariable =
-  TVariable [TIdentifier]
-            (Maybe TType)
+  TVariable [Identifier]
+            (Maybe Type)
             [TExpression]
-  deriving (Eq, Show)
-
--- Type aliasing
-data TTypeName =
-  TTypeName TType TType
-  deriving (Eq, Show)
-
--- Where the First Type is the variable name and the second
--- Type is the Associated Type
-data TIdentifier
-  = TIdOrType String
-  | TIdArray String [TExpression]
-  | TIdField [TIdentifier]
-  deriving (Eq, Ord, Show)
-
-data TType
-  = TAlias String
-  | TArray TType Int
-  | TSlice TType
-  | TStruct [([TIdentifier], TType)]
-  -- TODO: should we add the input types -> output type into the func constructor
-  | TFunc
-  | TBool
-  deriving (Eq, Ord, Show)
-
--- Parameter data type (List of identifiers with an associated type)
-data TParameter =
-  TParameter [TIdentifier] TType
   deriving (Eq, Show)
 
 -- Statements that can be declared inside blocks
@@ -93,11 +65,11 @@ data TStmt
 -- Simple statements
 data TSimpleStmt
   = TStmtFuncCall TFunctionCall
-  | TIncr TIdentifier
-  | TDecr TIdentifier
-  | TAssign [TIdentifier] [TExpression]
-  | TShortBinary BinaryOpEq TIdentifier TExpression
-  | TShortVarDec [TIdentifier] [TExpression]
+  | TIncr Identifier
+  | TDecr Identifier
+  | TAssign [Identifier] [TExpression]
+  | TShortBinary BinaryOpEq Identifier TExpression
+  | TShortVarDec [Identifier] [TExpression]
   | TEmptyStmt
   deriving (Eq, Show)
 
@@ -127,10 +99,10 @@ data TClause
 -- Expressions
 data TExpression'
   = TBrack TExpression
-  | TId TIdentifier
+  | TId Identifier
   | TLiteral Literal
   | TExprFuncCall TFunctionCall
-  | TAppend TIdentifier TExpression
+  | TAppend Identifier TExpression
   | TUnary UnaryOp TExpression
   | TBinary BinaryOp TExpression TExpression
   deriving (Eq, Ord, Show)

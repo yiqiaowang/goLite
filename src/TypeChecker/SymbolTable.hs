@@ -15,10 +15,11 @@ module TypeChecker.SymbolTable
   , getMap
   ) where
 
-import Data.Map.Strict
-       (Map, adjust, insert, lookup, member, toList, fromList)
+import Data.Map.Strict(Map, adjust, insert, lookup, member, toList, fromList)
 import qualified Data.Map.Strict as Map
 import Language.Language
+import Language.Common
+
 
 data SymbolTableError
   = DuplicateIdentifier { duplicateIdentifier :: Identifier }

@@ -34,35 +34,6 @@ data Variable =
            [Expression]
   deriving (Eq, Show)
 
--- Type aliasing
-data TypeName =
-  TypeName Type Type
-  deriving (Eq, Show)
-
--- Where the First Type is the variable name and the second
--- Type is the Associated Type
-data Identifier
-  = IdOrType String
-  | IdArray String [Expression]
-  | IdField [Identifier]
-  deriving (Eq, Ord, Show)
-
-data Type
-  = Alias String
-  | Array Type Int
-  | Slice Type
-  | Struct [([Identifier], Type)]
-  -- TODO: should we add the input types -> output type into the func constructor
-  | Bool
-  | Func [Type] (Maybe Type)
-  | BuiltIn
-  deriving (Eq, Show)
-
--- Parameter data type (List of identifiers with an associated type)
-data Parameter =
-  Parameter [Identifier] Type
-  deriving (Eq, Show)
-
 -- Statements that can be declared inside blocks
 data Stmt
   = StmtDec TopLevel
