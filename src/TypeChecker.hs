@@ -104,8 +104,8 @@ instance TypeCheckable Program where
     case typeCheckList symtbl alls of
       Right (_, symtbl') ->
         case popFrame' symtbl' of
-                              Right (f,ps) -> Right (Nothing, ps)
-                              Left err -> Left (SymbolTableError err, symtbl')
+          Right (f, ps) -> Right (Nothing, ps)
+          Left err -> Left (SymbolTableError err, symtbl')
       Left err -> Left err
 
 instance TypeCheckable All where
@@ -124,17 +124,17 @@ instance TypeCheckable All where
            (IdOrType iden)
            (Entry CategoryVariable $
             Just (Func (functionParamHelper params) ret)) of
-      Right symtbl'
-       ->
+      Right symtbl' ->
         case typeCheckList (newFrame symtbl') params of
-          Right (_, symtbl'')->
+          Right (_, symtbl'')
             -- Create a new frame, and type check the body of the function
             -- with the newly created frame
+           ->
             case typeCheckList symtbl'' stmts of
               Right (_, symtbl''')
                 -- Check to see that all returns return the correct types
                 -- If so, pop the stack frame, and return a new one
-                ->
+               ->
                 case typeCheckReturns symtbl''' stmts ret of
                   Nothing ->
                     case popFrame' symtbl''' of
@@ -253,16 +253,15 @@ instance TypeCheckable Parameter where
       Right symtbl -> Right (Nothing, symtbl)
       Left err -> Left (SymbolTableError err, symtbl)
 
-symbolTableFuncParam
-  :: SymbolTable
-  -> [Identifier]
-  -> Type
-  -> Either SymbolTableError SymbolTable
+symbolTableFuncParam :: SymbolTable
+                     -> [Identifier]
+                     -> Type
+                     -> Either SymbolTableError SymbolTable
 symbolTableFuncParam symtbl [] _ = Right symtbl
 symbolTableFuncParam symtbl (i:is) t =
-    case addEntry symtbl i (Entry CategoryVariable $ Just t) of
-      Left err -> Left err
-      Right symtbl -> symbolTableFuncParam symtbl is t
+  case addEntry symtbl i (Entry CategoryVariable $ Just t) of
+    Left err -> Left err
+    Right symtbl -> symbolTableFuncParam symtbl is t
 
 --
 instance TypeCheckable TopLevel where
@@ -299,8 +298,7 @@ instance TypeCheckable Stmt where
   -- Returns are typechecked seperatly in the function typeCheckReturns
   -- which also type checks that the return returns the expected type
   typeCheck symtbl (Return _) = Right (Nothing, symtbl)
-  typeCheck symtbl (Block stmts) =
-    typeCheckListNewFrame symtbl stmts
+  typeCheck symtbl (Block stmts) = typeCheckListNewFrame symtbl stmts
   -- Breaks and continues are trivially well typed
   typeCheck symtbl (Break) = Right (Nothing, symtbl)
   typeCheck symtbl (Continue) = Right (Nothing, symtbl)
@@ -316,7 +314,7 @@ instance TypeCheckable Stmt where
                 case typeCheckListNewFrame symtbl''' stmts of
                   Right (_, symtbl'''') ->
                     case popFrame' symtbl'''' of
-                      Right (f,ps) -> Right (Nothing, ps)
+                      Right (f, ps) -> Right (Nothing, ps)
                       Left err -> Left (SymbolTableError err, symtbl'''')
                   Left err -> Left err
               Left err -> Left err
@@ -335,14 +333,14 @@ instance TypeCheckable Stmt where
             case typeCheckClauses symtbl'' clauses (Alias "bool") of
               Right (_, symtbl''') ->
                 case popFrame symtbl''' of
-                  Right (f, ps) -> Right (Nothing,ps)
+                  Right (f, ps) -> Right (Nothing, ps)
                   Left err -> Left (SymbolTableError err, symtbl''')
               Left err -> Left err
           Right (Just t, symtbl'') ->
             case typeCheckClauses symtbl'' clauses t of
-              Right (_, symtbl''') -> 
+              Right (_, symtbl''') ->
                 case popFrame symtbl''' of
-                  Right (f, ps) -> Right (Nothing,ps)
+                  Right (f, ps) -> Right (Nothing, ps)
                   Left err -> Left (SymbolTableError err, symtbl''')
               Left err -> Left err
           Left err -> Left err
@@ -368,12 +366,10 @@ instance TypeCheckable IfStmt where
     (_, symtbl') <- typeCheckElemOf symtbl expr [Alias "bool"]
     (_, symtbl'') <- typeCheckListNewFrame symtbl' stmts
     Right (Nothing, symtbl'')
-
   typeCheck symtbl (IfStmt EmptyStmt expr stmts (IfStmtCont (Just (Left ifstmt)))) = do
     (_, symtbl') <- typeCheckElemOf symtbl expr [Alias "bool"]
     (_, symtbl'') <- typeCheckListNewFrame symtbl' stmts
     typeCheck symtbl'' ifstmt
-
   typeCheck symtbl (IfStmt EmptyStmt expr stmts (IfStmtCont (Just (Right stmts')))) = do
     (_, symtbl') <- typeCheckElemOf symtbl expr [Alias "bool"]
     (_, symtbl'') <- typeCheckListNewFrame symtbl' stmts
@@ -385,21 +381,16 @@ instance TypeCheckable IfStmt where
     (_, symtbl'') <- typeCheckElemOf symtbl' expr [Alias "bool"]
     (_, symtbl''') <- typeCheckListNewFrame symtbl'' stmts
     case popFrame' symtbl' of
-      Right (f,ps) -> 
-        Right (Nothing, ps)
-      Left err ->
-        Left (SymbolTableError err, symtbl''')
+      Right (f, ps) -> Right (Nothing, ps)
+      Left err -> Left (SymbolTableError err, symtbl''')
 
   typeCheck symtbl (IfStmt stmt expr stmts (IfStmtCont (Just (Left ifstmt)))) = do
     (_, symtbl') <- typeCheck (newFrame symtbl) stmt
     (_, symtbl'') <- typeCheckElemOf symtbl' expr [Alias "bool"]
     (_, symtbl''') <- typeCheckListNewFrame symtbl'' stmts
     case popFrame' symtbl' of
-      Right (f,ps) -> 
-        typeCheck ps ifstmt
-      Left err ->
-        Left (SymbolTableError err, symtbl''')
-
+      Right (f, ps) -> typeCheck ps ifstmt
+      Left err -> Left (SymbolTableError err, symtbl''')
 
   typeCheck symtbl (IfStmt stmt expr stmts (IfStmtCont (Just (Right stmts')))) = do
     (_, symtbl') <- typeCheck (newFrame symtbl) stmt
@@ -407,10 +398,8 @@ instance TypeCheckable IfStmt where
     (_, symtbl''') <- typeCheckListNewFrame symtbl'' stmts
     (_, symtbl'''') <- typeCheckListNewFrame symtbl''' stmts'
     case popFrame' symtbl' of
-      Right (f,ps) -> 
-        Right (Nothing, ps)
-      Left err ->
-        Left (SymbolTableError err, symtbl''')
+      Right (f, ps) -> Right (Nothing, ps)
+      Left err -> Left (SymbolTableError err, symtbl''')
 
 instance TypeCheckable IfStmtCont where
   typeCheck symtbl (IfStmtCont Nothing) = Right (Nothing, symtbl)
@@ -461,6 +450,21 @@ getStructInternal symtbl i =
     Right (Entry CategoryAlias (Just (Struct k))) -> Right k
     Right _ -> Left StructAccessError
 
+
+structHelper' :: SymbolTable ->  [([Identifier], Type)] -> [Identifier] -> Either TypeCheckError Type
+structHelper' symtbl internal [i] =
+  structFieldHelper internal i
+-- structHelper' symtbl internal [i, j] =
+--   structFieldHelper internal j
+structHelper' symtbl internal (i:is) =
+  case internal of
+    k ->
+      case structFieldHelper k i of
+        Right (Alias t) -> structHelper symtbl ((IdOrType t) : is)
+        Right (Struct internal) -> structHelper' symtbl internal is
+        Right _ -> Left DebugError
+        Left err -> Left err
+
 -- Struct helper
 structHelper :: SymbolTable -> [Identifier] -> Either TypeCheckError Type
 structHelper symtbl [i, j] =
@@ -472,7 +476,8 @@ structHelper symtbl (i:(j:js)) =
     Right k ->
       case structFieldHelper k j of
         Right (Alias t) -> structHelper symtbl ((IdOrType t) : js)
-
+        Right (Struct internal) -> structHelper' symtbl internal js
+        Right (Slice _) -> Left DebugError
         Left err -> Left err
     Left err -> Left err
 
@@ -912,8 +917,8 @@ binaryCheck tList ExpComparable (Just t1) symtbl =
           case (Alias s1, Alias s1) `elem` tList of
             True -> Right (Just (Alias "bool"), symtbl1)
             False -> Left (InvalidTypeForOpError (Just t1), symtbl1)
-        (Right (Just (Struct _), symtbl')) ->
-          Right (Just (Alias "bool"), symtbl')
+        (Right (Just (Struct ctx), symtbl')) ->
+          structListCheck ctx symtbl'
         Left err -> Left err
     (Array s1 _) -> comparableCheck s1 symtbl
     (Struct s1) -> structListCheck s1 symtbl
@@ -954,7 +959,7 @@ comparableCheck t1 symtbl =
         Left (err) -> Left (err)
     (Array s1 _) -> comparableCheck s1 symtbl
     (Struct s1) -> structListCheck s1 symtbl
-    s1 -> Left (ElementsNotComparableError, symtbl)
+    _ -> Left (ElementsNotComparableError, symtbl)
 
 structListCheck
   :: [([Identifier], Type)]
