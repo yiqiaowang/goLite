@@ -10,6 +10,7 @@ import Data.List (intercalate)
 import Language
 import SymbolTable
 import Pretty.Pretty
+import TypeChecker
 
 
 class TypedPretty a where
@@ -17,6 +18,20 @@ class TypedPretty a where
 
   prettyList :: [a] -> Integer -> History -> String
   prettyList ps i h = concatMap (\p -> typedPretty p i h) ps
+
+--
+commentType :: TypeCheckable a => a -> History -> String
+commentType a [] = undefined
+commentType a (ctxt : _) =
+  case typeCheck (SymbolTable ctxt [] []) a of
+    Right (Just type', _) -> "/*" ++ show type' ++ "*/"
+    Right (Nothing, _) -> error $ "no type info"
+    Left e -> error $ show e
+
+--
+nextContext :: History -> History
+nextContext [] = undefined
+nextContext (_ : t) = t
 
 --
 commaSepList :: TypedPretty a => [a] -> Integer -> History -> String
@@ -65,10 +80,10 @@ instance TypedPretty All where
     , "("
     , commaSepList params 0 h
     , ") {\n"
-    , prettyList stmts 1 h
+    , prettyList stmts 1 (nextContext h)
     , "}\n\n"
     ]
-  typedPretty (Function name params (Just type') stmts) _ h@(_:hs) = concat
+  typedPretty (Function name params (Just type') stmts) _ h = concat
     [ "func "
     , typedPretty name 0 h
     , "("
@@ -76,7 +91,7 @@ instance TypedPretty All where
     , ") "
     , typedPretty type' 0 h
     , " {\n"
-    , prettyList stmts 1 hs
+    , prettyList stmts 1 (nextContext h)
     , "}\n\n"
     ]
 
@@ -166,8 +181,8 @@ instance TypedPretty TypeName where
 
 instance TypedPretty Identifier where
   typedPretty (IdOrType s) i h = s
-  typedPretty (IdArray s xs) i h = concat
-    [s, wrapSquareList (map (\p -> typedPretty p i h) xs) i h]
+  typedPretty (IdArray s xs) i h =
+    s ++ wrapSquareList (map (\p -> typedPretty p i h) xs) i h
   typedPretty (IdField xs) i h = intercalate "." $ map (\p -> typedPretty p i h) xs
 
 instance TypedPretty Type where
@@ -178,7 +193,10 @@ instance TypedPretty Type where
     , "]"
     , typedPretty t 0 h
     ]
-  typedPretty (Slice t) _ h = concat ["[]", typedPretty t 0 h]
+  typedPretty (Slice t) _ h = concat
+    [ "[]"
+    , typedPretty t 0 h
+    ]
   typedPretty (Struct list) i h = concat
     [ "struct {\n"
     , concatMap (\p -> structList p (i + 1) h) list
@@ -218,13 +236,16 @@ instance TypedPretty Stmt where
     , typedPretty expr 0 h
     , ";\n"
     ]
-  typedPretty (If ifstmt) i h = concat [spacePrint i, typedPretty ifstmt i h]
+  typedPretty (If ifstmt) i h = concat
+    [ spacePrint i
+    , typedPretty ifstmt i (nextContext h)
+    ]
   typedPretty (Switch stmt Nothing c) i h = concat
     [ spacePrint i
     , "switch "
     , typedPretty stmt 0 h
     , "; {\n"
-    , prettyList c (i + 1) h
+    , prettyList c (i + 1) (nextContext h)
     , spacePrint i
     , "}\n"
     ]
@@ -235,14 +256,14 @@ instance TypedPretty Stmt where
     , "; "
     , typedPretty expr 0 h
     , " {\n"
-    , prettyList c (i + 1) h
+    , prettyList c (i + 1) (nextContext h)
     , spacePrint i
     , "}\n"
     ]
   typedPretty (Infinite stmts) i h = concat
     [ spacePrint i
     , "for {\n"
-    , prettyList stmts (i + 1) h
+    , prettyList stmts (i + 1) (nextContext h)
     , spacePrint i
     , "}\n"
     ]
@@ -251,7 +272,7 @@ instance TypedPretty Stmt where
     , "for "
     , typedPretty expr 0 h
     , " {\n"
-    , prettyList stmts (i + 1) h
+    , prettyList stmts (i + 1) (nextContext h)
     , spacePrint i
     , "}\n"
     ]
@@ -264,14 +285,14 @@ instance TypedPretty Stmt where
     , "; "
     , typedPretty simp2 0 h
     , " {\n"
-    , prettyList stmts (i + 1) h
+    , prettyList stmts (i + 1) (nextContext h)
     , spacePrint i
     , "}\n"
     ]
   typedPretty (Block xs) i h = concat
     [ spacePrint i
     , "{\n"
-    , prettyList xs (i+1) h
+    , prettyList xs (i+1) (nextContext h)
     , spacePrint i
     , "};\n"
     ]
@@ -367,20 +388,24 @@ instance TypedPretty Expression where
     , typedPretty expr i h
     , ")"
     ]
-  typedPretty (Id ident) i h = typedPretty ident i h
+  typedPretty (Id ident) i h = typedPretty ident i h ++ commentType ident h
   typedPretty (Literal lit) i h = typedPretty lit i h
   typedPretty (Unary op expr) i h = concat
     [ pretty op i
     , typedPretty expr i h
     ]
-  typedPretty (Binary op expr1 expr2) i h = concat
-    [ typedPretty expr1 i h
+  typedPretty e@(Binary op expr1 expr2) i h = concat
+    [ "("
+    , typedPretty expr1 i h
     , " "
     , pretty op i
     , " "
     , typedPretty expr2 i h
+    , ")"
+    , commentType e h
     ]
-  typedPretty (ExprFuncCall func) i h = typedPretty func i h
+  typedPretty f@(ExprFuncCall func) i h =
+    typedPretty func i h ++ commentType f h
   typedPretty (Append ident expr) i h = concat
     [ "append("
     , typedPretty ident i h
@@ -390,11 +415,11 @@ instance TypedPretty Expression where
     ]
 
 instance TypedPretty Literal where
-  typedPretty (Int' i) _ _ = show i
-  typedPretty (Float64 f) _ _ = show f
-  typedPretty (Rune i) _ _ = (show . chr . fromIntegral) i
-  typedPretty (String s) _ _ = s
-  typedPretty (Raw s) _ _ = s
+  typedPretty (Int' i) _ _ = show i ++ "/*int*/"
+  typedPretty (Float64 f) _ _ = show f ++ "/*flaot64*/"
+  typedPretty (Rune i) _ _ = (show . chr . fromIntegral) i ++ "/*rune*/"
+  typedPretty (String s) _ _ = s ++ "/*string*/"
+  typedPretty (Raw s) _ _ = s ++ "/*string*/"
 
 instance TypedPretty (Maybe Expression) where
   typedPretty Nothing _ _ = ""
