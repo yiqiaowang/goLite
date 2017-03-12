@@ -1,8 +1,8 @@
 package expressions
 
 func f_slice(a, b []int) []int {
-  var a []int
-  return a
+  var x []int
+  return x
 }
 
 func main() {
