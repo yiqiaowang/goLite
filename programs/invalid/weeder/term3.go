@@ -4,8 +4,8 @@ package main
 
 func foo () int{
 	if x > 0 {
-	}
-	else {
+		print(x)
+	} else {
 		return 10
 	}
 }
