@@ -10,7 +10,8 @@ library
                      , Scanner
                      , Parser
                      , Language
-                     , Pretty
+                     , Pretty.Pretty
+                     , Pretty.TypedPretty
                      , TokenClass
                      , Weeder
                      , TypeChecker
