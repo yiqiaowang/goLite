@@ -7,6 +7,10 @@ import qualified Pretty
 import System.Console.ArgParser
 import System.FilePath
 import qualified Text.Show.Pretty as Pr
+import SymbolTable
+import Text.PrettyPrint
+import Language (Identifier)
+import Data.Map.Strict (toList)
 --
 data GoLiteOptions = GoLiteOptions
   { filename :: String
@@ -15,6 +19,7 @@ data GoLiteOptions = GoLiteOptions
   , dumpAST :: Bool
   -- , prettyPrintType :: Bool
   } deriving (Show)
+
 
 --
 goLiteOptionsParser :: ParserSpec GoLiteOptions
@@ -52,8 +57,8 @@ processFile options = do
       -- Dump symboltable
       when (dumpSymbolTable options) $
         case GoLite.typeCheck program of
-          Right (_, symtbl) -> putStrLn $ Pr.ppShow symtbl
-          Left (GoLite.TypeCheckerError (_, symtbl)) -> putStrLn $ Pr.ppShow symtbl
+          Right (_, SymbolTable.SymbolTable s h c) -> putStrLn $ draw $ reverse $fmap (toList . getMap) c
+          Left (GoLite.TypeCheckerError (_, SymbolTable.SymbolTable s h c)) -> putStrLn $ draw $ reverse $ fmap (toList . getMap) c
       -- Dump ast
       when (dumpAST options) $
         putStrLn $ Pr.ppShow program
@@ -61,3 +66,20 @@ processFile options = do
   where
     goLiteFile = filename options
     prettyFile = replaceExtension goLiteFile ".pretty.go"
+
+
+-- Pretty Print Stack Frames
+leftPad :: Int -> String -> String
+leftPad t x = if 0 < k then replicate k ' '
+                               else "\t"
+                                    where k = (t - length x)
+
+drawRow :: (Identifier, Entry) -> String
+drawRow (i,e) = (show i) ++ (leftPad 30 (show i))  ++  (show e) ++ "\n"
+
+-- print lists of records: a header, then each row
+draw :: [[(Identifier,Entry)]] -> String
+draw [] = "Done."
+draw (x:xs) =
+   "Context:\nIdentifier" ++ leftPad 30 "Identifier" ++ "Mapping\n" ++
+   concatMap drawRow x ++ "\n" ++ draw xs
