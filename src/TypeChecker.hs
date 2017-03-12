@@ -239,10 +239,7 @@ typeCheckClauseReturns symtbl ((Default stmts):cs) ret =
     Just err -> Just err
 
 assertTypeEqual :: Maybe Type -> Maybe Type -> Bool
-assertTypeEqual expected actual =
-  if expected == actual
-    then True
-    else False
+assertTypeEqual expected actual = expected == actual
 
 -- Parameters.  Adds a parameter list to the symbol table for use in
 -- function body.
@@ -304,47 +301,67 @@ instance TypeCheckable Stmt where
   typeCheck symtbl (Continue) = Right (Nothing, symtbl)
   typeCheck symtbl (If ifstmt) = typeCheck symtbl ifstmt
   -- there is no god, also, looks kind of like node.js
-  typeCheck symtbl (For maybe_ss maybe_expr maybe_ss' stmts) =
-    case typeCheck (newFrame symtbl) maybe_ss of
-      Right (_, symtbl') ->
-        case typeCheckElemOf symtbl' maybe_expr [(Alias "bool")] of
-          Right (_, symtbl'') ->
-            case typeCheck symtbl'' maybe_ss' of
-              Right (_, symtbl''') ->
-                case typeCheckListNewFrame symtbl''' stmts of
-                  Right (_, symtbl'''') ->
-                    case popFrame' symtbl'''' of
-                      Right (f, ps) -> Right (Nothing, ps)
-                      Left err -> Left (SymbolTableError err, symtbl'''')
-                  Left err -> Left err
-              Left err -> Left err
-          Left err -> Left err
-      Left err -> Left err
+  typeCheck symtbl (For maybe_ss maybe_expr maybe_ss' stmts) = do
+    (_, symtbl') <- typeCheck (newFrame symtbl) maybe_ss
+    (_, symtbl'') <- typeCheckElemOf symtbl' maybe_expr [Alias "bool"]
+    (_, symtbl''') <- typeCheck symtbl'' maybe_ss'
+    (_, symtbl'''') <- typeCheckListNewFrame symtbl''' stmts
+    Right (Nothing, symtbl)
   typeCheck symtbl (Infinite stmts) = typeCheckListNewFrame symtbl stmts
-  typeCheck symtbl (While expr stmts) =
-    case typeCheckElemOf symtbl expr [(Alias "bool")] of
-      Right (_, symtbl') -> typeCheckListNewFrame symtbl' stmts
-      Left err -> Left err
-  typeCheck symtbl (Switch ss maybe_expr clauses) =
-    case typeCheck (newFrame symtbl) ss of
-      Right (_, symtbl') ->
-        case typeCheck symtbl' maybe_expr of
-          Right (Nothing, symtbl'') ->
-            case typeCheckClauses symtbl'' clauses (Alias "bool") of
-              Right (_, symtbl''') ->
-                case popFrame symtbl''' of
-                  Right (f, ps) -> Right (Nothing, ps)
-                  Left err -> Left (SymbolTableError err, symtbl''')
-              Left err -> Left err
-          Right (Just t, symtbl'') ->
-            case typeCheckClauses symtbl'' clauses t of
-              Right (_, symtbl''') ->
-                case popFrame symtbl''' of
-                  Right (f, ps) -> Right (Nothing, ps)
-                  Left err -> Left (SymbolTableError err, symtbl''')
-              Left err -> Left err
-          Left err -> Left err
-      Left err -> Left err
+  typeCheck symtbl (While expr stmts) = do
+    (_, symtbl') <- typeCheckElemOf symtbl expr [Alias "bool"]
+    typeCheckListNewFrame symtbl' stmts
+  typeCheck symtbl (Switch ss maybe_expr clauses) = do
+    (_, symtbl') <- typeCheck (newFrame symtbl) ss
+    (maybeType, symtbl'') <- typeCheck symtbl' maybe_expr
+    case maybeType of
+      Nothing -> do
+        (_, symtbl''') <- typeCheckClauses symtbl'' clauses (Alias "bool")
+        Right (Nothing, symtbl)
+      Just t' -> do
+        (_, symtbl''') <- typeCheckClauses symtbl'' clauses t'
+        Right (Nothing, symtbl)
+--   typeCheck symtbl (For maybe_ss maybe_expr maybe_ss' stmts) =
+--     case typeCheck (newFrame symtbl) maybe_ss of
+--       Right (_, symtbl') ->
+--         case typeCheckElemOf symtbl' maybe_expr [(Alias "bool")] of
+--           Right (_, symtbl'') ->
+--             case typeCheck symtbl'' maybe_ss' of
+--               Right (_, symtbl''') ->
+--                 case typeCheckListNewFrame symtbl''' stmts of
+--                   Right (_, symtbl'''') ->
+--                     case popFrame' symtbl'''' of
+--                       Right (f, ps) -> Right (Nothing, ps)
+--                       Left err -> Left (SymbolTableError err, symtbl'''')
+--                   Left err -> Left err
+--               Left err -> Left err
+--           Left err -> Left err
+--       Left err -> Left err
+--   typeCheck symtbl (Infinite stmts) = typeCheckListNewFrame symtbl stmts
+--   typeCheck symtbl (While expr stmts) =
+--     case typeCheckElemOf symtbl expr [(Alias "bool")] of
+--       Right (_, symtbl') -> typeCheckListNewFrame symtbl' stmts
+--       Left err -> Left err
+--   typeCheck symtbl (Switch ss maybe_expr clauses) =
+--     case typeCheck (newFrame symtbl) ss of
+--       Right (_, symtbl') ->
+--         case typeCheck symtbl' maybe_expr of
+--           Right (Nothing, symtbl'') ->
+--             case typeCheckClauses symtbl'' clauses (Alias "bool") of
+--               Right (_, symtbl''') ->
+--                 case popFrame symtbl''' of
+--                   Right (f, ps) -> Right (Nothing, ps)
+--                   Left err -> Left (SymbolTableError err, symtbl''')
+--               Left err -> Left err
+--           Right (Just t, symtbl'') ->
+--             case typeCheckClauses symtbl'' clauses t of
+--               Right (_, symtbl''') ->
+--                 case popFrame symtbl''' of
+--                   Right (f, ps) -> Right (Nothing, ps)
+--                   Left err -> Left (SymbolTableError err, symtbl''')
+--               Left err -> Left err
+--           Left err -> Left err
+--       Left err -> Left err
 
 typeCheckClauses
   :: SymbolTable
@@ -480,6 +497,32 @@ structHelper symtbl (i:(j:js)) =
         Right (Slice _) -> Left DebugError
         Left err -> Left err
     Left err -> Left err
+
+
+-- Helper for type checking struct identifiers
+-- structIdHelper :: SymbolTable -> [Identifier] -> Either TypeCheckError Type
+
+-- structIdHelper symtbl [i,j] =
+--   case lookupIdentifier symtbl i of
+--     Right (Entry CategoryAlias (Just (Struct js))) ->
+--       case structFieldHelper js j of
+--         Left err -> Left err
+--         Right t -> Right t
+--     Right (Entry CategoryVariable (Just (Alias k))) ->
+--       structIdHelper symtbl [(IdOrType k), j]
+--     Left err -> Left (SymbolTableError err)
+
+-- structIdHelper symtbl (i:j:js) =
+--   case lookupIdentifier symtbl i of
+--     Right (Entry CategoryAlias (Just (Struct k))) ->
+--       case structFieldHelper k j of
+--         Left err -> Left err
+--         Right t -> structIdHelper symtbl (j:js)
+--     Right (Entry CategoryAlias (Just (Alias k))) ->
+--       structIdHelper symtbl ((IdOrType k):(j:js))
+--     Right (Entry CategoryVariable (Just (Alias k))) ->
+--       structIdHelper symtbl ((IdOrType k):(j:js))
+--     Left err -> Left (SymbolTableError err)
 
 structFieldHelper :: [([Identifier], Type)]
                   -> Identifier
@@ -722,31 +765,14 @@ typeCheckCast
   -> Type
   -> Expression
   -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
-typeCheckCast symtbl t e =
+typeCheckCast symtbl t@(Alias t') e =
   case typeCheck symtbl e of
-    Right (Just x, symtbl') ->
-      case (t, x) of
-        (Alias "int", Alias "int") -> Right (Just (Alias "int"), symtbl')
-        (Alias "int", Alias "float64") -> Right (Just (Alias "int"), symtbl')
-        (Alias "int", Alias "rune") -> Right (Just (Alias "int"), symtbl')
-        (Alias "int", Alias "bool") -> Right (Just (Alias "int"), symtbl')
-        (Alias "bool", Alias "bool") -> Right (Just (Alias "bool"), symtbl')
-        (Alias "bool", Alias "int") -> Right (Just (Alias "bool"), symtbl')
-        (Alias "bool", Alias "float64") -> Right (Just (Alias "bool"), symtbl')
-        (Alias "bool", Alias "rune") -> Right (Just (Alias "bool"), symtbl')
-        (Alias "float64", Alias "float64") ->
-          Right (Just (Alias "float64"), symtbl')
-        (Alias "float64", Alias "int") ->
-          Right (Just (Alias "float64"), symtbl')
-        (Alias "float64", Alias "bool") ->
-          Right (Just (Alias "float64"), symtbl')
-        (Alias "float64", Alias "rune") ->
-          Right (Just (Alias "float64"), symtbl')
-        (Alias "rune", Alias "rune") -> Right (Just (Alias "rune"), symtbl')
-        (Alias "rune", Alias "int") -> Right (Just (Alias "rune"), symtbl')
-        (Alias "rune", Alias "float64") -> Right (Just (Alias "rune"), symtbl')
-        (Alias "rune", Alias "bool") -> Right (Just (Alias "rune"), symtbl')
-        _ -> Left (IllegalCastError t x, symtbl')
+    Right (Just x@(Alias x'), symtbl') ->
+      if t' `elem` ["int", "float64", "rune", "bool"]
+        && x' `elem` ["int", "float64", "rune", "bool"]
+        then Right (Just (Alias t'), symtbl')
+        else Left (IllegalCastError t x, symtbl')
+    Right (Just x, symtbl') -> Left (IllegalCastError t x, symtbl')
     Left err -> Left err
 
 -- Takes in a list of types, and a list of expressions, and makes sure they match up
@@ -782,20 +808,16 @@ instance TypeCheckable Expression where
           Left (err) -> Left (err)
       Right (_, symtbl') -> Left (AppendNotSliceError, symtbl')
       Left (err) -> Left (err)
-  typeCheck symtbl (Unary a expr) =
-    case typeCheck symtbl expr of
-      Right (t, symtbl') -> unaryCheck (unaryList a) t symtbl'
-      Left (err) -> Left (err)
-  typeCheck symtbl (Binary a expr1 expr2) =
-    case typeCheck symtbl expr1 of
-      Right (t, symtbl') ->
-        case typeCheck symtbl' expr2 of
-          Right (t2, symtbl'') ->
-            case assertTypeEqual t t2 of
-              True -> binaryCheck (binaryList a) (opToCategory a) t symtbl''
-              False -> Left (TypeMismatchError t t2, symtbl'')
-          Left (err) -> Left (err)
-      Left (err) -> Left (err)
+  typeCheck symtbl (Unary a expr) = do
+    (t, symtbl') <- typeCheck symtbl expr
+    unaryCheck (unaryList a) t symtbl'
+
+  typeCheck symtbl (Binary a expr1 expr2) = do
+    (t, symtbl') <- typeCheck symtbl expr1
+    (t2, symtbl'') <- typeCheck symtbl' expr2
+    if assertTypeEqual t t2
+      then binaryCheck (binaryList a) (opToCategory a) t symtbl''
+      else Left (TypeMismatchError t t2, symtbl'')
   typeCheck symtbl (ExprFuncCall funcCall) = typeCheck symtbl funcCall
 
 -- Check if a unary expression is correctly typed
