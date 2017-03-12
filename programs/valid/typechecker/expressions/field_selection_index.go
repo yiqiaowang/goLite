@@ -1,18 +1,18 @@
 package expressions
 
-type wrapped {
+type wrapped struct {
   slice []int
   array [0]int
 }
 
-type wrapper {
+type wrapper struct {
   inner wrapped
 }
 
-type wrapper' wrapper
+type wrapper2 wrapper
 
 func main() {
-  var w wrapper'
+  var w wrapper2
 
   var x []int = w.inner.slice
   var i int = w.inner.slice[0]

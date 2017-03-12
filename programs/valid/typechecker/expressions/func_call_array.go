@@ -1,8 +1,8 @@
 package expressions
 
 func f_array(a, b [0]int) [0]int {
-  var a [0]int
-  return a
+  var x [0]int
+  return x
 }
 
 func main() {

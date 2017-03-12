@@ -1,9 +1,10 @@
 package expressions
 
 func f_string(a, b string) rune {
-  return " "
+  return 'a'
 }
 
 func main() {
-  var a string = f_string(" ", ` `)
+  var a rune = f_string(" ", ` `)
+  return
 }

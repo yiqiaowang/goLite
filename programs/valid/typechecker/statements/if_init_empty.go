@@ -1,7 +1,10 @@
 package statements
 
+func f() {}
+
 func main() {
-  if x := 0; x > 1 {
+  var x int
+  if ; true {
     x++
   }
 }
