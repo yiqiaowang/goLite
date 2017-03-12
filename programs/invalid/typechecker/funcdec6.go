@@ -4,7 +4,7 @@ type pt struct {
 	x, y, z, h string
 	a int
 	f struct {
-		c, v [5][4]int
+		c, v [5]int
 	}
 }
 
@@ -18,12 +18,12 @@ func f_slice() a {
   x.z = "is"
   x.h = "tim"
 
-  var n [5][4]int
-  n[0][2] = 6
+  var n [5]int
+  n[5] = 6
 
   x.f.v = n
 
-  var y a
+  var y pt
   y.x = "hi"
 
   if (x == y) {

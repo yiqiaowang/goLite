@@ -472,6 +472,8 @@ structHelper symtbl (i:(j:js)) =
     Right k ->
       case structFieldHelper k j of
         Right (Alias t) -> structHelper symtbl ((IdOrType t) : js)
+
+        Left err -> Left err
     Left err -> Left err
 
 structFieldHelper :: [([Identifier], Type)]
