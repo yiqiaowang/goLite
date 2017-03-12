@@ -8,7 +8,6 @@ import System.Console.ArgParser
 import System.FilePath
 import qualified Text.Show.Pretty as Pr
 import SymbolTable
-import Text.PrettyPrint
 import Language (Identifier)
 import Data.Map.Strict (toList)
 --
