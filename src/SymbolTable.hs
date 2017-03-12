@@ -1,12 +1,13 @@
 -- A symbol table is a stack of stack frames
 module SymbolTable
-  ( SymbolTable
+  ( SymbolTable (..)
   , SymbolTableError
   , Entry (..)
   , TypeCategory (..)
   , initSymbolTable
   , newFrame
   , popFrame
+  , popFrame'
   , pushFrame
   , topFrame
   , addEntry
@@ -72,10 +73,7 @@ addSym id entry map = Map.insert id entry map
 getSym :: Identifier -> SymMap -> Maybe Entry
 getSym name map = Map.lookup name map
 
-newtype Frame =
-  Frame SymMap
-  deriving (Eq, Show)
-
+data Frame = Frame { getSymMap :: SymMap } deriving (Eq, Show)
 
 -- Stack to hold the frames
 newtype Stack =
@@ -102,30 +100,46 @@ getMap :: Frame -> SymMap
 getMap (Frame m) = m
 
 getStack :: SymbolTable -> Stack
-getStack (SymbolTable s) = s
+getStack (SymbolTable s _ _ ) = s
 
-newtype SymbolTable =
-  SymbolTable Stack
+type History = [Stack]
+type ContextRecord = [Frame]
+
+
+data SymbolTable =
+  SymbolTable Stack History ContextRecord
   deriving (Eq, Show)
 
-emptySymbolTable = SymbolTable empty :: SymbolTable
+emptySymbolTable = SymbolTable empty [] []:: SymbolTable
 
 initSymbolTable = pushFrame emptySymbolTable (Frame initMap) :: SymbolTable
 
 newFrame :: SymbolTable -> SymbolTable
-newFrame (SymbolTable s) = SymbolTable (push (Frame newMap) s)
+newFrame (SymbolTable s h c) = SymbolTable (push (Frame newMap) s) h c
+
+
+-- Since identifiers can't be redefined in the same scope, we can update history
+-- and the context record on scope exit.
 
 popFrame :: SymbolTable -> Either SymbolTableError (Frame, SymbolTable)
-popFrame (SymbolTable s) =
+popFrame (SymbolTable s h c) =
   case pop s of
-    Right s' -> Right (fst s', SymbolTable (snd s'))
+    Right s' -> Right (popped, SymbolTable (snd s') h c)
+      where popped = fst s'
+    Left err -> Left err
+
+popFrame' :: SymbolTable -> Either SymbolTableError (Frame, SymbolTable)
+popFrame' (SymbolTable s h c) =
+  case pop s of
+    Right s' -> Right (popped, SymbolTable (snd s') (s:h)  (popped:c))
+      where popped = fst s'
     Left err -> Left err
 
 pushFrame :: SymbolTable -> Frame -> SymbolTable
-pushFrame (SymbolTable s) f = SymbolTable (push f s)
+pushFrame (SymbolTable s h c) f = SymbolTable (push f s) h c
 
 topFrame :: SymbolTable -> Maybe Frame
-topFrame (SymbolTable s) =
+topFrame (SymbolTable s h c) =
   if isEmpty s
     then Nothing
     else Just $ top s
