@@ -395,13 +395,11 @@ instance TypedPretty Expression where
     , typedPretty expr i h
     ]
   typedPretty e@(Binary op expr1 expr2) i h = concat
-    [ "("
-    , typedPretty expr1 i h
+    [ typedPretty expr1 i h
     , " "
     , pretty op i
     , " "
     , typedPretty expr2 i h
-    , ")"
     , commentType e h
     ]
   typedPretty f@(ExprFuncCall func) i h =
