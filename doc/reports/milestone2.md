@@ -36,4 +36,4 @@ The typechecker was done in a recursive nature, similar to what we covered in cl
 
 ### 3. Invalid Programs
 --
-Below, we give explainations as to why each program in [types](../../../programs/invalid/types) is incorrectly typed.
+Below, we give explainations as to why each program in [types](../../programs/invalid/types) is incorrectly typed.
