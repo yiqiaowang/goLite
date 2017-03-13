@@ -31,7 +31,7 @@ goLiteOptionsParser = GoLiteOptions
     "goLite source file with relative file path"
   `andBy` boolFlag "typecheck" `Descr`
     "Type checks the input source file"
-  `andBy` boolFlag "symtbldump" `Descr`
+  `andBy` boolFlag "dumpsymtab" `Descr`
     "Dumps the entire symbol table on completion or error."
   `andBy` boolFlag "astdump" `Descr`
     "Dumps the ast on completed parse"

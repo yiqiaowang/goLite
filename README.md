@@ -73,7 +73,7 @@ The following commands are accepted.
 
 ```
 golite-exe
-usage : golite-exe filename [-t] [-s] [-a] [-p] [-h] [--version]
+usage : golite-exe filename [-t] [-d] [-a] [-p] [-h] [--version]
 
 mandatory arguments:
  filename                      goLite source file with relative
@@ -81,7 +81,7 @@ mandatory arguments:
 
 optional arguments:
  -t, --typecheck               Type checks the input source file
- -s, --symtbldump              Dumps the entire symbol table on
+ -d, --dumpsymtab              Dumps the entire symbol table on
                                completion or error.
  -a, --astdump                 Dumps the ast on completed parse
  -p, --pptype                  Pretty prints the program with the
