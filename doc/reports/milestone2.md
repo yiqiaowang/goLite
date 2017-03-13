@@ -35,7 +35,7 @@ The typechecker was done in a recursive nature, similar to what we covered in cl
 
 Scoping rules were implemented to be consistent with the milestone 2 spec. In particular, an identifier is in scope if it is declared in the current scope, or any parent scope.
 
-The type checks we made were identical to those specified in the milestone 2 spec. In the examples below, we demonstrate 20 typecheck errors stemming from 
+The type checks we made were identical to those specified in the milestone 2 spec. In the examples below, we demonstrate 20 typecheck errors stemming from:
 * Binary operations
 * Append statements
 * Assignment statements
@@ -47,7 +47,7 @@ The type checks we made were identical to those specified in the milestone 2 spe
 * Variable declarations
 * Short varaible declarations
 
-
+The exact reason for an error and the enumerated type check rules leading to the error are given below.
 
 ### 3. Invalid Programs
 --
