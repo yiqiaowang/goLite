@@ -1,0 +1,456 @@
+{-# LANGUAGE FlexibleInstances #-}
+
+module Codeable.CodeGenerator
+  ( codeGen
+  ) where
+
+
+import Data.List(intercalate)
+import Data.Char(chr)
+import Language
+
+
+class Codeable a where
+  code :: a -> Integer -> String
+
+  codeList :: [a] -> Integer -> String
+  codeList ps i = concatMap (`code` i) ps
+
+structList :: ([Identifier], Type) -> Integer -> String -> String
+structList ([], _) i s = ""
+structList ((ident:idents), t) i s =
+  concat 
+    [spacePrint i
+    , s
+    , "."
+    , code ident i
+    , " = "
+    , emptyTypeValue t i (concat [s, ".", code ident i])
+    , ";\n"]
+
+emptyTypeValue :: Type -> Integer -> String -> String
+emptyTypeValue (Alias "string") _ _ = "\"\""
+emptyTypeValue (Alias "bool") _ _ = "false"
+emptyTypeValue (Alias "int") _ _ = "0"
+emptyTypeValue (Alias "float64") _ _ = "0.0"
+emptyTypeValue (Alias "rune") _ _ = "\'\\0\'"
+emptyTypeValue (Alias str) = concat[str, "()"]
+
+emptyTypeValue (Array _ i) _ = concat ["new Array(", code i 0, ")"]
+emptyTypeValue (Slice _) _ = "new Array()"
+emptyTypeValue (Struct struct) i s) = 
+  concat
+    ["{};\n"
+    , concatMap (`structList` (i + 1) s) struct]
+
+--
+commaSepList :: Codeable a => [a] -> Integer -> String
+commaSepList string i = intercalate ", " (map (`code` i) string)
+
+commaSpaceSepList :: Codeable a => [a] -> Integer -> String
+commaSpaceSepList string i = intercalate ", \" \", " (map (`code` i) string)
+
+varList :: [Identifier] -> Type -> [Expression] -> Integer -> String
+varList [] exprs _ = ""
+varList (var:[]) t [] i = 
+      concat 
+          [spacePrint i
+          , ", "
+          , code var i
+          , " = "
+          , emptyTypeValue t i ""
+          , ";\n"]
+varList (var:vars) t [] i = 
+      concat
+          [spacePrint i
+          , ", "
+          , code var i
+          , " = "
+          , emptyTypeValue t i ""
+          , "\n"
+          , varList vars [] i]
+varList (var:[]) _ (expr:exprs) i = 
+      concat 
+          [spacePrint i
+          , ", "
+          , code var i
+          , " = "
+          , code expr i
+          , ";\n"]
+varList (var:vars) _ (expr:exprs) i = 
+      concat
+          [spacePrint i
+          , ", "
+          , code var i
+          , " = "
+          , code expr i
+          , "\n"
+          , varList vars exprs i]
+
+--
+spacePrint :: Integer -> String
+spacePrint x = replicate (fromInteger x) '\t'
+
+--
+wrapSquare :: String -> String
+wrapSquare s = "[" ++ s ++ "]"
+
+--
+wrapSquareList :: Codeable a => [a] -> Integer -> String
+wrapSquareList xs i = concatMap wrapSquare (map (`code` i) xs)
+
+--
+dotSepList :: [String] -> String
+dotSepList = intercalate "."
+
+-- Need to do
+instance Codeable Program where
+  code (Program package alls) _ =
+    concat ["package ", package, ";\n", "\n", codeList alls 0]
+
+instance Codeable All where
+  code (TopDec dec) _ = concat [code dec 0, "\n"]
+  code (Function name params _ stmts) _ =
+    concat
+      [ "function "
+      , code name 0
+      , "("
+      , commaSepList params 0
+      , ") {\n"
+      , codeList stmts 1
+      , "}\n\n"
+      ]
+
+instance Codeable TopLevel where
+  code (VarDec var) i = code var i
+  code (VarDecList vList) i = codeList vList i
+  code (TypeDec t) i = code t i
+  code (TypeDecList tList) i = codeList tList i
+
+instance Codeable Variable where
+  code (Variable [] _ []) = ""
+  code (Variable (var:[]) t []) i =
+    concat
+      [spacePrint i
+      , "var "
+      , code var i
+      , " = "
+      , emptyTypeValue t i ""
+      , ";\n"
+      ]
+  code (Variable (var:vars) t []) i =
+    concat
+      [spacePrint i
+      , "var "
+      , code var i
+      , " = "
+      , emptyTypeValue t i ""
+      , "\n"
+      , varList vars t [] (i + 1)
+      ]
+  code (Variable (var:[]) _ (expr:exprs)) i =
+    concat
+      [spacePrint i
+      , "var "
+      , code var i
+      , " = "
+      , code expr i
+      , ";\n"
+      ]
+  code (Variable (var:vars) t (expr:exprs)) i =
+    concat
+      [ spacePrint i
+      , "var "
+      , code var i
+      , " = "
+      , code expr i
+      , "\n"
+      , varList vars t exprs (i + 1)
+      ]
+
+instance Codeable TypeName where
+  code (TypeName (Alias s1) (Alias s2)) i = 
+    concat 
+      [spacePrint i
+      , "var "
+      , code (Alias s1) i
+      , " = function() {\n"
+      , spacePrint (i + 1)
+      , "return "
+      , emptyTypeValue (Alias s2) i ""
+      , ";\n"
+      , spacePrint i
+      , "}\n"
+  code (TypeName (Alias s) (Array _ num)) i = 
+    concat 
+      [spacePrint i
+      , "var "
+      , code (Alias s) i
+      , " = function() {\n"
+      , spacePrint (i + 1)
+      , "return new Array("
+      , code num _
+      , ");\n"
+      , spacePrint i
+      , "}\n"
+  code (TypeName (Alias s) (Slice _)) i = 
+    concat 
+      [spacePrint i
+      , "var "
+      , code (Alias s) i
+      , " = function() {\n"
+      , spacePrint (i + 1)
+      , "return new Array();\n"
+      , spacePrint i
+      , "}\n"
+  code (TypeName (Alias s) (Struct struct)) i = 
+    concat 
+      [spacePrint i
+      , "var "
+      , code (Alias s) i
+      , " = function() {\n"
+      , spacePrint (i + 1)
+      , "var struct = {};\n"
+      , concatMap (`structList` (i + 1) s) struct
+      , "return struct;\n"
+      , spacePrint i
+      , "}\n"]
+  code (TypeName _ _) i = ""
+
+instance Codeable Identifier where
+  code (IdOrType s) i = s
+  code (IdArray s xs) i = concat [s, wrapSquareList (map (`code` 0) xs) i]
+  code (IdField xs) i = intercalate "." $ map (`code` i) xs
+
+-- UNUSED!!!!!!!!!!!
+instance Codeable Type where
+  code (Alias s) _ = s
+  code (Array t expr) _ = concat ["new Array(", code expr 0, ")"]
+  code (Slice t) _ = "new Array()"
+  code (Struct list) i = "{}"
+
+instance Codeable Parameter where
+  code (Parameter idList _) i = commaSepList idList i
+
+instance Codeable Stmt where
+  code (StmtDec dec) i = code dec i
+  code (SimpleStmt simp) i = concat [spacePrint i, code simp i, ";\n"]
+  code (Print expr) i =
+    concat [spacePrint i, "console.log(", commaSepList expr i, ");\n"]
+  code (Println expr) i =
+    concat [spacePrint i, "console.log(", commaSpaceSepList expr i, ", \"\\n\");\n"]
+  code (Return Nothing) i = concat [spacePrint i, "return;\n"]
+  code (Return (Just expr)) i =
+    concat [spacePrint i, "return ", code expr 0, ";\n"]
+  code (If ifstmt) i = concat [spacePrint i, code ifstmt i]
+  code (Switch stmt Nothing c) i =
+    concat
+      [ spacePrint i
+      , "switch "
+      , code stmt 0
+      , "; {\n"
+      , codeList c (i + 1)
+      , spacePrint i
+      , "}\n"
+      ]
+  code (Switch stmt (Just expr) c) i =
+    concat
+      [ spacePrint i
+      , "switch "
+      , code stmt 0
+      , "; "
+      , code expr 0
+      , " {\n"
+      , codeList c (i + 1)
+      , spacePrint i
+      , "}\n"
+      ]
+  code (Infinite stmts) i =
+    concat
+      [spacePrint i, "for {\n", codeList stmts (i + 1), spacePrint i, "}\n"]
+  code (While expr stmts) i =
+    concat
+      [ spacePrint i
+      , "for "
+      , code expr 0
+      , " {\n"
+      , codeList stmts (i + 1)
+      , spacePrint i
+      , "}\n"
+      ]
+  code (For simp1 expr simp2 stmts) i =
+    concat
+      [ spacePrint i
+      , "for "
+      , code simp1 0
+      , "; "
+      , code expr 0
+      , "; "
+      , code simp2 0
+      , " {\n"
+      , codeList stmts (i + 1)
+      , spacePrint i
+      , "}\n"
+      ]
+  code (Block xs) i = concat [spacePrint i, "{\n", codeList xs (i+1), spacePrint i, "};\n"]
+  code Break i = concat [spacePrint i, "break;\n"]
+  code Continue i = concat [spacePrint i, "continue;\n"]
+
+-- Need to do
+instance Codeable SimpleStmt where
+  code (StmtFuncCall func) i = (code func i)
+  code (Incr ident) i = concat [code ident i, "++"]
+  code (Decr ident) i = concat [code ident i, "--"]
+  code (Assign idList exprList) i =
+    concat [commaSepList idList i, " = ", commaSepList exprList i]
+  code (ShortBinary opEq ident expr) i = concat [code ident i, " ", code opEq i, " ", code expr i]
+  code (ShortVarDec idList exprList) i =
+    concat [commaSepList idList i, " := ", commaSepList exprList i]
+  code (EmptyStmt) i = ""
+
+-- Need to do
+instance Codeable FunctionCall where
+  code (FunctionCall ident exprList) i =
+    concat [code ident i, "(", commaSepList exprList i, ")"]
+
+-- Need to do
+instance Codeable IfStmt where
+  code (IfStmt st expr stList (IfStmtCont Nothing)) i =
+    concat
+      [ "if "
+      , code st 0
+      , "; "
+      , code expr 0
+      , " {\n"
+      , codeList stList (i + 1)
+      , spacePrint i
+      , "}\n"
+      ]
+  code (IfStmt st expr stList (IfStmtCont (Just (Right elseStmt)))) i =
+    concat
+      [ "if "
+      , code st 0
+      , "; "
+      , code expr 0
+      , " {\n"
+      , codeList stList (i + 1)
+      , spacePrint i
+      , "} else {\n"
+      , codeList elseStmt (i + 1)
+      , spacePrint i
+      , "}\n"
+      ]
+  code (IfStmt st expr stList (IfStmtCont (Just (Left ifStmt)))) i =
+    concat
+      [ "if "
+      , code st 0
+      , "; "
+      , code expr 0
+      , " {\n"
+      , codeList stList (i + 1)
+      , spacePrint i
+      , "} else "
+      , code ifStmt i
+      ]
+
+-- Need to do
+instance Codeable Clause where
+  code (Case exList stList) i =
+    concat
+      [ spacePrint i
+      , "case "
+      , commaSepList exList i
+      , ":\n"
+      , codeList stList (i + 1)
+      ]
+  code (Default stList) i =
+    concat [spacePrint i, "default:\n", codeList stList (i + 1)]
+
+-- Need to do
+instance Codeable Expression where
+  code (Brack expr) i = concat
+    [ "("
+    , code expr i
+    , ")"
+    ]
+  code (Id ident) i = code ident i
+  code (Literal lit) i = code lit i
+  code (Unary op expr) i = concat [code op i, code expr i]
+  code (Binary op expr1 expr2) i = concat
+    [ code expr1 i
+    , " "
+    , code op i
+    , " "
+    , code expr2 i
+    ]
+  code (ExprFuncCall func) i = code func i
+  code (Append ident expr) i =
+    concat ["append(", code ident i, ", ", code expr i, ")"]
+
+-- Need to do
+instance Codeable UnaryOp where
+  code Pos _ = "+"
+  code Neg _ = "-"
+  code BoolNot _ = "!"
+  code BitComplement _ = "^"
+
+-- Need to do
+instance Codeable BinaryOp where
+  code Or _ = "||"
+  code And _ = "&&"
+  code Equals _ = "=="
+  code NotEquals _ = "!="
+  code LThan _ = "<"
+  code LEThan _ = "<="
+  code GThan _ = ">"
+  code GEThan _ = ">="
+  code Add _ = "+"
+  code Sub _ = "-"
+  code Mult _ = "*"
+  code Div _ = "/"
+  code Mod _ = "%"
+  code BitAnd _ = "&"
+  code BitOr _ = "|"
+  code BitXor _ = "^"
+  code BitLShift _ = "<<"
+  code BitRShift _ = ">>"
+  code BitClear _ = "&^"
+
+-- Need to do
+instance Codeable BinaryOpEq where
+  code PlusEq _ = "+="
+  code MinusEq _ = "-="
+  code MulEq _ = "*="
+  code DivEq _ = "/="
+  code ModEq _ = "%="
+  code BitAndEq _ = "&="
+  code BitOrEq _ = "|="
+  code BitXorEq _ = "^="
+  code BitLShiftEq _ = "<<="
+  code BitRShiftEq _ = ">>="
+  code BitClearEq _ = "&^="
+
+-- Need to do
+instance Codeable (Maybe Expression) where
+  code Nothing i = ""
+  code (Just e) i = code e i
+
+-- Need to do
+instance Codeable String where
+  code s _ = s
+
+-- Need to do
+instance Codeable Integer where
+  code int _ = (show int)
+
+-- Need to do
+instance Codeable Int where
+  code int _ = (show int)
+
+-- Need to do
+instance Codeable Literal where
+  code (Int' i) _ = show i
+  code (Float64 f) _ = show f
+  code (Rune i) _ = (show . chr . fromIntegral) i
+  code (String s) _ = s
+  code (Raw s) _ = s
