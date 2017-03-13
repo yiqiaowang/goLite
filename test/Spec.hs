@@ -12,6 +12,7 @@ import qualified Spec.Scanner
 import qualified Spec.Parser
 import qualified Spec.Pretty
 import qualified Spec.TypeChecker
+import qualified Spec.TypedPretty
 
 
 --
@@ -50,12 +51,14 @@ main = do
     Spec.Parser.spec invalidParser invalidWeeder validSyntax
   typeCheckerSummary <- hspecResult $
     Spec.TypeChecker.spec invalidTypeChecker validTypeChecker
+  typedPrettySummary <- hspecResult $ Spec.TypedPretty.spec validTypeChecker
 
   if any (not . isSuccess)
     [ scannerSummary
     , prettySummary
     , parserSummary
     , typeCheckerSummary
+    , typedPrettySummary
     ]
     then exitFailure
     else exitSuccess

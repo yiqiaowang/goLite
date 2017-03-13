@@ -4,6 +4,8 @@ module SymbolTable
   , SymbolTableError
   , Entry (..)
   , TypeCategory (..)
+  , History
+  , Stack
   , initSymbolTable
   , newFrame
   , popFrame

@@ -1,7 +1,6 @@
 module TypeChecker
   ( TypeCheckError(..)
-  , typeCheck
-  , typeCheckList
+  , TypeCheckable(..)
   ) where
 
 import Data.Map.Strict (keys)

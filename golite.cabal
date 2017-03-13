@@ -10,7 +10,8 @@ library
                      , Scanner
                      , Parser
                      , Language
-                     , Pretty
+                     , Pretty.Pretty
+                     , Pretty.TypedPretty
                      , TokenClass
                      , Weeder
                      , TypeChecker
@@ -41,6 +42,7 @@ test-suite golite-test
   other-modules:       Spec.Scanner
                      , Spec.Parser
                      , Spec.Pretty
+                     , Spec.TypedPretty
                      , Spec.TypeChecker
   build-depends:       base
                      , golite

@@ -1,48 +1,47 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Pretty
+module Pretty.Pretty
   ( pretty
   ) where
 
-import Data.Char (chr)
-import Data.List (intercalate)
+
+import Data.List(intercalate)
+import Data.Char(chr)
 import Language
+
 
 class Pretty a where
   pretty :: a -> Integer -> String
+
   prettyList :: [a] -> Integer -> String
   prettyList ps i = concatMap (`pretty` i) ps
 
-commaSepList :: Pretty a => [a] -> Integer -> String
-commaSepList string i = intercalate ", " (map (`pretty` i) string)
 
+--
 structList :: ([Identifier], Type) -> Integer -> String
 structList (idList, t) i =
   concat [spacePrint i, commaSepList idList i, " ", pretty t i, ";\n"]
 
-spacePrint :: Integer -> String
-spacePrint x =
-  case x <= 0 of
-    True -> ""
-    False -> concat ["\t", spacePrint (x - 1)]
+--
+commaSepList :: Pretty a => [a] -> Integer -> String
+commaSepList string i = intercalate ", " (map (`pretty` i) string)
 
+--
+spacePrint :: Integer -> String
+spacePrint x = replicate (fromInteger x) '\t'
+
+--
 wrapSquare :: String -> String
 wrapSquare s = "[" ++ s ++ "]"
 
+--
 wrapSquareList :: Pretty a => [a] -> Integer -> String
 wrapSquareList xs i = concatMap wrapSquare (map (`pretty` i) xs)
 
+--
 dotSepList :: [String] -> String
-dotSepList string = intercalate "." string
+dotSepList = intercalate "."
 
-
-
-
-
-
-
-instance Pretty String where
-  pretty s _ = s
 
 instance Pretty Program where
   pretty (Program package alls) _ =
@@ -119,7 +118,7 @@ instance Pretty Variable where
       , ";\n"
       ]
   pretty (Variable var Nothing expr) i =
-    concat [spacePrint i, commaSepList var i, " = ", commaSepList expr i, ";\n"]     
+    concat [spacePrint i, commaSepList var i, " = ", commaSepList expr i, ";\n"]
 
 instance Pretty TypeName where
   pretty (TypeName ident t) i =
@@ -140,13 +139,6 @@ instance Pretty Type where
 instance Pretty Parameter where
   pretty (Parameter idList t) i =
     concat [commaSepList idList i, " ", pretty t 0]
-
-
-
-
-
-
-
 
 instance Pretty Stmt where
   pretty (StmtDec dec) i = pretty dec i
@@ -210,7 +202,7 @@ instance Pretty Stmt where
       ]
   pretty (Block xs) i = concat [spacePrint i, "{\n", prettyList xs (i+1), spacePrint i, "};\n"]
   pretty Break i = concat [spacePrint i, "break;\n"]
-  pretty Continue i = concat [spacePrint i, "continue;\n"]   
+  pretty Continue i = concat [spacePrint i, "continue;\n"]
 
 instance Pretty SimpleStmt where
   pretty (StmtFuncCall func) i = (pretty func i)
@@ -218,22 +210,7 @@ instance Pretty SimpleStmt where
   pretty (Decr ident) i = concat [pretty ident i, "--"]
   pretty (Assign idList exprList) i =
     concat [commaSepList idList i, " = ", commaSepList exprList i]
-  pretty (ShortBinary PlusEq ident expr) i = concat [pretty ident i, " += ", pretty expr i]
-  pretty (ShortBinary MinusEq ident expr) i = concat [pretty ident i, " -= ", pretty expr i]
-  pretty (ShortBinary MulEq ident expr) i = concat [pretty ident i, " *= ", pretty expr i]
-  pretty (ShortBinary DivEq ident expr) i = concat [pretty ident i, " /= ", pretty expr i]
-  pretty (ShortBinary ModEq ident expr) i = concat [pretty ident i, " %= ", pretty expr i]
-  pretty (ShortBinary BitAndEq ident expr) i =
-    concat [pretty ident i, " &= ", pretty expr i]
-  pretty (ShortBinary BitOrEq ident expr) i = concat [pretty ident i, " |= ", pretty expr i]
-  pretty (ShortBinary BitXorEq ident expr) i =
-    concat [pretty ident i, " ^= ", pretty expr i]
-  pretty (ShortBinary BitLShiftEq ident expr) i =
-    concat [pretty ident i, " <<= ", pretty expr i]
-  pretty (ShortBinary BitRShiftEq ident expr) i =
-    concat [pretty ident i, " >>= ", pretty expr i]
-  pretty (ShortBinary BitClearEq ident expr) i =
-    concat [pretty ident i, " &^= ", pretty expr i]
+  pretty (ShortBinary opEq ident expr) i = concat [pretty ident i, " ", pretty opEq i, " ", pretty expr i]
   pretty (ShortVarDec idList exprList) i =
     concat [commaSepList idList i, " := ", commaSepList exprList i]
   pretty (EmptyStmt) i = ""
@@ -293,66 +270,87 @@ instance Pretty Clause where
   pretty (Default stList) i =
     concat [spacePrint i, "default:\n", prettyList stList (i + 1)]
 
-
-
-
-
-
-
-
-
 instance Pretty Expression where
-  pretty (Brack expr) i = concat ["(", pretty expr i, ")"]
+  pretty (Brack expr) i = concat
+    [ "("
+    , pretty expr i
+    , ")"
+    ]
   pretty (Id ident) i = pretty ident i
   pretty (Literal lit) i = pretty lit i
-  pretty (Unary Pos expr) i = concat ["+", pretty expr i]
-  pretty (Unary Neg expr) i = concat ["-", pretty expr i]
-  pretty (Unary BoolNot expr) i = concat ["!", pretty expr i]
-  pretty (Unary BitComplement expr) i = concat ["^", pretty expr i]
-  pretty (Binary Or expr1 expr2) i = concat [pretty expr1 i, " || ", pretty expr2 i]
-  pretty (Binary And expr1 expr2) i = concat [pretty expr1 i, " && ", pretty expr2 i]
-  pretty (Binary Equals expr1 expr2) i =
-    concat [pretty expr1 i, " == ", pretty expr2 i]
-  pretty (Binary NotEquals expr1 expr2) i =
-    concat [pretty expr1 i, " != ", pretty expr2 i]
-  pretty (Binary LThan expr1 expr2) i = concat [pretty expr1 i, " < ", pretty expr2 i]
-  pretty (Binary LEThan expr1 expr2) i =
-    concat [pretty expr1 i, " <= ", pretty expr2 i]
-  pretty (Binary GThan expr1 expr2) i = concat [pretty expr1 i, " > ", pretty expr2 i]
-  pretty (Binary GEThan expr1 expr2) i =
-    concat [pretty expr1 i, " >= ", pretty expr2 i]
-  pretty (Binary Add expr1 expr2) i = concat [pretty expr1 i, " + ", pretty expr2 i]
-  pretty (Binary Sub expr1 expr2) i = concat [pretty expr1 i, " - ", pretty expr2 i]
-  pretty (Binary Mult expr1 expr2) i = concat [pretty expr1 i, " * ", pretty expr2 i]
-  pretty (Binary Div expr1 expr2) i = concat [pretty expr1 i, " / ", pretty expr2 i]
-  pretty (Binary Mod expr1 expr2) i = concat [pretty expr1 i, " % ", pretty expr2 i]
-  pretty (Binary BitAnd expr1 expr2) i = concat [pretty expr1 i, " & ", pretty expr2 i]
-  pretty (Binary BitOr expr1 expr2) i = concat [pretty expr1 i, " | ", pretty expr2 i]
-  pretty (Binary BitXor expr1 expr2) i = concat [pretty expr1 i, " ^ ", pretty expr2 i]
-  pretty (Binary BitLShift expr1 expr2) i =
-    concat [pretty expr1 i, " << ", pretty expr2 i]
-  pretty (Binary BitRShift expr1 expr2) i =
-    concat [pretty expr1 i, " >> ", pretty expr2 i]
-  pretty (Binary BitClear expr1 expr2) i =
-    concat [pretty expr1 i, " &^ ", pretty expr2 i]
+  pretty (Unary op expr) i = concat [pretty op i, pretty expr i]
+  pretty (Binary op expr1 expr2) i = concat
+    [ pretty expr1 i
+    , " "
+    , pretty op i
+    , " "
+    , pretty expr2 i
+    ]
   pretty (ExprFuncCall func) i = pretty func i
   pretty (Append ident expr) i =
     concat ["append(", pretty ident i, ", ", pretty expr i, ")"]
 
+--
+instance Pretty UnaryOp where
+  pretty Pos _ = "+"
+  pretty Neg _ = "-"
+  pretty BoolNot _ = "!"
+  pretty BitComplement _ = "^"
+
+--
+instance Pretty BinaryOp where
+  pretty Or _ = "||"
+  pretty And _ = "&&"
+  pretty Equals _ = "=="
+  pretty NotEquals _ = "!="
+  pretty LThan _ = "<"
+  pretty LEThan _ = "<="
+  pretty GThan _ = ">"
+  pretty GEThan _ = ">="
+  pretty Add _ = "+"
+  pretty Sub _ = "-"
+  pretty Mult _ = "*"
+  pretty Div _ = "/"
+  pretty Mod _ = "%"
+  pretty BitAnd _ = "&"
+  pretty BitOr _ = "|"
+  pretty BitXor _ = "^"
+  pretty BitLShift _ = "<<"
+  pretty BitRShift _ = ">>"
+  pretty BitClear _ = "&^"
+
+instance Pretty BinaryOpEq where
+  pretty PlusEq _ = "+="
+  pretty MinusEq _ = "-="
+  pretty MulEq _ = "*="
+  pretty DivEq _ = "/="
+  pretty ModEq _ = "%="
+  pretty BitAndEq _ = "&="
+  pretty BitOrEq _ = "|="
+  pretty BitXorEq _ = "^="
+  pretty BitLShiftEq _ = "<<="
+  pretty BitRShiftEq _ = ">>="
+  pretty BitClearEq _ = "&^="
+
+instance Pretty (Maybe Expression) where
+  pretty Nothing i = ""
+  pretty (Just e) i = pretty e i
+
+instance Pretty String where
+  pretty s _ = s
+
+
+instance Pretty Integer where
+  pretty int _ = (show int)
+
+
+instance Pretty Int where
+  pretty int _ = (show int)
+
+--
 instance Pretty Literal where
   pretty (Int' i) _ = show i
   pretty (Float64 f) _ = show f
   pretty (Rune i) _ = (show . chr . fromIntegral) i
   pretty (String s) _ = s
   pretty (Raw s) _ = s
-
-instance Pretty (Maybe Expression) where
-  pretty Nothing i = ""
-  pretty (Just e) i = pretty e i
-
-instance Pretty Integer where
-  pretty int _ = (show int)
-
-instance Pretty Int where
-  pretty int _ = (show int)
-
