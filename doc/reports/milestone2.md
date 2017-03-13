@@ -14,6 +14,11 @@ Thomas
 * Tests
 
 Charlie
+* Typechecker
+* Typed pretty printing
+* CLI code
+* Test suite code
+* Test programs
 
 ### 2. Design Notes
 
