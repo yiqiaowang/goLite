@@ -280,13 +280,11 @@ instance Pretty Expression where
   pretty (Literal lit) i = pretty lit i
   pretty (Unary op expr) i = concat [pretty op i, pretty expr i]
   pretty (Binary op expr1 expr2) i = concat
-    [ "("
-    , pretty expr1 i
+    [ pretty expr1 i
     , " "
     , pretty op i
     , " "
     , pretty expr2 i
-    , ")"
     ]
   pretty (ExprFuncCall func) i = pretty func i
   pretty (Append ident expr) i =
