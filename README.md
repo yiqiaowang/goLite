@@ -12,7 +12,7 @@ Team Members:
 --
 ## MileStones - Please read for notes regarding Milestones
 ### Milestone 1
-* Question 1: The structure of [```programs/```](programs/) looks like 
+* Question 1: The structure of [```programs/```](programs/) looks like
 
     ```
     programs/
@@ -27,10 +27,10 @@ Team Members:
         invalid_program1.go
         invalid_program2.go
     ```
-    
+
   For question 1, please grade the 6 golite programs located in the ```valid/``` directory (ie. their paths should be ```programs/valid/*.go```). For the invalid programs, any golite program in any subpath of ```invalid/``` can be graded, however 30 invalid golite programs are provided in the ```invalid/``` directory for convenience (ie. their paths should be ```programs/invalid/*.go```).
 * Question 2: If you run out of disk quota when building, it might help to use ```stack.yaml.bak``` instead of ```stack.yaml```. To use ```stack.yaml.bak``` just rename it to ```stack.yaml```.
-* Question 3: [Report] (doc/milestone1.pdf) 
+* Question 3: [Report] (doc/milestone1.pdf)
 
 
 
@@ -73,13 +73,19 @@ The following commands are accepted.
 
 ```
 golite-exe
-usage : golite-exe filename [-h] [--version]
+usage : golite-exe filename [-t] [-s] [-a] [-p] [-h] [--version]
 
 mandatory arguments:
  filename                      goLite source file with relative
                                file path
 
 optional arguments:
+ -t, --typecheck               Type checks the input source file
+ -s, --symtbldump              Dumps the entire symbol table on
+                               completion or error.
+ -a, --astdump                 Dumps the ast on completed parse
+ -p, --pptype                  Pretty prints the program with the
+                               type of each expression
  -h, --help                    show this help message and exit
  --version                     print the program version and exit
  ```
