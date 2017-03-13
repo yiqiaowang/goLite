@@ -9,8 +9,9 @@ Yi Qiao
 * Tests
 
 Thomas
-
-
+* Typechecker
+* Fixed errors in Parser
+* Tests
 
 Charlie
 
@@ -34,6 +35,8 @@ The second stack was used to store the history of all popped symbol table frames
 The typechecker was done in a recursive nature, similar to what we covered in class. For example, statements, while they have no type themselves, are correctly typed if they satisify the rules outlined in the spec. To satisfy the rules, we might need to type sub-components of the statement, and these are handled by the same recursive function that is typing the statement. Likewise, expressions are well typed if their arguments are well typed, their arguments are well typed if the sub arguments are well typed. This propagates down to the base cases of the type system, things are trivially well typed.
 
 Scoping rules were implemented to be consistent with the milestone 2 spec. In particular, an identifier is in scope if it is declared in the current scope, or any parent scope.
+
+To make sure Binary operations were well typed, first we checked to make sure both sides of the operation had the same type. Then we made sure that the type was compatible with the operation by finding out which built-in type the type correlated with if it was an alias.
 
 The type checks we made were identical to those specified in the milestone 2 spec. In the examples below, we demonstrate 20 typecheck errors stemming from:
 * Binary operations
