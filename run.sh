@@ -2,4 +2,4 @@
 
 args="$@"
 
-stack exec golite-exe -- $args
+stack exec golite-exe -- $args -t
