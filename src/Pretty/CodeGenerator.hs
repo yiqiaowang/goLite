@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 module Pretty.CodeGenerator
-  ( codeGenerator
+  ( Codeable(..)
   ) where
 
 
@@ -28,20 +28,24 @@ structList ((ident:idents), t) i s =
     , emptyTypeValue t i (concat [s, ".", code ident i])
     , ";\n"]
 
+structPrint :: [([Identifier], Type)] -> Integer -> String -> String
+structPrint [] _ _ = ""
+structPrint (struct:structs) i s = concat[structList struct i s, structPrint structs i s]
+
 emptyTypeValue :: Type -> Integer -> String -> String
 emptyTypeValue (Alias "string") _ _ = "\"\""
 emptyTypeValue (Alias "bool") _ _ = "false"
 emptyTypeValue (Alias "int") _ _ = "0"
 emptyTypeValue (Alias "float64") _ _ = "0.0"
 emptyTypeValue (Alias "rune") _ _ = "\'\\0\'"
-emptyTypeValue (Alias str) = concat[str, "()"]
+emptyTypeValue (Alias str) _ _ = concat[str, "()"]
 
-emptyTypeValue (Array _ i) _ = concat ["new Array(", code i 0, ")"]
-emptyTypeValue (Slice _) _ = "new Array()"
+emptyTypeValue (Array _ i) _ _ = concat ["new Array(", code i 0, ")"]
+emptyTypeValue (Slice _) _ _ = "new Array()"
 emptyTypeValue (Struct struct) i s = 
   concat
     ["{};\n"
-    , concatMap (`structList` (i + 1) s) struct]
+    , structPrint struct (i + 1) s]
 
 --
 commaSepList :: Codeable a => [a] -> Integer -> String
@@ -50,9 +54,9 @@ commaSepList string i = intercalate ", " (map (`code` i) string)
 commaSpaceSepList :: Codeable a => [a] -> Integer -> String
 commaSpaceSepList string i = intercalate ", \" \", " (map (`code` i) string)
 
-varList :: [Identifier] -> Type -> [Expression] -> Integer -> String
-varList [] exprs _ = ""
-varList (var:[]) t [] i = 
+varList :: [Identifier] -> (Maybe Type) -> [Expression] -> Integer -> String
+varList [] exprs _ _ = ""
+varList (var:[]) (Just t) [] i = 
       concat 
           [spacePrint i
           , ", "
@@ -60,7 +64,7 @@ varList (var:[]) t [] i =
           , " = "
           , emptyTypeValue t i ""
           , ";\n"]
-varList (var:vars) t [] i = 
+varList (var:vars) (Just t) [] i = 
       concat
           [spacePrint i
           , ", "
@@ -68,7 +72,7 @@ varList (var:vars) t [] i =
           , " = "
           , emptyTypeValue t i ""
           , "\n"
-          , varList vars [] i]
+          , varList vars (Just t) [] i]
 varList (var:[]) _ (expr:exprs) i = 
       concat 
           [spacePrint i
@@ -77,7 +81,7 @@ varList (var:[]) _ (expr:exprs) i =
           , " = "
           , code expr i
           , ";\n"]
-varList (var:vars) _ (expr:exprs) i = 
+varList (var:vars) t (expr:exprs) i = 
       concat
           [spacePrint i
           , ", "
@@ -85,7 +89,7 @@ varList (var:vars) _ (expr:exprs) i =
           , " = "
           , code expr i
           , "\n"
-          , varList vars exprs i]
+          , varList vars t exprs i]
 
 --
 spacePrint :: Integer -> String
@@ -135,8 +139,8 @@ instance Codeable TopLevel where
   code (TypeDecList tList) i = codeList tList i
 
 instance Codeable Variable where
-  code (Variable [] _ []) = ""
-  code (Variable (var:[]) t []) i =
+  code (Variable [] _ []) _ = ""
+  code (Variable (var:[]) (Just t) []) i =
     concat
       [spacePrint i
       , "var "
@@ -145,7 +149,7 @@ instance Codeable Variable where
       , emptyTypeValue t i ""
       , ";\n"
       ]
-  code (Variable (var:vars) t []) i =
+  code (Variable (var:vars) (Just t) []) i =
     concat
       [spacePrint i
       , "var "
@@ -153,7 +157,7 @@ instance Codeable Variable where
       , " = "
       , emptyTypeValue t i ""
       , "\n"
-      , varList vars t [] (i + 1)
+      , varList vars (Just t) [] (i + 1)
       ]
   code (Variable (var:[]) _ (expr:exprs)) i =
     concat
@@ -187,7 +191,7 @@ instance Codeable TypeName where
       , emptyTypeValue (Alias s2) i ""
       , ";\n"
       , spacePrint i
-      , "}\n"
+      , "}\n"]
   code (TypeName (Alias s) (Array _ num)) i = 
     concat 
       [spacePrint i
@@ -196,10 +200,10 @@ instance Codeable TypeName where
       , " = function() {\n"
       , spacePrint (i + 1)
       , "return new Array("
-      , code num _
+      , code num i
       , ");\n"
       , spacePrint i
-      , "}\n"
+      , "}\n"]
   code (TypeName (Alias s) (Slice _)) i = 
     concat 
       [spacePrint i
@@ -209,7 +213,7 @@ instance Codeable TypeName where
       , spacePrint (i + 1)
       , "return new Array();\n"
       , spacePrint i
-      , "}\n"
+      , "}\n"]
   code (TypeName (Alias s) (Struct struct)) i = 
     concat 
       [spacePrint i
@@ -218,7 +222,7 @@ instance Codeable TypeName where
       , " = function() {\n"
       , spacePrint (i + 1)
       , "var struct = {};\n"
-      , concatMap (`structList` (i + 1) s) struct
+      , structPrint struct (i + 1) s
       , "return struct;\n"
       , spacePrint i
       , "}\n"]
@@ -311,7 +315,7 @@ instance Codeable SimpleStmt where
       , code (Assign identList exprList) i
       ]
   code (ShortBinary opEq ident expr) i = concat [code ident i, " ", code opEq i, code expr i]
- code (ShortVarDec [] _) i = ""
+  code (ShortVarDec [] _) i = ""
   code (ShortVarDec (ident:[]) (expr:exprList)) i =
     concat
       [ "var "
@@ -398,8 +402,6 @@ instance Codeable Expression where
     ]
   code (ExprFuncCall func) i = code func i
   code (Append ident expr) i =
-    concat [
-      ]
     concat ["append(", code ident i, ", ", code expr i, ")"]
 
 -- Need to do
@@ -466,23 +468,23 @@ instance Codeable Literal where
   code (Raw s) _ = s
 
 class Injectable a where
-  inject :: [a] -> Stmt -> [a]
+  inject :: [a] -> SimpleStmt -> [a]
 
 instance Injectable Clause where
   inject [] stmt = []
   inject ((Case exprs stmtList):clauses) stmt = (Case exprs (inject stmtList stmt)):(inject clauses stmt)
   inject ((Default stmtList): clauses) stmt = (Default (inject stmtList stmt)):(inject clauses stmt)
 
-injectIf :: IfStmt -> Stmt -> IfStmt
+injectIf :: IfStmt -> SimpleStmt -> IfStmt
 injectIf (IfStmt st expr stList (IfStmtCont Nothing)) stmt = 
        (IfStmt st expr (inject stList stmt) (IfStmtCont Nothing))
 injectIf (IfStmt st expr stList (IfStmtCont (Just (Right elseStmt)))) stmt = 
        (IfStmt st expr (inject stList stmt) (IfStmtCont (Just (Right (inject elseStmt stmt)))))
 injectIf (IfStmt st expr stList (IfStmtCont (Just (Left ifStmt)))) stmt = 
-       (IfStmt st expr (inject stList stmt) (IfStmtCont (Just (Left (injectIf ifstmt stmt)))))
+       (IfStmt st expr (inject stList stmt) (IfStmtCont (Just (Left (injectIf ifStmt stmt)))))
 
 instance Injectable Stmt where
-  inject stmts stmt = stmt:stmts
+  inject stmts stmt = (SimpleStmt stmt):stmts
 
 
 
