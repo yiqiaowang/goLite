@@ -16,6 +16,7 @@ library
                      , Weeder
                      , TypeChecker
                      , SymbolTable
+                     , Pretty.CodeGenerator
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , array
