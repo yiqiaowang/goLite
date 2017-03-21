@@ -59,7 +59,7 @@ processFile options = do
             when (prettyPrintType options) $
               writeFile ppTypeFile $ TypedPretty.typedPretty program 0 history
           Left (GoLite.TypeCheckerError (err, symtbl)) ->
-            putStrLn ("FAIL\n" ++ Pr.ppShow err)
+            errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
 
       -- Dump symboltable
       when (dumpSymbolTable options) $
@@ -67,7 +67,7 @@ processFile options = do
           Right (_, SymbolTable.SymbolTable s h c) ->
             putStrLn $ draw $ reverse $ fmap (toList . getMap) c
           Left (GoLite.TypeCheckerError (_, SymbolTable.SymbolTable s h c)) ->
-            putStrLn $ draw $ reverse $ fmap (toList . getMap) c
+            errorWithoutStackTrace $ draw $ reverse $ fmap (toList . getMap) c
 
       -- Dump ast
       when (dumpAST options) $

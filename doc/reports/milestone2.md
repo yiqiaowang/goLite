@@ -59,7 +59,7 @@ The exact reason for an error and the enumerated type check rules leading to the
 
 ### 3. Invalid Programs
 --
-Below, we give explainations as to why each program in [types](../../programs/invalid/types) is incorrectly typed.
+Below, we give explainations as to why each program in [types](https://github.com/Sable/comp520-2017-01/tree/master/programs/invalid/types) is incorrectly typed.
 
 ##### alias1.go
 --
