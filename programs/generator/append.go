@@ -51,7 +51,7 @@ func append_bool() {
 
 	//should print 1 2 3 on separate lines
 	println("The following should be 'true' and 'false', each on a separate line.")
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 2; i++ {
 		println(a[i])
 	}
 }
