@@ -68,5 +68,32 @@ var bar foo
 This requires resolving the base type of all varaibles that of an aliased type. We accomplished this by retyping the variable. This approach was chosen since, for our team, it was the easiest and simplest way to implement such behavior.
 
 #### Testing
-Since the code generator itself is finished. What remains to do is testing. We have already implemented functions and flags that should ease testing of generated code. We do this by comparing the output of running our generated code (via Node.js) to the output of running the original Go/Golite code (via the Go compiler). 
+Since the code generator itself is finished. What remains to do is testing. A [bash script](https://github.com/Sable/comp520-2017-01/blob/master/diff_generator.sh), as well as run flags, have been implemented to aid in testing of generated code. We do this by comparing the output of running our generated code (via Node.js) to the output of running the original Go/Golite code (via the Go compiler). 
+
 ### 4. Description of Programs
+We decided to test the following five language constructs:
+* append
+* equality
+* identifiers
+* if statement initialization variable declaration
+* type casting
+
+
+#### [Append](https://github.com/Sable/comp520-2017-01/blob/master/programs/generator/append.go)
+For the ```append``` construct, we tested append with all four types that can be used with ```println```. For each of the types, an empty slice was declared, and ```append``` applied to it. The behaviour was then verified by looping over the length of the slice and printing out what each value is, versus what we expect it to be. 
+
+#### [Equality](https://github.com/Sable/comp520-2017-01/blob/master/programs/generator/equality.go)
+For equality, we verified that all types that can be equated, including structs, work as intended. Again, a similar approach to the one used in verifing the ```append``` construct was used. Two variables of each type were declared and given values. Then the equality comparison operator ```==``` was applied to the variables. The expected result of the comparison and the actual result of the comparison are then printed to the screen.
+
+#### [Identifiers](https://github.com/Sable/comp520-2017-01/blob/master/programs/generator/identifiers.go)
+The following behaviors of identifers were verifed. First, it was verified that type names (```int``` etc.) were valid identifiers. Then, we verified that identifiers could be used in-place of values in expressions. Finally, it was verified that the value of identifiers can be reassigned. Again, testing involved printing the expected resutl versus the actual result.
+
+#### [If Statment Variable Initialization](https://github.com/Sable/comp520-2017-01/blob/master/programs/generator/if_init_shadow.go)
+The optional variable declaration in ```if``` statements was verified by checking that, first, the initialized variable was indeed accessible inside the body of the ```if``` statement. Secondly, it was verified that the variable declared in the initialization of the if statement could be shadowed by a variable of the same name declared inside the body of the ```if``` statement.
+
+#### [Type Casting](https://github.com/Sable/comp520-2017-01/blob/master/programs/generator/type_casting.go)
+Type casting was verified by checking that all types could be casted to each other. This was done by declaring variables of each type and casting them to one another. In addition, the casting of aliased types was also verfied by declaring two aliased types, both capable of being cast to each other, and two variables, one of each aliased type. Then they were cast to each other and the outcomes compared.
+
+
+
+
