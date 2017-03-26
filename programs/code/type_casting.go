@@ -23,12 +23,19 @@ func int_cast() {
 	x := 1
 	y := 1.0
 
+
 	println("The following should be '1'")
 	println(int(x))
 	println("The following should be '1'")
 	println(int(y))
 		
 	// Go doesn't allow for casts from bool to ints
+	// Golite converts to 0 or 1
+	
+	println("The following should be '1'")
+	println(int(true))
+	println("The following should be '0'")
+	println(int(false))
 }
 
 func bool_cast() {
@@ -62,7 +69,14 @@ func float64_cast() {
 	println(float64(x))
 	println("The following should be '1.0'")
 	println(float64(y))
+	
 	// Go doesn't allow for casts from bool to floats
+	// Golite converts to 0.0 or 1.0
+	
+	println("The following should be '1.0'")
+	println(float64(true))
+	println("The following should be '0.0'")
+	println(float64(false))
 }
 
 
