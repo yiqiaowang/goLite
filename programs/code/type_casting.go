@@ -22,24 +22,22 @@ func complex_cast() {
 func int_cast() {
 	x := 1
 	y := 1.0
-	a := true
 
 	println("The following should be '1'")
 	println(int(x))
 	println("The following should be '1'")
 	println(int(y))
-	println("The following should be '1'")
-	println(int(a))
-	
-	
-	println("The following should be '0'")
-	println(int(false))
+		
+	// Go doesn't allow for casts from bool to ints
 }
 
 func bool_cast() {
 	x := 1
 	y := 1.0
 	a := true
+	
+	// Go does not allow for type casts from int to bool
+	// Golite allows for this via comparison to 0, where 0 is false, rest is true
 
 	println("The following should be 'true'")
 	println(bool(x))
@@ -48,34 +46,23 @@ func bool_cast() {
 	println("The following should be 'true'")
 	println(bool(a))
 	
+	
 	println("The following should be 'false'")
 	println(bool(0))
 	println("The following should be 'false'")
 	println(bool(0.0))
-	println("The following should be 'false'")
-	println(bool(false))
 }
 
 
 func float64_cast() {
 	x := 1
 	y := 1.0
-	a := true
 
 	println("The following should be '1.0'")
 	println(float64(x))
 	println("The following should be '1.0'")
 	println(float64(y))
-	println("The following should be '1.0'")
-	println(float64(a))
-	
-	println("The following should be '0.0'")
-	println(float64(0))
-	println("The following should be '0.0'")
-	println(float64(0.0))
-	println("The following should be '0.0'")
-	println(float64(false))
-	
+	// Go doesn't allow for casts from bool to floats
 }
 
 
