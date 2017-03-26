@@ -11,10 +11,13 @@ Team Members:
 
 --
 ## MileStones - Please read for notes regarding Milestones
+### Milestone 3
+* No additional notes.
+
 ### Milestone 2
 * Question 1: The 20 invalid programs are in the [```types```](programs/invalid/tests/) directory.
 * Question 2: _We have implemented the "terminating statements" rules returns._ The compiler will typecheck if invoked with the flag ```-t```: ```stack exec golite-exe -- foo.go -t```. The run script, by default, will run the file with the ```-t``` flag enabled. To run with the ```-pptype``` flag, we can do either of the following: ```./run.sh foo.go -p``` or ```./run.sh foo.go --pptype```. To run with the ```-dumpsymtab``` flag, please use either ```./run.sh foo.go -d``` or ```./run.sh foo.go --dumpsymtab```. 
-* Question 3: [Report] (doc/milestone2.pdf)
+* Question 3: [Report](doc/milestone2.pdf)
 
 
 ### Milestone 1
