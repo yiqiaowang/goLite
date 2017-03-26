@@ -1,5 +1,7 @@
+/* To increase the running time of this algorithm, increase the size of the graph */
+
 // A completely customizable Random Number Generator
-package pathplanning;
+package main;
 
 
 // sets the value at the given index from an array to negative 1 and returns a new array
