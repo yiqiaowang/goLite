@@ -1,16 +1,7 @@
 # Milestone 2 Report
 Group comp520-2017-01
 
-### 1. Team Work
-Yi Qiao
-* Fixing bugs from milestone 2
-* Writing report
-
-Thomas
-
-Charlie
-
-### 2. Design Notes
+### Design Notes
 
 #### Target Language  
 
