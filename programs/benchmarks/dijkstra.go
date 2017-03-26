@@ -115,7 +115,7 @@ func addEdge(vertex1, vertex2, length int, graph [][]int) {
 // Test the algorithm to see if it works with a sample graph
 func exampleTest() {
   var myGraph [][]int;
-  var nodes = 10;
+  var nodes = 16;
 
   for i := 0; i < nodes; i++ {
     var row []int;
@@ -172,4 +172,9 @@ func exampleTest() {
   }
 
   return;
+}
+
+/* Run the function */
+func main() {
+	exampleTest();
 }
