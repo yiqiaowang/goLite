@@ -1,12 +1,13 @@
 // Verify the semantics of identifiers
 package main
 
+
 // types are not reserved, and thus can be used as identifiers
 func int(x float64) float64 {
 	return 42.42
 }
 
-func main() {
+func rename() {
 	var x float64 = int(0.0)
 
 	//should print 42.42
@@ -31,4 +32,10 @@ func change_value() {
 	x = 20
 	println("The following should print '20'")
 	println(x)
+}
+
+func main() {
+	rename()
+	expr()
+	change_value()
 }
