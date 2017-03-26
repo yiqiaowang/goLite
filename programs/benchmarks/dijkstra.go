@@ -138,6 +138,28 @@ func exampleTest() {
   addEdge(6, 7, 4, myGraph);
   addEdge(7, 8, 4, myGraph);
   addEdge(8, 9, 3, myGraph);
+  addEdge(8, 10, 10, myGraph);
+  addEdge(8, 11, 9, myGraph);
+  addEdge(9, 10, 11, myGraph);
+  addEdge(9, 13, 3, myGraph);
+  addEdge(9, 14, 7, myGraph);
+  addEdge(10, 3, 20, myGraph);
+  addEdge(10, 2, 15, myGraph);
+  addEdge(10, 5, 99, myGraph);
+  addEdge(10, 9, 11, myGraph);
+  addEdge(10, 7, 14, myGraph);
+  addEdge(11, 10, 21, myGraph);
+  addEdge(11, 8, 99, myGraph);
+  addEdge(11, 3, 12, myGraph);
+  addEdge(11, 9, 17, myGraph);
+  addEdge(11, 2, 33, myGraph);
+  addEdge(12, 5, 21, myGraph);
+  addEdge(12, 11, 69, myGraph);
+  addEdge(13, 11, 20, myGraph);
+  addEdge(14, 12, 18, myGraph);
+  addEdge(15, 14, 7, myGraph);
+  addEdge(15, 8, 19, myGraph);
+  addEdge(15, 9, 5, myGraph);
 
   for i := 0; i < nodes; i++ {
     distances := dijkstra(myGraph, nodes, i)
