@@ -22,47 +22,67 @@ func complex_cast() {
 func int_cast() {
 	x := 1
 	y := 1.0
-	z := "foo"
 	a := true
 
+	println("The following should be '1'")
 	println(int(x))
+	println("The following should be '1'")
 	println(int(y))
-	println(int(z))
+	println("The following should be '1'")
 	println(int(a))
+	
+	
+	println("The following should be '0'")
+	println(int(false))
 }
 
 func bool_cast() {
 	x := 1
 	y := 1.0
-	z := "foo"
 	a := true
 
+	println("The following should be 'true'")
 	println(bool(x))
+	println("The following should be 'true'")
 	println(bool(y))
-	println(bool(z))
+	println("The following should be 'true'")
 	println(bool(a))
+	
+	println("The following should be 'false'")
+	println(bool(0))
+	println("The following should be 'false'")
+	println(bool(0.0))
+	println("The following should be 'false'")
+	println(bool(false))
 }
 
-func string_cast() {
-	x := 1
-	y := 1.0
-	z := "foo"
-	a := true
-
-	println(string(x))
-	println(string(y))
-	println(string(z))
-	println(string(a))
-}
 
 func float64_cast() {
 	x := 1
 	y := 1.0
-	z := "foo"
 	a := true
 
+	println("The following should be '1.0'")
 	println(float64(x))
+	println("The following should be '1.0'")
 	println(float64(y))
-	println(float64(z))
+	println("The following should be '1.0'")
 	println(float64(a))
+	
+	println("The following should be '0.0'")
+	println(float64(0))
+	println("The following should be '0.0'")
+	println(float64(0.0))
+	println("The following should be '0.0'")
+	println(float64(false))
+	
+}
+
+
+func main() {
+	complex_cast()
+	string_cast()
+	bool_cast()
+	int_cast()
+	float64_cast()
 }
