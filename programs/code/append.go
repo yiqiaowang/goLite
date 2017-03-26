@@ -1,6 +1,13 @@
 // Verify the behavior of append
 package main
 
+func main() {
+	append_int()
+	append_string()
+	append_float64()
+	append_bool()
+}
+
 func append_int() {
 	var a []int
 
