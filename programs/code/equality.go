@@ -60,6 +60,25 @@ func str_cmp() {
 	x = "foo"
 	y = "bar"
 
-	println("Expect the following to be true:")
+	println("Expect the following to be false:")
 	println(x == y)
+	
+	println("Expect the following to be true:")
+	println(x == x)
 }
+
+func bool_cmp() {
+	println("Expect the following to be false:")
+	println(false == true)
+	
+	println("Expect the following to be true:")
+	println(false == false)
+}
+
+func main() {
+	struct_cmp()
+	str_cmp()
+	num_cmp()
+	bool_cmp()
+}
+	
