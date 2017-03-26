@@ -3,7 +3,7 @@
 * of querying the length of a slice, nor is there a way of removing
 * values from a slice. Due to this limitation, building data structures
 * (like a hash table) that rely on dynamically changing lists is difficult.
-* This list provides a both lenght and reomval operations on lists.
+* This list provides a both length and removal operations on lists.
 *
 * Running the main function takes approximately .4s on the canonical Go
 * compiler.
@@ -63,17 +63,17 @@ func push(l List, value int) List {
   return l
 }
 
-//Benchmark the list by inserting 10K elements into the list.
+//Benchmark the list by inserting 100K elements into the list.
 func main() {
   var l List
 
   //push 10K values
-  for i := 0; i < 10000; i++ {
+  for i := 0; i < 100000; i++ {
     l = push(l, i)
   }
 
   //remove all the values
-  for i := 0; i < 10000; i++ {
+  for i := 0; i < 100000; i++ {
     l = remove(l, 0)
   }
 }
