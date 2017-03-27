@@ -12,7 +12,7 @@ Team Members:
 --
 ## MileStones - Please read for notes regarding Milestones
 ### Milestone 3
-* No additional notes.
+* We have included 3 benchmark programs. This is due to the fact that we have already submitted ```dijkstra.go``` in a previous milestone. As of this milestone, ```subset_sum.go``` and ```knapsack.go``` are new programs. We feel like ```dijkstra.go``` is more impressive than either of the other two, however, just in case we are not allowed to submit ```dijkstra.go```, there are still two other benchmark programs.
 
 ### Milestone 2
 * Question 1: The 20 invalid programs are in the [```types```](programs/invalid/tests/) directory.
