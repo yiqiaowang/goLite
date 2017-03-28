@@ -53,21 +53,22 @@ processFile options = do
       writeFile prettyFile $ Pretty.pretty program 0
 
       -- Typecheck
-      case GoLite.typeCheck program of
-        Right (_, SymbolTable _ history _) -> do
-          -- output type checking success message
-          putStrLn "OK"
+      when (typeCheck options) $
+        case GoLite.typeCheck program of
+            Right (_, SymbolTable _ history _) -> do
+            -- output type checking success message
+              putStrLn "OK"
 
-          -- output pretty file with types
-          when (prettyPrintType options) $
-            writeFile ppTypeFile $ TypedPretty.typedPretty program 0 history
+            -- -- output pretty file with types
+            -- when (prettyPrintType options) $
+            --   writeFile ppTypeFile $ TypedPretty.typedPretty program 0 history
 
-          -- if not typecheck flag, generate code
-          unless (typeCheck options) $
-            writeFile jsFile $ Generator.code program 0
+            -- -- if not typecheck flag, generate code
+            -- unless (typeCheck options) $
+            --   writeFile jsFile $ Generator.code program 0
 
-        Left (GoLite.TypeCheckerError (err, symtbl)) ->
-          errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
+            Left (GoLite.TypeCheckerError (err, symtbl)) ->
+              errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
 
       -- Dump symboltable
       when (dumpSymbolTable options) $
