@@ -1,0 +1,51 @@
+Total (50)
+
+	A*10 + B*10 + C*10 + D*4 + E*2 + F*4 + G*10 + H
+
+Q1
+--
+
+A. Invalid programs (18/20)
+
+   - With the same error: undeclared identifier (-2)
+       + assign1.go
+       + assign2.go
+       + for1.go
+       + if1.go
+
+Q2
+--
+
+B. Valid tests for type checking (2/16)
+
+   - See Valid_Typechecker.log
+
+C. Invalid tests for type checking (166/197)
+
+   - See Invalid_Typechecker.log
+
+D. -dumpsymtab (1/4)
+
+   - Not sure about what 'Identifier Mapping' means
+   - Need at least line numbers to show the scope information (-3)
+
+E. -pptype (2/2)
+
+   - Pass valid tests
+
+F. Code review (4/4)
+
+
+Note: D and E are tested with 'symboltable.go'
+
+Q3
+--
+
+G. See paper (8/10)
+
+
+Extra
+-----
+
+H. Bonus and penalty (0)
+
