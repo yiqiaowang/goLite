@@ -40,7 +40,23 @@ emptyTypeValue (Alias "float64") _ _ = "0.0"
 emptyTypeValue (Alias "rune") _ _ = "\'\\0\'"
 emptyTypeValue (Alias str) _ _ = concat[str, "()"]
 
-emptyTypeValue (Array _ i) _ _ = concat ["new Array(", code i 0, ")"]
+emptyTypeValue (Array t num) i s = concat 
+                         ["new Array("
+                         , code num 0
+                         , ");\n"
+                         , spacePrint i
+                         , "for (var GO_COUNT = 0;"
+                         , " GO_COUNT < "
+                         , code num 0
+                         , "; GO_COUNT++) {\n"
+                         , spacePrint (i+1)
+                         , code s 0
+                         , "[GO_COUNT] = "
+                         , emptyTypeValue t (i+1) s
+                         , ";\n"
+                         , spacePrint i
+                         , "}"]
+
 emptyTypeValue (Slice _) _ _ = "new Array()"
 emptyTypeValue (Struct struct) i s =
   concat
@@ -62,7 +78,7 @@ varList (var:[]) (Just t) [] i =
           , ", "
           , code var i
           , " = "
-          , emptyTypeValue t i ""
+          , emptyTypeValue t i (code var i)
           , ";\n"]
 varList (var:vars) (Just t) [] i =
       concat
@@ -70,7 +86,7 @@ varList (var:vars) (Just t) [] i =
           , ", "
           , code var i
           , " = "
-          , emptyTypeValue t i ""
+          , emptyTypeValue t i (code var i)
           , "\n"
           , varList vars (Just t) [] i]
 varList (var:[]) _ (expr:exprs) i =
@@ -115,21 +131,30 @@ instance Codeable Program where
         , "\tlist.push(addition);\n"
         , "\treturn list;\n"
         , "}\n\n"
-        , codeList alls 0
-        , "\n\nmain();\n"]
+        , codeList alls 0]
 
 instance Codeable All where
   code (TopDec dec) _ = concat [code dec 0, "\n"]
   code (Function name params _ stmts) _ =
-    concat
-      [ "function "
-      , code name 0
-      , "("
-      , commaSepList params 0
-      , ") {\n"
-      , codeList stmts 1
-      , "}\n\n"
-      ]
+    case name of
+      "main" -> concat
+                  [ "function "
+                  , code name 0
+                  , "("
+                  , commaSepList params 0
+                  , ") {\n"
+                  , codeList stmts 1
+                  , "}\nmain();\n\n"
+                  ]
+      _ -> concat
+                  [ "function "
+                  , code name 0
+                  , "("
+                  , commaSepList params 0
+                  , ") {\n"
+                  , codeList stmts 1
+                  , "}\n\n"
+                  ]
 
 instance Codeable TopLevel where
   code (VarDec var) i = code var i
@@ -145,7 +170,7 @@ instance Codeable Variable where
       , "var "
       , code var i
       , " = "
-      , emptyTypeValue t i ""
+      , emptyTypeValue t i (code var i)
       , ";\n"
       ]
   code (Variable (var:vars) (Just t) []) i =
@@ -154,7 +179,7 @@ instance Codeable Variable where
       , "var "
       , code var i
       , " = "
-      , emptyTypeValue t i ""
+      , emptyTypeValue t i (code var i)
       , "\n"
       , varList vars (Just t) [] (i + 1)
       ]
@@ -187,7 +212,7 @@ instance Codeable TypeName where
       , " = function() {\n"
       , spacePrint (i + 1)
       , "return "
-      , emptyTypeValue (Alias s2) i ""
+      , emptyTypeValue (Alias s2) i (code (Alias s1) i)
       , ";\n"
       , spacePrint i
       , "}\n"]
@@ -279,13 +304,13 @@ instance Codeable Stmt where
   code (For simp1 expr simp2 stmts) i =
     concat
       [ spacePrint i
-      , "for "
+      , "for ("
       , code simp1 0
-      , "; ("
+      , "; "
       , code expr 0
-      , "); "
+      , "; "
       , code simp2 0
-      , " {\n"
+      , ") {\n"
       , codeList stmts (i + 1)
       , spacePrint i
       , "}\n"
@@ -483,4 +508,5 @@ injectIf (IfStmt st expr stList (IfStmtCont (Just (Left ifStmt)))) stmt =
        (IfStmt st expr (inject stList stmt) (IfStmtCont (Just (Left (injectIf ifStmt stmt)))))
 
 instance Injectable Stmt where
+  inject stmts EmptyStmt = stmts
   inject stmts stmt = (SimpleStmt stmt):stmts
