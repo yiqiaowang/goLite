@@ -9,6 +9,7 @@ import Data.List(intercalate)
 import Data.Char(chr)
 import Language
 import CodeGen.Comparison
+import CodeGen.Array
 
 
 class Codeable a where
@@ -111,10 +112,7 @@ dotSepList = intercalate "."
 -- Need to do
 instance Codeable Program where
   code (Program package alls) _ = concat
-    [ "function append(list, addition) {\n"
-    , "\tlist.push(addition);\n"
-    , "\treturn list;\n"
-    , "}\n\n"
+    [ goLiteAppend
     , goLiteEquals
     , goLiteNotEquals
     , codeList alls 0

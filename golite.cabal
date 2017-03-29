@@ -18,6 +18,7 @@ library
                      , SymbolTable
                      , CodeGen.CodeGenerator
                      , CodeGen.Comparison
+                     , CodeGen.Array
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , array
