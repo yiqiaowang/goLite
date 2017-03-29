@@ -115,7 +115,8 @@ instance Codeable Program where
         , "\tlist.push(addition);\n"
         , "\treturn list;\n"
         , "}\n\n"
-        , codeList alls 0]
+        , codeList alls 0
+        , "\n\nmain();\n"]
 
 instance Codeable All where
   code (TopDec dec) _ = concat [code dec 0, "\n"]
