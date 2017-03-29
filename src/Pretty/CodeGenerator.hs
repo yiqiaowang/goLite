@@ -107,17 +107,14 @@ wrapSquareList xs i = concatMap wrapSquare (map (`code` i) xs)
 dotSepList :: [String] -> String
 dotSepList = intercalate "."
 
--- Need to do
 instance Codeable Program where
   code (Program package alls) _ =
-    concat ["package "
-        , package
-        , ";\n\n"
-        , "function append(list, addition) {\n"
+    concat ["function append(list, addition) {\n"
         , "\tlist.push(addition);\n"
         , "\treturn list;\n"
         , "}\n\n"
-        , codeList alls 0]
+        , codeList alls 0
+        , "\n\nmain();\n]
 
 instance Codeable All where
   code (TopDec dec) _ = concat [code dec 0, "\n"]
@@ -394,6 +391,8 @@ instance Codeable Expression where
   code (Id ident) i = code ident i
   code (Literal lit) i = code lit i
   code (Unary op expr) i = concat [code op i, code expr i]
+  code (Binary Equals expr1 expr2) i = concat
+
   code (Binary op expr1 expr2) i = concat
     [ code expr1 i
     , " "
