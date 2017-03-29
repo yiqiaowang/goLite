@@ -19,6 +19,8 @@ library
                      , CodeGen.CodeGenerator
                      , CodeGen.Comparison
                      , CodeGen.Array
+                     , CodeGen.Expressions
+                     , CodeGen.Codeable
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , array
