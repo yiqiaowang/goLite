@@ -110,10 +110,8 @@ dotSepList = intercalate "."
 -- Need to do
 instance Codeable Program where
   code (Program package alls) _ =
-    concat ["package "
-        , package
-        , ";\n\n"
-        , "function append(list, addition) {\n"
+    concat
+        [ "function append(list, addition) {\n"
         , "\tlist.push(addition);\n"
         , "\treturn list;\n"
         , "}\n\n"
