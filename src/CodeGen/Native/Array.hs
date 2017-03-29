@@ -9,6 +9,22 @@ goLiteAppend = unlines
   , "}"
   ]
 
+goLiteReadIndex :: String
+goLiteReadIndex = unlines
+  [ "function GO_LITE_READ_INDEX(arr, index) {"
+  , "  GO_LITE_BOUNDS_CHECK(arr, index)"
+  , "  return arr[index];"
+  , "}"
+  ]
+
+goLiteAssignIndex :: String
+goLiteAssignIndex = unlines
+  [ "function GO_LITE_ASSIGN_INDEX(arr, index, val) {"
+  , "  GO_LITE_BOUNDS_CHECK(arr, index);"
+  , "  arr[index] = val;"
+  , "}"
+  ]
+
 goLiteBoundsCheck :: String
 goLiteBoundsCheck = unlines
   [ "function GO_LITE_BOUNDS_CHECK(arr, index) {"

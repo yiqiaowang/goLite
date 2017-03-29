@@ -14,7 +14,7 @@ import CodeGen.Expressions
 import CodeGen.Codeable
 
 -- Takes a struct entry, the number of spaces to print,
--- the prefix (ex: "pt.x[1]"), and the index number for 
+-- the prefix (ex: "pt.x[1]"), and the index number for
 -- multi-dimensional arrays
 structList :: ([Identifier], Type) -> Integer -> String -> Integer -> String
 structList ([], _) _ _ _ = ""
@@ -39,14 +39,14 @@ structList ((ident:idents), t) i s index =
     , structList (idents, t) i s index]
 
 -- Takes a struct, the number of spaces to print,
--- the prefix (ex: "pt.x[1]"), and the index number for 
+-- the prefix (ex: "pt.x[1]"), and the index number for
 -- multi-dimensional arrays
 structPrint :: [([Identifier], Type)] -> Integer -> String -> Integer -> String
 structPrint [] _ _ _ = ""
 structPrint (struct:structs) i s index = concat[structList struct i s index, structPrint structs i s index]
 
 -- Takes a type, the number of spaces to print,
--- the prefix (ex: "pt.x[1]"), and the index number for 
+-- the prefix (ex: "pt.x[1]"), and the index number for
 -- multi-dimensional arrays
 emptyTypeValue :: Type -> Integer -> String -> Integer -> String
 emptyTypeValue (Alias "string") _ _ _ = "\"\""
@@ -55,8 +55,7 @@ emptyTypeValue (Alias "int") _ _ _ = "0"
 emptyTypeValue (Alias "float64") _ _ _ = "0.0"
 emptyTypeValue (Alias "rune") _ _ _ = "\'\\0\'"
 emptyTypeValue (Alias str) _ _ _ = concat[str, "()"]
-
-emptyTypeValue (Array t num) i s index = concat 
+emptyTypeValue (Array t num) i s index = concat
                          ["new Array("
                          , code num 0
                          , ");\n"
@@ -79,7 +78,6 @@ emptyTypeValue (Array t num) i s index = concat
                          , ";\n"
                          , spacePrint i
                          , "}"]
-
 emptyTypeValue (Slice _) _ _ _ = "new Array()"
 emptyTypeValue (Struct struct) i s index =
   concat
@@ -92,6 +90,7 @@ instance Codeable Program where
     [ goLiteAppend
     , goLiteEquals
     , goLiteNotEquals
+    , goLiteBoundsCheck
     , codeList alls 0
     ]
 
@@ -236,7 +235,7 @@ instance Codeable Stmt where
   code (Return (Just expr)) i =
     concat [spacePrint i, "return ", code expr 0, ";\n"]
   code (If ifstmt) i = concat [spacePrint i, code ifstmt i]
-  code (Switch EmptyStmt expr clauses) i = 
+  code (Switch EmptyStmt expr clauses) i =
     concat
       [ spacePrint i
       , "switch ("
@@ -246,7 +245,7 @@ instance Codeable Stmt where
       , spacePrint i
       , "}\n"
       ]
-  code (Switch stmt expr clauses) i = 
+  code (Switch stmt expr clauses) i =
     concat
       [ spacePrint i
       , "{\n"
@@ -296,22 +295,20 @@ instance Codeable SimpleStmt where
   code (StmtFuncCall func) i = (code func i)
   code (Incr ident) i = concat [code ident i, "++"]
   code (Decr ident) i = concat [code ident i, "--"]
-  code (Assign [] _) i = ""
-  code (Assign (ident:[]) (expr:exprList)) i =
-    concat
-      [ code ident i
-      , " = "
-      , code expr i
-      ]
-  code (Assign (ident:identList) (expr:exprList)) i =
-    concat
-      [ code ident i
-      , " = "
-      , code expr i
-      , ", "
-      , code (Assign identList exprList) i
-      ]
-  code (ShortBinary opEq ident expr) i = concat [code ident i, " ", code opEq i, code expr i]
+  code (Assign ids exps) ident =
+    let pairs = zip ids exps in
+      let arrays = filter isIdArray ids in concat
+        [ concatMap (\array -> boundsCheck array ident) arrays
+        , intercalate ", " $ map (uncurry assign') pairs
+        ]
+    where
+      assign' i e = concat
+        [ code i ident
+        , " = "
+        , code e ident
+        ]
+      isIdArray (IdArray _ _ ) = True
+      isIdArray _ = False
   code (ShortVarDec [] _) i = ""
   code (ShortVarDec (ident:[]) (expr:exprList)) i =
     concat
@@ -330,6 +327,10 @@ instance Codeable SimpleStmt where
       , code (Assign identList exprList) i
       ]
   code (EmptyStmt) i = ""
+
+boundsCheck (IdArray s []) ident = ""
+boundsCheck (IdArray s (x : xs)) ident =
+  "GO_LITE_BOUNDS_CHECK(" ++ s ++ ", " ++ code x ident ++ ");"
 
 instance Codeable IfStmt where
   code (IfStmt EmptyStmt expr stList (IfStmtCont Nothing)) i =
@@ -423,6 +424,3 @@ instance Codeable Clause where
       ]
   code (Default stList) i =
     concat [spacePrint i, "default:\n", codeList stList (i + 1)]
-
-
-
