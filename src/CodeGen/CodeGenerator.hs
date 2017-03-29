@@ -247,13 +247,28 @@ instance Codeable Stmt where
   code (Return (Just expr)) i =
     concat [spacePrint i, "return ", code expr 0, ";\n"]
   code (If ifstmt) i = concat [spacePrint i, code ifstmt i]
-  code (Switch stmt expr c) i =
+  code (Switch EmptyStmt expr clauses) i = 
     concat
       [ spacePrint i
       , "switch ("
       , code expr 0
       , ") {\n"
-      , codeList (inject c stmt) (i + 1)
+      , codeList clauses (i + 1)
+      , spacePrint i
+      , "}\n"
+      ]
+  code (Switch stmt expr clauses) i = 
+    concat
+      [ spacePrint i
+      , "{\n"
+      , code stmt (i + 1)
+      , spacePrint (i + 1)
+      , "switch ("
+      , code expr 0
+      , ") {\n"
+      , codeList clauses (i + 2)
+      , spacePrint (i + 1)
+      , "}\n"
       , spacePrint i
       , "}\n"
       ]
@@ -328,36 +343,82 @@ instance Codeable SimpleStmt where
   code (EmptyStmt) i = ""
 
 instance Codeable IfStmt where
-  code (IfStmt st expr stList (IfStmtCont Nothing)) i =
+  code (IfStmt EmptyStmt expr stList (IfStmtCont Nothing)) i =
     concat
       [ "if ("
       , code expr 0
       , ") {\n"
-      , codeList (inject stList st) (i + 1)
+      , codeList stList (i + 1)
       , spacePrint i
       , "}\n"
       ]
-  code (IfStmt st expr stList (IfStmtCont (Just (Right elseStmt)))) i =
+  code (IfStmt EmptyStmt expr stList (IfStmtCont (Just (Right elseStmt)))) i =
     concat
       [ "if ("
       , code expr 0
       , ") {\n"
-      , codeList (inject stList st) (i + 1)
+      , codeList stList (i + 1)
       , spacePrint i
       , "} else {\n"
-      , codeList (inject stList st) (i + 1)
+      , codeList elseStmt (i + 1)
       , spacePrint i
       , "}\n"
       ]
-  code (IfStmt st expr stList (IfStmtCont (Just (Left ifStmt)))) i =
+  code (IfStmt EmptyStmt expr stList (IfStmtCont (Just (Left ifStmt)))) i =
     concat
       [ "if ("
       , code expr 0
       , ") {\n"
-      , codeList (inject stList st) (i + 1)
+      , codeList stList (i + 1)
       , spacePrint i
       , "} else "
       , code ifStmt i
+      ]
+  code (IfStmt stmt expr stList (IfStmtCont Nothing)) i =
+    concat
+      [ "{\n"
+      , code stmt (i + 1)
+      , spacePrint (i + 1)
+      ,  "if ("
+      , code expr 0
+      , ") {\n"
+      , codeList stList (i + 2)
+      , spacePrint (i + 1)
+      , "}\n"
+      , spacePrint i
+      , "}\n"
+      ]
+  code (IfStmt stmt expr stList (IfStmtCont (Just (Right elseStmt)))) i =
+    concat
+      [ "{\n"
+      , code stmt (i + 1)
+      , spacePrint (i + 1)
+      ,  "if ("
+      , code expr 0
+      , ") {\n"
+      , codeList stList (i + 2)
+      , spacePrint (i + 1)
+      , "} else {\n"
+      , codeList elseStmt (i + 2)
+      , spacePrint (i + 1)
+      , "}\n"
+      , spacePrint i
+      , "}\n"
+      ]
+  code (IfStmt stmt expr stList (IfStmtCont (Just (Left ifStmt)))) i =
+    concat
+      [ "{\n"
+      , code stmt (i + 1)
+      , spacePrint (i + 1)
+      ,  "if ("
+      , code expr 0
+      , ") {\n"
+      , codeList stList (i + 2)
+      , spacePrint (i + 1)
+      , "} else"
+      , code ifStmt (i + 1)
+      , spacePrint i
+      , "}\n"
       ]
 
 instance Codeable Clause where
@@ -374,22 +435,5 @@ instance Codeable Clause where
   code (Default stList) i =
     concat [spacePrint i, "default:\n", codeList stList (i + 1)]
 
-class Injectable a where
-  inject :: [a] -> SimpleStmt -> [a]
 
-instance Injectable Clause where
-  inject [] stmt = []
-  inject ((Case exprs stmtList):clauses) stmt = (Case exprs (inject stmtList stmt)):(inject clauses stmt)
-  inject ((Default stmtList): clauses) stmt = (Default (inject stmtList stmt)):(inject clauses stmt)
 
-injectIf :: IfStmt -> SimpleStmt -> IfStmt
-injectIf (IfStmt st expr stList (IfStmtCont Nothing)) stmt =
-       (IfStmt st expr (inject stList stmt) (IfStmtCont Nothing))
-injectIf (IfStmt st expr stList (IfStmtCont (Just (Right elseStmt)))) stmt =
-       (IfStmt st expr (inject stList stmt) (IfStmtCont (Just (Right (inject elseStmt stmt)))))
-injectIf (IfStmt st expr stList (IfStmtCont (Just (Left ifStmt)))) stmt =
-       (IfStmt st expr (inject stList stmt) (IfStmtCont (Just (Left (injectIf ifStmt stmt)))))
-
-instance Injectable Stmt where
-  inject stmts EmptyStmt = stmts
-  inject stmts stmt = (SimpleStmt stmt):stmts
