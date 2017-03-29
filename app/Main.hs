@@ -5,7 +5,7 @@ import qualified GoLite
 import qualified Parser
 import qualified Pretty.Pretty as Pretty
 import qualified Pretty.TypedPretty as TypedPretty
-import qualified Pretty.CodeGenerator as Generator
+import qualified CodeGen.CodeGenerator as Generator
 
 import System.Console.ArgParser
 import System.FilePath
