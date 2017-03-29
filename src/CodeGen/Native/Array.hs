@@ -1,4 +1,4 @@
-module CodeGen.Array where
+module CodeGen.Native.Array where
 
 
 goLiteAppend :: String

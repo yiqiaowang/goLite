@@ -1,4 +1,4 @@
-module CodeGen.Comparison where
+module CodeGen.Native.Comparison where
 
 
 goLiteEquals :: String

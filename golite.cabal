@@ -17,10 +17,10 @@ library
                      , TypeChecker
                      , SymbolTable
                      , CodeGen.CodeGenerator
-                     , CodeGen.Comparison
-                     , CodeGen.Array
                      , CodeGen.Expressions
                      , CodeGen.Codeable
+                     , CodeGen.Native.Comparison
+                     , CodeGen.Native.Array
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , array

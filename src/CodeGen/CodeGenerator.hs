@@ -8,8 +8,8 @@ module CodeGen.CodeGenerator
 import Data.List(intercalate)
 import Data.Char(chr)
 import Language
-import CodeGen.Comparison
-import CodeGen.Array
+import CodeGen.Native.Comparison
+import CodeGen.Native.Array
 import CodeGen.Expressions
 import CodeGen.Codeable
 
