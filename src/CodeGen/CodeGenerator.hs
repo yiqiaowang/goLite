@@ -242,7 +242,7 @@ instance Codeable Stmt where
   code (Print expr) i = concat
     [spacePrint i, "process.stdout.write(JSON.stringify(", commaSepList expr i, "));\n"]
   code (Println expr) i = concat
-    [spacePrint i, "console.log(", commaSpaceSepList expr i, ");\n"]
+    [spacePrint i, "console.log(", commaSepList expr i, ");\n"]
   code (Return Nothing) i = concat [spacePrint i, "return;\n"]
   code (Return (Just expr)) i =
     concat [spacePrint i, "return ", code expr 0, ";\n"]

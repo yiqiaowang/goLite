@@ -16,10 +16,6 @@ commaSepList :: Codeable a => [a] -> Integer -> String
 commaSepList string i = intercalate ", " (map (`code` i) string)
 
 --
-commaSpaceSepList :: Codeable a => [a] -> Integer -> String
-commaSpaceSepList string i = intercalate ", \" \", " (map (`code` i) string)
-
---
 spacePrint :: Integer -> String
 spacePrint x = replicate (fromInteger x) '\t'
 
