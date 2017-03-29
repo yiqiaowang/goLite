@@ -146,7 +146,7 @@ data Clause
 -- Expressions
 data Expression
   = Brack Expression
-  | Id Identifier Type
+  | Id Identifier
   | Literal Literal
   | ExprFuncCall FunctionCall
   | Append Identifier
