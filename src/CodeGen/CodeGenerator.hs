@@ -86,43 +86,6 @@ emptyTypeValue (Struct struct) i s index =
     ["{};\n"
     , structPrint struct (i + 1) s index]
 
-varList :: [Identifier] -> (Maybe Type) -> [Expression] -> Integer -> String
-varList [] exprs _ _ = ""
-varList (var:[]) (Just t) [] i =
-      concat
-          [spacePrint i
-          , ", "
-          , code var i
-          , " = "
-          , emptyTypeValue t i (code var i) 0
-          , ";\n"]
-varList (var:vars) (Just t) [] i =
-      concat
-          [spacePrint i
-          , ", "
-          , code var i
-          , " = "
-          , emptyTypeValue t i (code var i) 0
-          , "\n"
-          , varList vars (Just t) [] i]
-varList (var:[]) _ (expr:exprs) i =
-      concat
-          [spacePrint i
-          , ", "
-          , code var i
-          , " = "
-          , code expr i
-          , ";\n"]
-varList (var:vars) t (expr:exprs) i =
-      concat
-          [spacePrint i
-          , ", "
-          , code var i
-          , " = "
-          , code expr i
-          , "\n"
-          , varList vars t exprs i]
-
 -- Need to do
 instance Codeable Program where
   code (Program package alls) _ = concat
@@ -180,7 +143,7 @@ instance Codeable Variable where
       , " = "
       , emptyTypeValue t i (code var i) 0
       , "\n"
-      , varList vars (Just t) [] (i + 1)
+      , code (Variable vars (Just t) []) i
       ]
   code (Variable (var:[]) _ (expr:exprs)) i =
     concat
@@ -199,7 +162,7 @@ instance Codeable Variable where
       , " = "
       , code expr i
       , "\n"
-      , varList vars t exprs (i + 1)
+      , code (Variable vars t exprs) i
       ]
 
 instance Codeable TypeName where
