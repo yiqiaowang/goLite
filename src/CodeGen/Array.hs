@@ -4,8 +4,8 @@ module CodeGen.Array where
 goLiteAppend :: String
 goLiteAppend = unlines
   [ "function GO_LITE_APPEND(slice, addition) {"
-  , "\tlist.push(addition);"
-  , "\treturn list;"
+  , "\tslice.push(addition);"
+  , "\treturn slice;"
   , "}"
   ]
 
