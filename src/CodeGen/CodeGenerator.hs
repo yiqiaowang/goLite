@@ -8,6 +8,7 @@ module CodeGen.CodeGenerator
 import Data.List(intercalate)
 import Data.Char(chr)
 import Language
+import CodeGen.Comparison
 
 
 class Codeable a where
@@ -115,6 +116,8 @@ instance Codeable Program where
         , "\tlist.push(addition);\n"
         , "\treturn list;\n"
         , "}\n\n"
+        , goLiteEquals
+        , goLiteNotEquals
         , codeList alls 0]
 
 instance Codeable All where
@@ -392,6 +395,10 @@ instance Codeable Expression where
   code (Id ident) i = code ident i
   code (Literal lit) i = code lit i
   code (Unary op expr) i = concat [code op i, code expr i]
+  code (Binary Equals expr1 expr2) i =
+    "GO_LITE_EQUALS(" ++ code expr1 i ++ ", " ++ code expr2 i ++ ")"
+  code (Binary NotEquals expr1 expr2) i =
+    "GO_LITE_NOT_EQUALS(" ++ code expr1 i ++ ", " ++ code expr2 i ++ ")"
   code (Binary op expr1 expr2) i = concat
     [ code expr1 i
     , " "

@@ -17,7 +17,7 @@ library
                      , TypeChecker
                      , SymbolTable
                      , CodeGen.CodeGenerator
-                     , CodeGen.BuiltIns
+                     , CodeGen.Comparison
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , array
