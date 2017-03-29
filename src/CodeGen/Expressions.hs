@@ -28,7 +28,7 @@ instance Codeable Expression where
     ]
   code (ExprFuncCall func) i = code func i
   code (Append ident expr) i =
-    concat ["append(", code ident i, ", ", code expr i, ")"]
+    concat ["GO_LITE_APPEND(", code ident i, ", ", code expr i, ")"]
 
 instance Codeable FunctionCall where
   code (FunctionCall ident exprList) i =
