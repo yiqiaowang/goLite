@@ -13,53 +13,78 @@ import CodeGen.Native.Array
 import CodeGen.Expressions
 import CodeGen.Codeable
 
-
-structList :: ([Identifier], Type) -> Integer -> String -> String
-structList ([], _) i s = ""
-structList ((ident:idents), t) i s =
+-- Takes a struct entry, the number of spaces to print,
+-- the prefix (ex: "pt.x[1]"), and the index number for 
+-- multi-dimensional arrays
+structList :: ([Identifier], Type) -> Integer -> String -> Integer -> String
+structList ([], _) _ _ _ = ""
+structList ((ident:idents), (Struct t)) i s index =
   concat
     [spacePrint i
     , s
     , "."
     , code ident i
     , " = "
-    , emptyTypeValue t i (concat [s, ".", code ident i])
-    , ";\n"]
+    , emptyTypeValue (Struct t) i (concat [s, ".", code ident i]) index
+    , structList (idents, (Struct t)) i s index]
+structList ((ident:idents), t) i s index =
+  concat
+    [spacePrint i
+    , s
+    , "."
+    , code ident i
+    , " = "
+    , emptyTypeValue t i (concat [s, ".", code ident i]) index
+    , ";\n"
+    , structList (idents, t) i s index]
 
-structPrint :: [([Identifier], Type)] -> Integer -> String -> String
-structPrint [] _ _ = ""
-structPrint (struct:structs) i s = concat[structList struct i s, structPrint structs i s]
+-- Takes a struct, the number of spaces to print,
+-- the prefix (ex: "pt.x[1]"), and the index number for 
+-- multi-dimensional arrays
+structPrint :: [([Identifier], Type)] -> Integer -> String -> Integer -> String
+structPrint [] _ _ _ = ""
+structPrint (struct:structs) i s index = concat[structList struct i s index, structPrint structs i s index]
 
-emptyTypeValue :: Type -> Integer -> String -> String
-emptyTypeValue (Alias "string") _ _ = "\"\""
-emptyTypeValue (Alias "bool") _ _ = "false"
-emptyTypeValue (Alias "int") _ _ = "0"
-emptyTypeValue (Alias "float64") _ _ = "0.0"
-emptyTypeValue (Alias "rune") _ _ = "\'\\0\'"
-emptyTypeValue (Alias str) _ _ = concat[str, "()"]
+-- Takes a type, the number of spaces to print,
+-- the prefix (ex: "pt.x[1]"), and the index number for 
+-- multi-dimensional arrays
+emptyTypeValue :: Type -> Integer -> String -> Integer -> String
+emptyTypeValue (Alias "string") _ _ _ = "\"\""
+emptyTypeValue (Alias "bool") _ _ _ = "false"
+emptyTypeValue (Alias "int") _ _ _ = "0"
+emptyTypeValue (Alias "float64") _ _ _ = "0.0"
+emptyTypeValue (Alias "rune") _ _ _ = "\'\\0\'"
+emptyTypeValue (Alias str) _ _ _ = concat[str, "()"]
 
-emptyTypeValue (Array t num) i s = concat 
+emptyTypeValue (Array t num) i s index = concat 
                          ["new Array("
                          , code num 0
                          , ");\n"
                          , spacePrint i
-                         , "for (var GO_COUNT = 0;"
-                         , " GO_COUNT < "
+                         , "for (var GO_COUNT_"
+                         , code index 0
+                         , " = 0; GO_COUNT_"
+                         , code index 0
+                         , " < "
                          , code num 0
-                         , "; GO_COUNT++) {\n"
+                         , "; GO_COUNT_"
+                         , code index 0
+                         , "++) {\n"
                          , spacePrint (i+1)
                          , code s 0
-                         , "[GO_COUNT] = "
-                         , emptyTypeValue t (i+1) s
+                         , "[GO_COUNT_"
+                         , code index 0
+                         , "] = "
+                         , emptyTypeValue t (i+1) (concat[s, "[GO_COUNT_", code index 0, "]"]) (index + 1)
                          , ";\n"
                          , spacePrint i
                          , "}"]
 
-emptyTypeValue (Slice _) _ _ = "new Array()"
-emptyTypeValue (Struct struct) i s =
+emptyTypeValue (Slice _) _ _ _ = "new Array()"
+emptyTypeValue (Struct struct) i s index =
   concat
     ["{};\n"
-    , structPrint struct (i + 1) s]
+    , structPrint struct (i + 1) s index]
 
 varList :: [Identifier] -> (Maybe Type) -> [Expression] -> Integer -> String
 varList [] exprs _ _ = ""
@@ -69,7 +94,7 @@ varList (var:[]) (Just t) [] i =
           , ", "
           , code var i
           , " = "
-          , emptyTypeValue t i (code var i)
+          , emptyTypeValue t i (code var i) 0
           , ";\n"]
 varList (var:vars) (Just t) [] i =
       concat
@@ -77,7 +102,7 @@ varList (var:vars) (Just t) [] i =
           , ", "
           , code var i
           , " = "
-          , emptyTypeValue t i (code var i)
+          , emptyTypeValue t i (code var i) 0
           , "\n"
           , varList vars (Just t) [] i]
 varList (var:[]) _ (expr:exprs) i =
@@ -144,7 +169,7 @@ instance Codeable Variable where
       , "var "
       , code var i
       , " = "
-      , emptyTypeValue t i (code var i)
+      , emptyTypeValue t i (code var i) 0
       , ";\n"
       ]
   code (Variable (var:vars) (Just t) []) i =
@@ -153,7 +178,7 @@ instance Codeable Variable where
       , "var "
       , code var i
       , " = "
-      , emptyTypeValue t i (code var i)
+      , emptyTypeValue t i (code var i) 0
       , "\n"
       , varList vars (Just t) [] (i + 1)
       ]
@@ -186,7 +211,7 @@ instance Codeable TypeName where
       , " = function() {\n"
       , spacePrint (i + 1)
       , "return "
-      , emptyTypeValue (Alias s2) i (code (Alias s1) i)
+      , emptyTypeValue (Alias s2) i (code (Alias s1) i) 0
       , ";\n"
       , spacePrint i
       , "}\n"]
@@ -220,7 +245,8 @@ instance Codeable TypeName where
       , " = function() {\n"
       , spacePrint (i + 1)
       , "var struct = {};\n"
-      , structPrint struct (i + 1) s
+      , structPrint struct (i + 1) s 0
+      , spacePrint (i + 1)
       , "return struct;\n"
       , spacePrint i
       , "}\n"]
