@@ -110,15 +110,16 @@ dotSepList = intercalate "."
 
 -- Need to do
 instance Codeable Program where
-  code (Program package alls) _ =
-    concat
-        [ "function append(list, addition) {\n"
-        , "\tlist.push(addition);\n"
-        , "\treturn list;\n"
-        , "}\n\n"
-        , goLiteEquals
-        , goLiteNotEquals
-        , codeList alls 0]
+  code (Program package alls) _ = concat
+    [ "function append(list, addition) {\n"
+    , "\tlist.push(addition);\n"
+    , "\treturn list;\n"
+    , "}\n\n"
+    , goLiteEquals
+    , goLiteNotEquals
+    , codeList alls 0
+    , "\n\nmain();\n"
+    ]
 
 instance Codeable All where
   code (TopDec dec) _ = concat [code dec 0, "\n"]
