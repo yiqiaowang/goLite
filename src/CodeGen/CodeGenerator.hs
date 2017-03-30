@@ -207,7 +207,7 @@ instance Codeable TypeName where
       , " = function() {\n"
       , spacePrint (i + 1)
       , "var struct = {};\n"
-      , structPrint struct (i + 1) s 0
+      , structPrint struct (i + 1) "struct" 0
       , spacePrint (i + 1)
       , "return struct;\n"
       , spacePrint i
@@ -249,7 +249,9 @@ instance Codeable Stmt where
     concat
       [ spacePrint i
       , "{\n"
+      , spacePrint (i + 1)
       , code stmt (i + 1)
+      , ";\n"
       , spacePrint (i + 1)
       , "switch ("
       , code expr 0
@@ -367,7 +369,9 @@ instance Codeable IfStmt where
   code (IfStmt stmt expr stList (IfStmtCont Nothing)) i =
     concat
       [ "{\n"
+      , spacePrint (i + 1)
       , code stmt (i + 1)
+      , ";\n"
       , spacePrint (i + 1)
       ,  "if ("
       , code expr 0
@@ -381,7 +385,9 @@ instance Codeable IfStmt where
   code (IfStmt stmt expr stList (IfStmtCont (Just (Right elseStmt)))) i =
     concat
       [ "{\n"
+      , spacePrint (i + 1)
       , code stmt (i + 1)
+      , ";\n"
       , spacePrint (i + 1)
       ,  "if ("
       , code expr 0
@@ -398,7 +404,9 @@ instance Codeable IfStmt where
   code (IfStmt stmt expr stList (IfStmtCont (Just (Left ifStmt)))) i =
     concat
       [ "{\n"
+      , spacePrint (i + 1)
       , code stmt (i + 1)
+      , ";\n"
       , spacePrint (i + 1)
       ,  "if ("
       , code expr 0

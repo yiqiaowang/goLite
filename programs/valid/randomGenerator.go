@@ -58,7 +58,7 @@ func getNextInt(min, max int) int {
 }
 
 // Test the algorithm to see if it works
-func exampleTest() {
+func main() {
   var mySeed = 83752;
 
   setSeed(mySeed);
