@@ -88,6 +88,7 @@ emptyTypeValue (Struct struct) i s index =
 instance Codeable Program where
   code (Program package alls) _ = concat
     [ goLiteAppend
+    , goLiteReadIndex
     , goLiteCopy
     , goLiteEquals
     , goLiteNotEquals
