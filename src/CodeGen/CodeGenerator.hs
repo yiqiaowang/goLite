@@ -60,7 +60,7 @@ emptyTypeValue (Array t num) i s index = concat
                          , code num 0
                          , ");\n"
                          , spacePrint i
-                         , "for (var GO_COUNT_"
+                         , "for (let GO_COUNT_"
                          , code index 0
                          , " = 0; GO_COUNT_"
                          , code index 0
@@ -130,7 +130,7 @@ instance Codeable Variable where
   code (Variable (var:[]) (Just t) []) i =
     concat
       [spacePrint i
-      , "var "
+      , "let "
       , code var i
       , " = "
       , emptyTypeValue t i (code var i) 0
@@ -139,7 +139,7 @@ instance Codeable Variable where
   code (Variable (var:vars) (Just t) []) i =
     concat
       [spacePrint i
-      , "var "
+      , "let "
       , code var i
       , " = "
       , emptyTypeValue t i (code var i) 0
@@ -149,7 +149,7 @@ instance Codeable Variable where
   code (Variable (var:[]) _ (expr:exprs)) i =
     concat
       [spacePrint i
-      , "var "
+      , "let "
       , code var i
       , " = "
       , code expr i
@@ -158,7 +158,7 @@ instance Codeable Variable where
   code (Variable (var:vars) t (expr:exprs)) i =
     concat
       [ spacePrint i
-      , "var "
+      , "let "
       , code var i
       , " = "
       , code expr i
@@ -170,7 +170,7 @@ instance Codeable TypeName where
   code (TypeName (Alias s1) (Alias s2)) i =
     concat
       [spacePrint i
-      , "var "
+      , "let "
       , code (Alias s1) i
       , " = function() {\n"
       , spacePrint (i + 1)
@@ -182,7 +182,7 @@ instance Codeable TypeName where
   code (TypeName (Alias s) (Array _ num)) i =
     concat
       [spacePrint i
-      , "var "
+      , "let "
       , code (Alias s) i
       , " = function() {\n"
       , spacePrint (i + 1)
@@ -194,7 +194,7 @@ instance Codeable TypeName where
   code (TypeName (Alias s) (Slice _)) i =
     concat
       [spacePrint i
-      , "var "
+      , "let "
       , code (Alias s) i
       , " = function() {\n"
       , spacePrint (i + 1)
@@ -204,11 +204,11 @@ instance Codeable TypeName where
   code (TypeName (Alias s) (Struct struct)) i =
     concat
       [spacePrint i
-      , "var "
+      , "let "
       , code (Alias s) i
       , " = function() {\n"
       , spacePrint (i + 1)
-      , "var struct = {};\n"
+      , "let struct = {};\n"
       , structPrint struct (i + 1) s 0
       , spacePrint (i + 1)
       , "return struct;\n"
@@ -314,14 +314,14 @@ instance Codeable SimpleStmt where
   code (ShortVarDec [] _) i = ""
   code (ShortVarDec (ident:[]) (expr:exprList)) i =
     concat
-      [ "var "
+      [ "let "
       , code ident i
       , " = "
       , code expr i
       ]
   code (ShortVarDec (ident:identList) (expr:exprList)) i =
     concat
-      [ "var "
+      [ "let "
       , code ident i
       , " = "
       , code expr i
