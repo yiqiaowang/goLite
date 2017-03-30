@@ -5,7 +5,7 @@ import qualified GoLite
 import qualified Parser
 import qualified Pretty.Pretty as Pretty
 import qualified Pretty.TypedPretty as TypedPretty
-import qualified Pretty.CodeGenerator as Generator
+import qualified CodeGen.CodeGenerator as Generator
 
 import System.Console.ArgParser
 import System.FilePath
@@ -52,23 +52,21 @@ processFile options = do
     Right program -> do
       writeFile prettyFile $ Pretty.pretty program 0
 
-      -- Typecheck
-      when (typeCheck options) $
-        case GoLite.typeCheck program of
-            Right (_, SymbolTable _ history _) -> do
-            -- output type checking success message
-              putStrLn "OK"
+      case GoLite.typeCheck program of
+        Right (_, SymbolTable _ history _) -> do
+          -- output type checking success message
+          putStrLn "OK"
 
-            -- -- output pretty file with types
-            -- when (prettyPrintType options) $
-            --   writeFile ppTypeFile $ TypedPretty.typedPretty program 0 history
+          -- output pretty file with types
+          when (prettyPrintType options) $
+            writeFile ppTypeFile $ TypedPretty.typedPretty program 0 history
 
-            -- -- if not typecheck flag, generate code
-            -- unless (typeCheck options) $
-            --   writeFile jsFile $ Generator.code program 0
+          -- if not typecheck flag, generate code
+          unless (typeCheck options) $
+            writeFile jsFile $ Generator.code program 0
 
-            Left (GoLite.TypeCheckerError (err, symtbl)) ->
-              errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
+        Left (GoLite.TypeCheckerError (err, symtbl)) ->
+          errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
 
       -- Dump symboltable
       when (dumpSymbolTable options) $

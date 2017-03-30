@@ -16,7 +16,11 @@ library
                      , Weeder
                      , TypeChecker
                      , SymbolTable
-                     , Pretty.CodeGenerator
+                     , CodeGen.CodeGenerator
+                     , CodeGen.Expressions
+                     , CodeGen.Codeable
+                     , CodeGen.Native.Comparison
+                     , CodeGen.Native.Array
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , array
