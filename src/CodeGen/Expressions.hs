@@ -32,7 +32,7 @@ instance Codeable Expression where
 
 instance Codeable FunctionCall where
   code (FunctionCall ident exprList) i =
-    concat [code ident i, "(", commaSepList exprList i, ")"]
+    concat [code ident i, "(", commaSepList (map copyWrap exprList) 0, ")"]
 
 -- Need to do
 instance Codeable UnaryOp where
@@ -106,3 +106,7 @@ instance Codeable Identifier where
       code' s (x : xs') =
         "GO_LITE_READ_INDEX(" ++ code' s xs' ++ " ," ++ code x i ++ ")"
   code (IdField xs) i = intercalate "." $ map (`code` i) xs
+
+--
+copyWrap :: Expression -> String
+copyWrap expr = concat["GO_LITE_COPY(", code expr 0, ")"]
