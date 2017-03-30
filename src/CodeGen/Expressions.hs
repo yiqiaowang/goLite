@@ -99,5 +99,10 @@ instance Codeable Literal where
 
 instance Codeable Identifier where
   code (IdOrType s) i = s
-  code (IdArray s xs) i = concat [s, wrapSquareList (map (`code` 0) xs) i]
+  code (IdArray s xs) i = code' s $ reverse xs
+    where
+      code' s (x : []) =
+        "GO_LITE_READ_INDEX(" ++ s ++ ", " ++ code x i ++ ")"
+      code' s (x : xs') =
+        "GO_LITE_READ_INDEX(" ++ code' s xs' ++ " ," ++ code x i ++ ")"
   code (IdField xs) i = intercalate "." $ map (`code` i) xs
