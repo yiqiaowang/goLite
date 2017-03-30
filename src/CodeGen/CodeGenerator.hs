@@ -295,22 +295,33 @@ instance Codeable Stmt where
 
 instance Codeable SimpleStmt where
   code (StmtFuncCall func) i = (code func i)
-  code (Incr ident) i = concat [code ident i, "++"]
-  code (Decr ident) i = concat [code ident i, "--"]
-  code (Assign ids exps) ident =
+  code (Incr ident) i =
+    let incrementCode = concat [codeLHS ident i, "++"] in
+    if isIdArray ident
+      then boundsCheck ident i ++ incrementCode
+      else incrementCode
+  code (Decr ident) i =
+    let decrementCode = concat [codeLHS ident i, "--"] in
+    if isIdArray ident
+      then boundsCheck ident i ++ decrementCode
+      else decrementCode
+  code (ShortBinary opEq ident expr) i =
+    let opeqCode = concat [codeLHS ident i, code opEq i, code expr i] in
+    if isIdArray ident
+      then boundsCheck ident i ++ opeqCode
+      else opeqCode
+  code (Assign ids exps) indent =
     let pairs = zip ids exps in
       let arrays = filter isIdArray ids in concat
-        [ concatMap (`boundsCheck` ident) arrays
+        [ concatMap (`boundsCheck` indent) arrays
         , intercalate ", " $ map (uncurry assign') pairs
         ]
     where
       assign' i e = concat
-        [ codeLHS i ident
+        [ codeLHS i indent
         , " = "
-        , code e ident
+        , code e indent
         ]
-      isIdArray (IdArray _ _ ) = True
-      isIdArray _ = False
   code (ShortVarDec ids exps) indent =
     let pairs = zip ids exps in
       "let " ++ intercalate ", " (map (uncurry svd') pairs)
@@ -321,6 +332,10 @@ instance Codeable SimpleStmt where
         , code e indent
         ]
   code (EmptyStmt) i = ""
+
+--
+isIdArray (IdArray _ _ ) = True
+isIdArray _ = False
 
 --
 boundsCheck (IdArray name indices) ident =
