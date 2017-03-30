@@ -311,23 +311,15 @@ instance Codeable SimpleStmt where
         ]
       isIdArray (IdArray _ _ ) = True
       isIdArray _ = False
-  code (ShortVarDec [] _) i = ""
-  code (ShortVarDec (ident:[]) (expr:exprList)) i =
-    concat
-      [ "let "
-      , codeLHS ident i
-      , " = "
-      , code expr i
-      ]
-  code (ShortVarDec (ident:identList) (expr:exprList)) i =
-    concat
-      [ "let "
-      , codeLHS ident i
-      , " = "
-      , code expr i
-      , ", "
-      , code (Assign identList exprList) i
-      ]
+  code (ShortVarDec ids exps) indent =
+    let pairs = zip ids exps in
+      "let " ++ intercalate ", " (map (uncurry svd') pairs)
+    where
+      svd' i e = concat
+        [ codeLHS i indent
+        , " = "
+        , code e indent
+        ]
   code (EmptyStmt) i = ""
 
 --
