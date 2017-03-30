@@ -88,6 +88,7 @@ emptyTypeValue (Struct struct) i s index =
 instance Codeable Program where
   code (Program package alls) _ = concat
     [ goLiteAppend
+    , goLiteCopy
     , goLiteEquals
     , goLiteNotEquals
     , goLiteBoundsCheck
@@ -207,7 +208,7 @@ instance Codeable TypeName where
       , " = function() {\n"
       , spacePrint (i + 1)
       , "var struct = {};\n"
-      , structPrint struct (i + 1) "struct" 0
+      , structPrint struct (i + 1) s 0
       , spacePrint (i + 1)
       , "return struct;\n"
       , spacePrint i
@@ -249,9 +250,7 @@ instance Codeable Stmt where
     concat
       [ spacePrint i
       , "{\n"
-      , spacePrint (i + 1)
       , code stmt (i + 1)
-      , ";\n"
       , spacePrint (i + 1)
       , "switch ("
       , code expr 0
@@ -300,7 +299,7 @@ instance Codeable SimpleStmt where
   code (Assign ids exps) ident =
     let pairs = zip ids exps in
       let arrays = filter isIdArray ids in concat
-        [ concatMap (\array -> boundsCheck array ident) arrays
+        [ concatMap (`boundsCheck` ident) arrays
         , intercalate ", " $ map (uncurry assign') pairs
         ]
     where
@@ -330,7 +329,7 @@ instance Codeable SimpleStmt where
       ]
   code (EmptyStmt) i = ""
 
-boundsCheck (IdArray s []) ident = ""
+boundsCheck (IdArray s []) _ = ""
 boundsCheck (IdArray s (x : xs)) ident =
   "GO_LITE_BOUNDS_CHECK(" ++ s ++ ", " ++ code x ident ++ ");"
 
@@ -369,9 +368,7 @@ instance Codeable IfStmt where
   code (IfStmt stmt expr stList (IfStmtCont Nothing)) i =
     concat
       [ "{\n"
-      , spacePrint (i + 1)
       , code stmt (i + 1)
-      , ";\n"
       , spacePrint (i + 1)
       ,  "if ("
       , code expr 0
@@ -385,9 +382,7 @@ instance Codeable IfStmt where
   code (IfStmt stmt expr stList (IfStmtCont (Just (Right elseStmt)))) i =
     concat
       [ "{\n"
-      , spacePrint (i + 1)
       , code stmt (i + 1)
-      , ";\n"
       , spacePrint (i + 1)
       ,  "if ("
       , code expr 0
@@ -404,9 +399,7 @@ instance Codeable IfStmt where
   code (IfStmt stmt expr stList (IfStmtCont (Just (Left ifStmt)))) i =
     concat
       [ "{\n"
-      , spacePrint (i + 1)
       , code stmt (i + 1)
-      , ";\n"
       , spacePrint (i + 1)
       ,  "if ("
       , code expr 0

@@ -1,6 +1,14 @@
 module CodeGen.Native.Array where
 
 
+goLiteCopy :: String
+goLiteCopy = unlines
+  [ "function GO_LITE_COPY(obj) {"
+  , "  return JSON.parse(JSON.stringify(obj));"
+  , "}"
+  ]
+
+
 goLiteAppend :: String
 goLiteAppend = unlines
   [ "function GO_LITE_APPEND(slice, addition) {"
