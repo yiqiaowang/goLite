@@ -305,7 +305,7 @@ instance Codeable SimpleStmt where
         ]
     where
       assign' i e = concat
-        [ code i ident
+        [ codeLHS i ident
         , " = "
         , code e ident
         ]
@@ -315,14 +315,14 @@ instance Codeable SimpleStmt where
   code (ShortVarDec (ident:[]) (expr:exprList)) i =
     concat
       [ "var "
-      , code ident i
+      , codeLHS ident i
       , " = "
       , code expr i
       ]
   code (ShortVarDec (ident:identList) (expr:exprList)) i =
     concat
       [ "var "
-      , code ident i
+      , codeLHS ident i
       , " = "
       , code expr i
       , ", "
@@ -330,9 +330,16 @@ instance Codeable SimpleStmt where
       ]
   code (EmptyStmt) i = ""
 
-boundsCheck (IdArray s []) _ = ""
-boundsCheck (IdArray s (x : xs)) ident =
-  "GO_LITE_BOUNDS_CHECK(" ++ s ++ ", " ++ code x ident ++ ");"
+--
+boundsCheck (IdArray name indices) ident =
+  let depths = [0 .. length indices - 1] in
+    concatMap (\depth -> check' name depth indices) depths
+  where
+    check' name depth exps =
+      if depth == 0
+        then "GO_LITE_BOUNDS_CHECK(" ++ name ++ ", " ++ code (head exps) 0 ++ ");"
+        else
+          "GO_LITE_BOUNDS_CHECK(" ++ name ++ concatMap (wrapSquare . (`code` 0)) (take depth exps) ++ ", " ++ code (exps !! depth) 0 ++ ");\n"
 
 instance Codeable IfStmt where
   code (IfStmt EmptyStmt expr stList (IfStmtCont Nothing)) i =
@@ -426,3 +433,8 @@ instance Codeable Clause where
       ]
   code (Default stList) i =
     concat [spacePrint i, "default:\n", codeList stList (i + 1)]
+
+-- TODO use for ids on left hand side of assignments
+codeLHS (IdOrType s) i = s
+codeLHS (IdArray s xs) i = concat [s, wrapSquareList (map (`code` 0) xs) i]
+codeLHS (IdField xs) i = intercalate "." $ map (`code` i) xs
