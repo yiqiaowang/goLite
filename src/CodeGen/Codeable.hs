@@ -2,7 +2,7 @@ module CodeGen.Codeable where
 
 
 import Data.List(intercalate)
-
+import Language
 
 class Codeable a where
   code :: a -> Integer -> String
