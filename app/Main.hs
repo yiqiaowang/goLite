@@ -38,7 +38,6 @@ goLiteOptionsParser = GoLiteOptions
     "Dumps the ast on completed parse"
   `andBy` boolFlag "pptype" `Descr`
     "Pretty prints the program with the type of each expression"
-
 --
 main :: IO ()
 main = do
@@ -52,22 +51,6 @@ processFile options = do
     Right program -> do
       writeFile prettyFile $ Pretty.pretty program 0
 
-      case GoLite.typeCheck program of
-        Right (_, SymbolTable _ history _) -> do
-          -- output type checking success message
-          putStrLn "OK"
-
-          -- output pretty file with types
-          when (prettyPrintType options) $
-            writeFile ppTypeFile $ TypedPretty.typedPretty program 0 history
-
-          -- if not typecheck flag, generate code
-          unless (typeCheck options) $
-            writeFile jsFile $ Generator.code program 0
-
-        Left (GoLite.TypeCheckerError (err, symtbl)) ->
-          errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
-
       -- Dump symboltable
       when (dumpSymbolTable options) $
         case GoLite.typeCheck program of
@@ -79,6 +62,23 @@ processFile options = do
       -- Dump ast
       when (dumpAST options) $
         putStrLn $ Pr.ppShow program
+
+      -- Otherwise, generate files
+      case GoLite.typeCheck program of
+        Right (_, SymbolTable _ history _) -> do
+          -- output type checking success message
+          putStrLn "OK"
+
+          -- output pretty file with types
+          when (prettyPrintType options) $
+            writeFile ppTypeFile $ TypedPretty.prettyPrintProgram program 0 history
+
+          -- if not typecheck flag, generate code
+          unless (typeCheck options) $
+            writeFile jsFile $ Generator.code program 0
+
+        Left (GoLite.TypeCheckerError (err, symtbl)) ->
+          errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
 
     Left parseError -> errorWithoutStackTrace $ Pr.ppShow parseError
 
