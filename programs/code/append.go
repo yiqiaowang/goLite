@@ -32,7 +32,7 @@ func append_string() {
 }
 
 func append_float64() {
-	var a []int
+	var a []float64
 
 	a = append(a, 0.0)
 	a = append(a, 1.0)
@@ -46,7 +46,7 @@ func append_float64() {
 }
 
 func append_bool() {
-	var a []int
+	var a []bool
 
 	a = append(a, true)
 	a = append(a, false)
