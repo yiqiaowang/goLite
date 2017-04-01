@@ -12,6 +12,7 @@ module SymbolTable
   , addEntry
   , lookupIdentifier
   , newFrame
+  , newFrameFunc
   , hasKey
   , initSymbolTable
   ) where
@@ -82,7 +83,7 @@ type ContextRecord = [SymMap]
 
 data SymbolTable =
   SymbolTable Stack
-              History
+              [History]
               ContextRecord
   deriving (Eq, Show)
 
@@ -93,17 +94,25 @@ initSymbolTable = SymbolTable [initMap] [] [] :: SymbolTable
 newFrame :: SymbolTable -> SymbolTable
 newFrame (SymbolTable xs h c) = SymbolTable (newMap : xs) h c
 
+newFrameFunc :: SymbolTable -> SymbolTable
+newFrameFunc (SymbolTable xs h c) = SymbolTable (newMap : xs) ([]:h) c
+
 popFrame :: SymbolTable -> Either SymbolTableError (SymMap, SymbolTable)
 popFrame (SymbolTable s@(m:ms) h c) =
   case null s of
     True -> Left PopEmptyStackError
     False -> Right (m, SymbolTable ms h c)
 
+
 popFrame' :: SymbolTable -> Either SymbolTableError (SymMap, SymbolTable)
-popFrame' (SymbolTable s@(m:ms) h c) =
+popFrame' (SymbolTable s@(m:ms) (h:hs) c) =
   case null s of
     True -> Left PopEmptyStackError
-    False -> Right (m, SymbolTable ms (s : h) (m : c))
+    False -> Right (m, SymbolTable ms ((s : h):hs) (m : c))
+popFrame' (SymbolTable s@(m:ms) [] c) =
+  case null s of
+    True -> Left PopEmptyStackError
+    False -> Right (m, SymbolTable ms [[s]] (m : c))
 
 addEntry :: SymbolTable
          -> Identifier
