@@ -72,9 +72,9 @@ processFile options = do
       when (dumpSymbolTable options) $
         case GoLite.typeCheck program of
           Right (_, SymbolTable.SymbolTable s h c) ->
-            putStrLn $ draw $ reverse $ fmap (toList . getMap) c
+            putStrLn $ draw $ reverse $ fmap (toList) c
           Left (GoLite.TypeCheckerError (_, SymbolTable.SymbolTable s h c)) ->
-            errorWithoutStackTrace $ draw $ reverse $ fmap (toList . getMap) c
+            errorWithoutStackTrace $ draw $ reverse $ fmap (toList) c
 
       -- Dump ast
       when (dumpAST options) $

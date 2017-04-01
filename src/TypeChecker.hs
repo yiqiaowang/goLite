@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module TypeChecker
   ( TypeCheckError(..)
   , TypeCheckable(..)
@@ -90,6 +92,7 @@ class TypeCheckable a where
                  Right (Just t, symtbl) -> if t `elem` types
                                             then Right (Nothing, symtbl')
                                             else Left (TypeNotElementOfError (Just t) types, symtbl')
+      Right (t,symtbl')-> Left (TypeNotElementOfError t types, symtbl')
       Left err -> Left err
   typeCheckListElemOf
     :: SymbolTable
@@ -303,14 +306,14 @@ instance TypeCheckable Stmt where
   typeCheck symtbl (Break) = Right (Nothing, symtbl)
   typeCheck symtbl (Continue) = Right (Nothing, symtbl)
   typeCheck symtbl (If ifstmt) = typeCheck symtbl ifstmt
-  -- there is no god, also, looks kind of like node.js
+
   typeCheck symtbl (For maybe_ss maybe_expr maybe_ss' stmts) = do
     (_, symtbl') <- typeCheck (newFrame symtbl) maybe_ss
     (_, symtbl'') <- case maybe_expr of
                        Just t -> typeCheckElemOf symtbl' (Just t) [Alias "bool"]
                        Nothing -> Right (Nothing, symtbl')
     (_, symtbl''') <- typeCheck symtbl'' maybe_ss'
-    (_, symtbl'''') <- typeCheckListNewFrame symtbl''' stmts
+    (_, symtbl'''') <- typeCheckListNewFrame symtbl stmts
     Right (Nothing, symtbl)
   typeCheck symtbl (Infinite stmts) = typeCheckListNewFrame symtbl stmts
   typeCheck symtbl (While expr stmts) = do
@@ -402,7 +405,7 @@ instance TypeCheckable IfStmt where
     (_, symtbl') <- typeCheck (newFrame symtbl) stmt
     (_, symtbl'') <- typeCheckElemOf symtbl' expr [Alias "bool"]
     (_, symtbl''') <- typeCheckListNewFrame symtbl'' stmts
-    case popFrame' symtbl' of
+    case popFrame' symtbl''' of
       Right (f, ps) -> Right (Nothing, ps)
       Left err -> Left (SymbolTableError err, symtbl''')
 
@@ -410,7 +413,7 @@ instance TypeCheckable IfStmt where
     (_, symtbl') <- typeCheck (newFrame symtbl) stmt
     (_, symtbl'') <- typeCheckElemOf symtbl' expr [Alias "bool"]
     (_, symtbl''') <- typeCheckListNewFrame symtbl'' stmts
-    case popFrame' symtbl' of
+    case popFrame' symtbl''' of
       Right (f, ps) -> typeCheck ps ifstmt
       Left err -> Left (SymbolTableError err, symtbl''')
 
@@ -419,7 +422,7 @@ instance TypeCheckable IfStmt where
     (_, symtbl'') <- typeCheckElemOf symtbl' expr [Alias "bool"]
     (_, symtbl''') <- typeCheckListNewFrame symtbl'' stmts
     (_, symtbl'''') <- typeCheckListNewFrame symtbl''' stmts'
-    case popFrame' symtbl' of
+    case popFrame' symtbl'''' of
       Right (f, ps) -> Right (Nothing, ps)
       Left err -> Left (SymbolTableError err, symtbl''')
 
@@ -682,7 +685,7 @@ instance TypeCheckable SimpleStmt where
 svdIdenHelper :: SymbolTable -> [Identifier] -> Either TypeCheckError Bool
 svdIdenHelper symtbl idens =
   case popFrame symtbl of
-    Right (f, ps) -> Right (False `elem` fmap (hasKey $ getMap f) idens)
+    Right (f, ps) -> Right (False `elem` fmap (hasKey f) idens)
     Left err -> Left (SymbolTableError err)
 
 svdAssignHelper :: SymbolTable
@@ -693,7 +696,7 @@ svdAssignHelper symtbl [] [] = Right symtbl
 svdAssignHelper symtbl (iden:idens) (expr:exprs) =
   case popFrame symtbl of
     Right (f, ps) ->
-      case hasKey (getMap f) iden of
+      case hasKey f iden of
         False ->
           case typeCheck symtbl expr of
             Right (t, symtbl') ->
