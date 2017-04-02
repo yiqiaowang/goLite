@@ -14,6 +14,7 @@ import CodeGen.Native.Comparison
 import CodeGen.Native.Array
 import CodeGen.Expressions
 import CodeGen.Codeable
+import Data.Ix
 
 --
 nextContext :: History -> History
@@ -103,7 +104,9 @@ tempVar i indent hist = code (concat [ "GO_LITE_TEMP_" , code i 0 hist]) indent 
 temparize :: [Identifier] -> [Expression] -> Integer -> Integer -> History -> String
 temparize [] _ _ _ _ = ""
 temparize (ident:idents) (expr:exprs) i indent hist = concat [
-                spacePrint indent
+                spacePrint (case i of 
+                                0 -> 0
+                                _ -> indent)
                 , temparizeOne ident expr i hist
                 , temparize idents exprs (i + 1) indent hist ]
 
@@ -359,7 +362,7 @@ instance Codeable SimpleStmt where
       then boundsCheck ident i h ++ opeqCode
       else opeqCode
   code (Assign ids exps) indent h =
-    let pairs = zip ids exps in
+    let pairs = zip ids (range (0, (toInteger (length exps)))) in
       let arrays = filter isIdArray ids in concat
         [ concatMap (\array -> boundsCheck array indent h) arrays
         , temparize ids exps 0 indent h
@@ -369,16 +372,17 @@ instance Codeable SimpleStmt where
       assign' i e = concat
         [ codeLHS i indent h
         , " = "
-        , code e indent h
+        , tempVar e 0 h
         ]
   code (ShortVarDec ids exps) indent h =
-    let pairs = zip ids exps in
-      "let " ++ intercalate ", " (map (uncurry svd') pairs)
+    let pairs = zip ids (range (0, (toInteger (length exps)))) in concat
+          [ temparize ids exps 0 indent h
+          , "let " ++ intercalate ", " (map (uncurry svd') pairs) ]
     where
       svd' i e = concat
         [ codeLHS i indent h
         , " = "
-        , code e indent h
+        , tempVar e 0 h
         ]
   code EmptyStmt _ _ = ""
 
