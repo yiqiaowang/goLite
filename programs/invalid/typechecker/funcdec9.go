@@ -26,6 +26,7 @@ func f_slice() a {
   var y a
   y.x = "hi"
 
+  // structs are not bools?
   if (x && y) {
   	return y
   }

@@ -18,7 +18,7 @@ spec validTypeChecker =
         case GoLite.parse file text of
           Right program -> case GoLite.typeCheck program of
             Right (_, SymbolTable _ history _) ->
-              case GoLite.parse file $ TypedPretty.typedPretty program 0 history of
+              case GoLite.parse file $ TypedPretty.prettyPrintProgram program 0 history of
                 Right program' -> program `shouldBe` program'
                 Left parseError -> error "Pretty Print Error"
             Left typeError -> error "Type Checker Error"

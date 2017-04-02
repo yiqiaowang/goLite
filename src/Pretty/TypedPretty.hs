@@ -2,6 +2,7 @@
 
 module Pretty.TypedPretty
   ( typedPretty
+  , prettyPrintProgram
   ) where
 
 
@@ -19,6 +20,10 @@ class TypedPretty a where
   prettyList :: [a] -> Integer -> History -> String
   prettyList ps i h = concatMap (\p -> typedPretty p i h) ps
 
+  prettyList' :: [a] -> Integer -> History -> String
+  prettyList' [] _ _ = ""
+  prettyList' (p:ps) i h = typedPretty p i h ++ prettyList' ps i (nextContext h)
+
 --
 commentType :: TypeCheckable a => a -> History -> String
 commentType a [] = undefined
@@ -32,6 +37,11 @@ commentType a (ctxt : _) =
 nextContext :: History -> History
 nextContext [] = undefined
 nextContext (_ : t) = t
+
+
+
+nextContext' :: History -> Int -> History
+nextContext' h n = drop n h
 
 --
 commaSepList :: TypedPretty a => [a] -> Integer -> History -> String
@@ -63,14 +73,21 @@ wrapSquareList ps i h = concatMap wrapSquare (map (\p -> typedPretty p i h) ps)
 dotSepList :: [String] -> String
 dotSepList = intercalate "."
 
-instance TypedPretty Program where
-  typedPretty (Program package alls) _ h = concat
+
+prettyPrintProgram :: Program -> Integer -> [History] -> String
+
+prettyPrintProgram (Program package alls) _ h = concat
     [ "package "
     , package
     , ";\n"
     , "\n"
-    , prettyList alls 0 h
+    , prettyPrintAlls alls 0 0 h
     ]
+
+prettyPrintAlls :: [All] -> Int -> Integer -> [History] -> String
+prettyPrintAlls [] _ _ _ = ""
+prettyPrintAlls (TopDec dec:as) offset i h = typedPretty (TopDec dec) i (head h) ++ prettyPrintAlls as offset i h
+prettyPrintAlls (Function a b c d:as) offset i h = typedPretty (Function a b c d) i (h!!(((length h)-1)-offset)) ++ prettyPrintAlls as (offset+1) i h
 
 instance TypedPretty All where
   typedPretty (TopDec dec) _ h = typedPretty dec 0 h
@@ -78,22 +95,27 @@ instance TypedPretty All where
     [ "func "
     , typedPretty name 0 h
     , "("
-    , commaSepList params 0 h
+    , commaSepList params 0 ctxt
     , ") {\n"
-    , prettyList stmts 1 (nextContext h)
+    , prettyList stmts 1 ctxt
     , "}\n\n"
-    ]
+    ] where ctxt = if length h <= 1 then h else (nextContext h)
+                     
   typedPretty (Function name params (Just type') stmts) _ h = concat
     [ "func "
     , typedPretty name 0 h
     , "("
-    , commaSepList params 0 h
+    , commaSepList params 0 ctxt
     , ") "
-    , typedPretty type' 0 h
+    , typedPretty type' 0 ctxt
     , " {\n"
-    , prettyList stmts 1 (nextContext h)
+    , prettyList stmts 1 ctxt
     , "}\n\n"
-    ]
+    ] where ctxt = if length h <= 1 then h else (nextContext h)
+
+
+
+
 
 instance TypedPretty TopLevel where
   typedPretty (VarDec (Variable var (Just t) [])) i h = concat
@@ -243,20 +265,20 @@ instance TypedPretty Stmt where
   typedPretty (Switch stmt Nothing c) i h = concat
     [ spacePrint i
     , "switch "
-    , typedPretty stmt 0 h
+    , typedPretty stmt 0 (nextContext h)
     , "; {\n"
-    , prettyList c (i + 1) (nextContext h)
+    , prettyListClause c (i + 1) (nextContext h)
     , spacePrint i
     , "}\n"
     ]
   typedPretty (Switch stmt (Just expr) c) i h = concat
     [ spacePrint i
     , "switch "
-    , typedPretty stmt 0 h
+    , typedPretty stmt 0 (nextContext h)
     , "; "
-    , typedPretty expr 0 h
+    , typedPretty expr 0 (nextContext h)
     , " {\n"
-    , prettyList c (i + 1) (nextContext h)
+    , prettyListClause c (i + 1) (nextContext h)
     , spacePrint i
     , "}\n"
     ]
@@ -279,13 +301,13 @@ instance TypedPretty Stmt where
   typedPretty (For simp1 expr simp2 stmts) i h = concat
     [ spacePrint i
     , "for "
-    , typedPretty simp1 0 h
+    , typedPretty simp1 0 (nextContext h)
     , "; "
-    , typedPretty expr 0 h
+    , typedPretty expr 0 (nextContext h)
     , "; "
-    , typedPretty simp2 0 h
+    , typedPretty simp2 0 (nextContext h)
     , " {\n"
-    , prettyList stmts (i + 1) (nextContext h)
+    , prettyList stmts (i + 1) (nextContext $ nextContext h)
     , spacePrint i
     , "}\n"
     ]
@@ -367,6 +389,15 @@ instance TypedPretty IfStmt where
       , "} else "
       , typedPretty ifStmt i h
       ]
+
+
+
+prettyListClause :: [Clause] -> Integer -> History -> String
+prettyListClause [] _ _ = ""
+prettyListClause (p:ps) i h = typedPretty p i (nextContext h) ++ prettyListClause ps i (nextContext h)
+
+
+ 
 
 instance TypedPretty Clause where
   typedPretty (Case exList stList) i h = concat
