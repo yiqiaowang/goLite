@@ -96,6 +96,25 @@ emptyTypeValue (Struct struct) i s index h =
     ["{};\n"
     , structPrint struct (i + 1) s index h]
 
+tempVar :: Integer -> Integer -> String
+tempVar i indent = code (concat [ "GO_LITE_TEMP_" , code i 0 ]) indent
+
+--
+temparize :: [Identifier] -> [Expression] -> Integer -> Integer -> String
+temparize [] _ _ _ = ""
+temparize (ident:idents) (expr:exprs) i indent= concat [
+                spacePrint indent
+                , temparizeOne ident expr i
+                , temparize idents exprs (i + 1) ]
+
+temparizeOne :: Identifier -> Expression -> Integer -> String
+temparizeOne ident expr i = concat [
+              "var "
+              , tempVar i 0
+              , " = GO_LITE_COPY("
+              , code expr 0
+              , ");\n" ]
+
 codeProgram :: Program -> Integer -> [History] -> String
 codeProgram (Program package alls) _ h = concat
   [ goLiteAppend
@@ -172,7 +191,7 @@ instance Codeable Variable where
       , code var i h
       , " = "
       , emptyTypeValue t i (code var i h) 0 h
-      , "\n"
+      , ";\n"
       , code (Variable vars (Just t) []) i h
       ]
   code (Variable (var:[]) _ (expr:exprs)) i h =
@@ -180,18 +199,18 @@ instance Codeable Variable where
       [spacePrint i
       , "let "
       , code var i h
-      , " = "
+      , " = GO_LITE_COPY("
       , code expr i h
-      , ";\n"
+      , ");\n"
       ]
   code (Variable (var:vars) t (expr:exprs)) i h =
     concat
       [ spacePrint i
       , "let "
       , code var i h
-      , " = "
+      , " = GO_LITE_COPY("
       , code expr i h
-      , "\n"
+      , ");\n"
       , code (Variable vars t exprs) i h
       ]
 
@@ -343,6 +362,7 @@ instance Codeable SimpleStmt where
     let pairs = zip ids exps in
       let arrays = filter isIdArray ids in concat
         [ concatMap (\array -> boundsCheck array indent h) arrays
+        , temparize ids exps indent
         , intercalate ", " $ map (uncurry assign') pairs
         ]
     where
