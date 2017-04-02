@@ -24,7 +24,7 @@ data TypeCheckError
   | InvalidInitStatement
   | NoNewIdentifierError
   | AppendNotSliceError
-  | ElementsNotComparableError
+  | ElementsNotComparableError { cType :: Maybe Type }
   | DefinitionNotFoundError
   | FuncCallArgNumError { expectedArgs :: [Type]
                        ,  receivedArgs :: [Expression]}
@@ -457,6 +457,7 @@ instance TypeCheckable Identifier where
     case lookupIdentifier symtbl (IdOrType i) of
       Right (Entry CategoryType t) -> Right (t, symtbl)
       Right (Entry CategoryVariable t) -> typeCheck symtbl t
+      Right (Entry CategoryAlias t) -> Right (t, symtbl)
       Left err -> Left (SymbolTableError err, symtbl)
   typeCheck symtbl (IdField is) =
     case structHelper symtbl is of
@@ -1034,17 +1035,18 @@ comparableCheck t1 symtbl =
     (Alias s1) ->
       case (getBaseType symtbl (IdOrType s1)) of
         Right (baseT, symtbl') ->
-          case ((Alias s1, Alias s1) `elem` (binaryList Equals)) ||
-               (binaryAliasHelper
-                  symtbl
-                  (Alias s1, Alias s1)
-                  (binaryList Equals)) of
-            True -> Right (Just (Alias "bool"), symtbl')
-            False -> Left (ElementsNotComparableError, symtbl')
+          case baseT of
+            (Just (Struct s)) -> structListCheck s symtbl'
+            (Just _) -> case ((Alias s1, Alias s1) `elem` (binaryList Equals)) ||
+                              (binaryAliasHelper
+                               symtbl
+                               (Alias s1, Alias s1)
+                               (binaryList Equals)) of
+                           True -> Right (Just (Alias "bool"), symtbl')
+                           False -> Left (ElementsNotComparableError $ Just (Alias s1), symtbl')
         Left (err) -> Left (err)
     (Array s1 _) -> comparableCheck s1 symtbl
     (Struct s1) -> structListCheck s1 symtbl
-    _ -> Left (ElementsNotComparableError, symtbl)
 
 structListCheck
   :: [([Identifier], Type)]
