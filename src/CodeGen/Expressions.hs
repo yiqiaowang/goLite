@@ -5,108 +5,109 @@ import Data.List(intercalate)
 import Data.Char(chr)
 import CodeGen.Codeable
 import Language
+import SymbolTable
 
 
 instance Codeable Expression where
-  code (Brack expr) i = concat
+  code (Brack expr) i h = concat
     [ "("
-    , code expr i
+    , code expr i h
     , ")"
     ]
-  code (Id ident) i = code ident i
-  code (Literal lit) i = code lit i
-  code (Unary op expr) i = concat [code op i, code expr i]
-  code (Binary Equals expr1 expr2) i =
-    "GO_LITE_EQUALS(" ++ code expr1 i ++ ", " ++ code expr2 i ++ ")"
-  code (Binary NotEquals expr1 expr2) i =
-    "GO_LITE_NOT_EQUALS(" ++ code expr1 i ++ ", " ++ code expr2 i ++ ")"
-  code (Binary op expr1 expr2) i = concat
-    [ code expr1 i
+  code (Id ident) i h = code ident i h
+  code (Literal lit) i h = code lit i h
+  code (Unary op expr) i h = concat [code op i h, code expr i h]
+  code (Binary Equals expr1 expr2) i h =
+    "GO_LITE_EQUALS(" ++ code expr1 i h ++ ", " ++ code expr2 i h ++ ")"
+  code (Binary NotEquals expr1 expr2) i h =
+    "GO_LITE_NOT_EQUALS(" ++ code expr1 i h ++ ", " ++ code expr2 i h ++ ")"
+  code (Binary op expr1 expr2) i h = concat
+    [ code expr1 i h
     , " "
-    , code op i
-    , code expr2 i
+    , code op i h
+    , code expr2 i h
     ]
-  code (ExprFuncCall func) i = code func i
-  code (Append ident expr) i =
-    concat ["GO_LITE_APPEND(", code ident i, ", ", code expr i, ")"]
+  code (ExprFuncCall func) i h = code func i h
+  code (Append ident expr) i h =
+    concat ["GO_LITE_APPEND(", code ident i h, ", ", code expr i h, ")"]
 
 instance Codeable FunctionCall where
-  code (FunctionCall ident exprList) i =
-    concat [code ident i, "(", commaSepList (map copyWrap exprList) 0, ")"]
+  code (FunctionCall ident exprList) i h =
+    concat [code ident i h, "(", commaSepList (map (`copyWrap` h) exprList) 0 h, ")"]
 
 -- Need to do
 instance Codeable UnaryOp where
-  code Pos _ = "+"
-  code Neg _ = "-"
-  code BoolNot _ = "!"
-  code BitComplement _ = "~"
+  code Pos _ h = "+"
+  code Neg _ h = "-"
+  code BoolNot _ h = "!"
+  code BitComplement _ h = "~"
 
 -- Need to do
 instance Codeable BinaryOp where
-  code Or _ = "|| "
-  code And _ = "&& "
-  code Equals _ = "== "
-  code NotEquals _ = "!= "
-  code LThan _ = "< "
-  code LEThan _ = "<= "
-  code GThan _ = "> "
-  code GEThan _ = ">= "
-  code Add _ = "+ "
-  code Sub _ = "- "
-  code Mult _ = "* "
-  code Div _ = "/ "
-  code Mod _ = "% "
-  code BitAnd _ = "& "
-  code BitOr _ = "| "
-  code BitXor _ = "^ "
-  code BitLShift _ = "<< "
-  code BitRShift _ = ">> "
-  code BitClear _ = "& ~"
+  code Or _ _ = "|| "
+  code And _ _ = "&& "
+  code Equals _ _ = "== "
+  code NotEquals _ _ = "!= "
+  code LThan _ _ = "< "
+  code LEThan _ _ = "<= "
+  code GThan _ _ = "> "
+  code GEThan _ _ = ">= "
+  code Add _ _ = "+ "
+  code Sub _ _ = "- "
+  code Mult _ _ = "* "
+  code Div _ _ = "/ "
+  code Mod _ _ = "% "
+  code BitAnd _ _ = "& "
+  code BitOr _ _ = "| "
+  code BitXor _ _ = "^ "
+  code BitLShift _ _ = "<< "
+  code BitRShift _ _ = ">> "
+  code BitClear _ _ = "& ~"
 
 -- Need to do
 instance Codeable BinaryOpEq where
-  code PlusEq _ = "+= "
-  code MinusEq _ = "-= "
-  code MulEq _ = "*= "
-  code DivEq _ = "/= "
-  code ModEq _ = "%= "
-  code BitAndEq _ = "&= "
-  code BitOrEq _ = "|= "
-  code BitXorEq _ = "^= "
-  code BitLShiftEq _ = "<<= "
-  code BitRShiftEq _ = ">>= "
-  code BitClearEq _ = "&= ~"
+  code PlusEq _ _ = "+= "
+  code MinusEq _ _ = "-= "
+  code MulEq _ _ = "*= "
+  code DivEq _ _ = "/= "
+  code ModEq _ _ = "%= "
+  code BitAndEq _ _ = "&= "
+  code BitOrEq _ _ = "|= "
+  code BitXorEq _ _ = "^= "
+  code BitLShiftEq _ _ = "<<= "
+  code BitRShiftEq _ _ = ">>= "
+  code BitClearEq _ _ = "&= ~"
 
 instance Codeable (Maybe Expression) where
-  code Nothing i = "true"
-  code (Just e) i = code e i
+  code Nothing i _ = "true"
+  code (Just e) i h = code e i h
 
 instance Codeable String where
-  code s _ = s
+  code s _ _ = s
 
 instance Codeable Integer where
-  code int _ = (show int)
+  code int _ _ = show int
 
 instance Codeable Int where
-  code int _ = (show int)
+  code int _ _ = show int
 
 instance Codeable Literal where
-  code (Int' i) _ = show i
-  code (Float64 f) _ = show f
-  code (Rune i) _ = (show . chr . fromIntegral) i
-  code (String s) _ = s
-  code (Raw s) _ = s
+  code (Int' i) _ _ = show i
+  code (Float64 f) _ _ = show f
+  code (Rune i) _ _ = (show . chr . fromIntegral) i
+  code (String s) _ _ = s
+  code (Raw s) _ _ = s
 
 instance Codeable Identifier where
-  code (IdOrType s) i = s
-  code (IdArray s xs) i = code' s $ reverse xs
+  code (IdOrType s) i _ = s
+  code (IdArray s xs) i h = code' s $ reverse xs
     where
       code' s (x : []) =
-        "GO_LITE_READ_INDEX(" ++ s ++ ", " ++ code x i ++ ")"
+        "GO_LITE_READ_INDEX(" ++ s ++ ", " ++ code x i h ++ ")"
       code' s (x : xs') =
-        "GO_LITE_READ_INDEX(" ++ code' s xs' ++ " ," ++ code x i ++ ")"
-  code (IdField xs) i = intercalate "." $ map (`code` i) xs
+        "GO_LITE_READ_INDEX(" ++ code' s xs' ++ " ," ++ code x i h ++ ")"
+  code (IdField xs) i h = intercalate "." $ map (\x -> code x i h) xs
 
 --
-copyWrap :: Expression -> String
-copyWrap expr = concat["GO_LITE_COPY(", code expr 0, ")"]
+copyWrap :: Expression -> History -> String
+copyWrap expr h = concat["GO_LITE_COPY(", code expr 0 h, ")"]
