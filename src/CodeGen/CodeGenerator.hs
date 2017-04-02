@@ -66,7 +66,7 @@ emptyTypeValue (Alias "string") _ _ _ _ = "\"\""
 emptyTypeValue (Alias "bool") _ _ _ _ = "false"
 emptyTypeValue (Alias "int") _ _ _ _ = "0"
 emptyTypeValue (Alias "float64") _ _ _ _ = "0.0"
-emptyTypeValue (Alias "rune") _ _ _ _ = "\'\\0\'"
+emptyTypeValue (Alias "rune") _ _ _ _ = "0"
 emptyTypeValue (Alias str) _ _ _ _ = concat [str, "()"]
 emptyTypeValue (Array t num) i s index h = concat
                          ["new Array("
