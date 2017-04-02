@@ -62,12 +62,12 @@ structPrint (struct:structs) i s index h = concat
 -- the prefix (ex: "pt.x[1]"), and the index number for
 -- multi-dimensional arrays
 emptyTypeValue :: Type -> Integer -> String -> Integer -> History -> String
-emptyTypeValue (Alias "u_string") _ _ _ _ = "\"\""
-emptyTypeValue (Alias "u_bool") _ _ _ _ = "false"
-emptyTypeValue (Alias "u_int") _ _ _ _ = "0"
-emptyTypeValue (Alias "u_float64") _ _ _ _ = "0.0"
-emptyTypeValue (Alias "u_rune") _ _ _ _ = "\'\\0\'"
-emptyTypeValue (Alias str) _ _ _ _ = concat[str, "()"]
+emptyTypeValue (Alias "string") _ _ _ _ = "\"\""
+emptyTypeValue (Alias "bool") _ _ _ _ = "false"
+emptyTypeValue (Alias "int") _ _ _ _ = "0"
+emptyTypeValue (Alias "float64") _ _ _ _ = "0.0"
+emptyTypeValue (Alias "rune") _ _ _ _ = "0"
+emptyTypeValue (Alias str) _ _ _ _ = concat [str, "()"]
 emptyTypeValue (Array t num) i s index h = concat
                          ["new Array("
                          , code num 0 h
@@ -126,6 +126,7 @@ codeProgram (Program package alls) _ h = concat
   , goLiteEquals
   , goLiteNotEquals
   , goLiteBoundsCheck
+  , goLiteIntDiv
   , codeAlls alls 0 0 h
   ]
 
@@ -151,14 +152,14 @@ instance Codeable All where
   code (TopDec dec) _ h = concat [code dec 0 h, "\n"]
   code (Function name params _ stmts) _ h =
     case name of
-      "u_main" -> concat
+      "main" -> concat
             [ "function "
             , code name 0 h
             , "("
             , commaSepList params 0 h
             , ") {\n"
             , codeList stmts 1 (nextContext h)
-            , "}\nu_main();\n\n"
+            , "}\nmain();\n\n"
             ]
       _ -> concat
             [ "function "
@@ -178,7 +179,7 @@ instance Codeable TopLevel where
 
 instance Codeable Variable where
   code (Variable [] _ []) _ h = ""
-  code (Variable (var:[]) (Just t) []) i h =
+  code (Variable [var] (Just t) []) i h =
     concat
       [spacePrint i
       , "let "
@@ -197,7 +198,7 @@ instance Codeable Variable where
       , ";\n"
       , code (Variable vars (Just t) []) i h
       ]
-  code (Variable (var:[]) _ (expr:exprs)) i h =
+  code (Variable [var] _ (expr:exprs)) i h =
     concat
       [spacePrint i
       , "let "
@@ -330,17 +331,11 @@ instance Codeable Stmt where
     concat
       [ spacePrint i
       , "for ("
-      , (case simp1 of 
-              (Assign ids exprs) -> alternateAssign ids exprs 0 (nextContext h)
-              (ShortVarDec ids exprs) -> alternateShortDec ids exprs 0 (nextContext h)
-              _ -> code simp1 0 (nextContext h))
+      , code simp1 0 (nextContext h)
       , "; "
       , code expr 0 (nextContext h)
       , "; "
-      , (case simp2 of 
-              (Assign ids exprs) -> alternateAssign ids exprs 0 (nextContext h)
-              (ShortVarDec ids exprs) -> alternateShortDec ids exprs 0 (nextContext h)
-              _ -> code simp2 0 (nextContext h))
+      , code simp2 0 (nextContext h)
       , ") {\n"
       , codeList stmts (i + 1) (nextContext $ nextContext h)
       , spacePrint i
@@ -372,7 +367,6 @@ instance Codeable SimpleStmt where
       let arrays = filter isIdArray ids in concat
         [ concatMap (\array -> boundsCheck array indent h) arrays
         , temparize ids exps 0 indent h
-        , spacePrint indent
         , intercalate ", " $ map (uncurry assign') pairs
         ]
     where
@@ -384,7 +378,6 @@ instance Codeable SimpleStmt where
   code (ShortVarDec ids exps) indent h =
     let pairs = zip ids (range (0, (toInteger (length exps)))) in concat
           [ temparize ids exps 0 indent h
-          , spacePrint indent
           , "let " ++ intercalate ", " (map (uncurry svd') pairs) ]
     where
       svd' i e = concat
@@ -510,26 +503,3 @@ instance Codeable Clause where
 codeLHS (IdOrType s) _ _= s
 codeLHS (IdArray s xs) i h = concat [s, wrapSquareList (map (\x -> code x 0 h) xs) i h]
 codeLHS (IdField xs) i h = intercalate "." $ map (\x -> code x i h) xs
-
-alternateAssign :: [Identifier] -> [Expression] -> Integer -> History -> String
-alternateAssign ids exprs indent h = 
-    let pairs = zip ids exprs in
-      let arrays = filter isIdArray ids in concat
-        [ intercalate ", " $ map (uncurry assign') pairs ]
-    where
-      assign' i e = concat
-        [ codeLHS i indent h
-        , " = "
-        , code e 0 h
-        ]
-
-alternateShortDec :: [Identifier] -> [Expression] -> Integer -> History -> String
-alternateShortDec ids exprs indent h = 
-    let pairs = zip ids exprs in
-          "let " ++ intercalate ", " (map (uncurry svd') pairs)
-    where
-      svd' i e = concat
-        [ codeLHS i indent h
-        , " = "
-        , code e 0 h
-        ]

@@ -1,0 +1,16 @@
+1. Printing runes - Prints (random?) characters instead of ints [TEST: init_and_print.go]
+2. Printing struct fields - If there is a struct that looks like:
+type x struct {
+	y int
+}
+
+and we do
+
+var herp x
+
+println(herp.y) -> Prints undefined
+
+[TEST: pass_by_value.go]
+
+3. Multiple assignments - swap behaviour [TEST: multiple_assigns.go]
+

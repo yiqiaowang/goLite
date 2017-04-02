@@ -4,6 +4,7 @@ module CodeGen.Codeable where
 import Data.List(intercalate)
 import Language
 import SymbolTable
+import TypeChecker
 
 class Codeable a where
   code :: a -> Integer -> History -> String
@@ -11,6 +12,12 @@ class Codeable a where
   codeList :: [a] -> Integer -> History -> String
   codeList cs i h = concatMap (\c -> code c i h) cs
 
+getType :: TypeCheckable t => t -> History -> Type
+getType t (ctxt : _) =
+  case typeCheck (SymbolTable ctxt [] []) t of
+    Right (Just type', _) -> type'
+    Right (Nothing, _) -> error "no type info"
+    Left e -> error $ show e
 
 --
 commaSepList :: Codeable a => [a] -> Integer -> History -> String
