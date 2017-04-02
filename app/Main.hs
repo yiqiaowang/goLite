@@ -75,7 +75,7 @@ processFile options = do
 
           -- if not typecheck flag, generate code
           unless (typeCheck options) $
-            writeFile jsFile $ Generator.code program 0
+            writeFile jsFile $ Generator.codeProgram program 0 history
 
         Left (GoLite.TypeCheckerError (err, symtbl)) ->
           errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
