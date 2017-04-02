@@ -94,7 +94,7 @@ instance Codeable Int where
 instance Codeable Literal where
   code (Int' i) _ _ = show i
   code (Float64 f) _ _ = show f
-  code (Rune i) _ _ = (show . chr . fromIntegral) i
+  code (Rune i) _ _ = show i
   code (String s) _ _ = s
   code (Raw s) _ _ = s
 
@@ -102,7 +102,7 @@ instance Codeable Identifier where
   code (IdOrType s) i _ = s
   code (IdArray s xs) i h = code' s $ reverse xs
     where
-      code' s (x : []) =
+      code' s [x] =
         "GO_LITE_READ_INDEX(" ++ s ++ ", " ++ code x i h ++ ")"
       code' s (x : xs') =
         "GO_LITE_READ_INDEX(" ++ code' s xs' ++ " ," ++ code x i h ++ ")"
