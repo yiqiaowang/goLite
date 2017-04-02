@@ -94,7 +94,7 @@ instance Codeable Int where
 instance Codeable Literal where
   code (Int' i) _ _ = show i
   code (Float64 f) _ _ = show f
-  code (Rune i) _ _ = (show . chr . fromIntegral) i
+  code (Rune i) _ _ = show i
   code (String s) _ _ = s
   code (Raw s) _ _ = s
 
