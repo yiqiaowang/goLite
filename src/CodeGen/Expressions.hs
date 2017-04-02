@@ -21,6 +21,10 @@ instance Codeable Expression where
     "GO_LITE_EQUALS(" ++ code expr1 i h ++ ", " ++ code expr2 i h ++ ")"
   code (Binary NotEquals expr1 expr2) i h =
     "GO_LITE_NOT_EQUALS(" ++ code expr1 i h ++ ", " ++ code expr2 i h ++ ")"
+  code e@(Binary Div expr1 expr2) i h = case (getType expr1 h, getType expr2 h) of
+    (Alias "int", Alias "int") ->
+      "GO_LITE_INT_DIV(" ++ code expr1 i h ++ ", " ++ code expr2 i h ++ ")"
+    _ -> code e i h
   code (Binary op expr1 expr2) i h = concat
     [ code expr1 i h
     , " "

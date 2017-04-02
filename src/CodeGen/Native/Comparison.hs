@@ -14,3 +14,10 @@ goLiteNotEquals = unlines
   , "  return JSON.stringify(obj1) != JSON.stringify(obj2);"
   , "}"
   ]
+
+goLiteIntDiv :: String
+goLiteIntDiv = unlines
+  [ "function GO_LITE_INT_DIV(x, y) {"
+  , "  return Math.floor(x / y);"
+  , "}"
+  ]

@@ -126,6 +126,7 @@ codeProgram (Program package alls) _ h = concat
   , goLiteEquals
   , goLiteNotEquals
   , goLiteBoundsCheck
+  , goLiteIntDiv
   , codeAlls alls 0 0 h
   ]
 
