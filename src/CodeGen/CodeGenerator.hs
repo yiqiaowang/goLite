@@ -257,7 +257,7 @@ instance Codeable TypeName where
       , " = function() {\n"
       , spacePrint (i + 1)
       , "let struct = {};\n"
-      , structPrint struct (i + 1) s 0 h
+      , structPrint struct (i + 1) "struct" 0 h
       , spacePrint (i + 1)
       , "return struct;\n"
       , spacePrint i
