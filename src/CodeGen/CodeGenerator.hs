@@ -96,23 +96,23 @@ emptyTypeValue (Struct struct) i s index h =
     ["{};\n"
     , structPrint struct (i + 1) s index h]
 
-tempVar :: Integer -> Integer -> String
-tempVar i indent = code (concat [ "GO_LITE_TEMP_" , code i 0 ]) indent
+tempVar :: Integer -> Integer -> History -> String
+tempVar i indent hist = code (concat [ "GO_LITE_TEMP_" , code i 0 hist]) indent hist
 
 --
-temparize :: [Identifier] -> [Expression] -> Integer -> Integer -> String
-temparize [] _ _ _ = ""
-temparize (ident:idents) (expr:exprs) i indent= concat [
+temparize :: [Identifier] -> [Expression] -> Integer -> Integer -> History -> String
+temparize [] _ _ _ _ = ""
+temparize (ident:idents) (expr:exprs) i indent hist = concat [
                 spacePrint indent
-                , temparizeOne ident expr i
-                , temparize idents exprs (i + 1) ]
+                , temparizeOne ident expr i hist
+                , temparize idents exprs (i + 1) indent hist ]
 
-temparizeOne :: Identifier -> Expression -> Integer -> String
-temparizeOne ident expr i = concat [
+temparizeOne :: Identifier -> Expression -> Integer -> History -> String
+temparizeOne ident expr i hist = concat [
               "var "
-              , tempVar i 0
+              , tempVar i 0 hist
               , " = GO_LITE_COPY("
-              , code expr 0
+              , code expr 0 hist
               , ");\n" ]
 
 codeProgram :: Program -> Integer -> [History] -> String
@@ -362,7 +362,7 @@ instance Codeable SimpleStmt where
     let pairs = zip ids exps in
       let arrays = filter isIdArray ids in concat
         [ concatMap (\array -> boundsCheck array indent h) arrays
-        , temparize ids exps indent
+        , temparize ids exps 0 indent h
         , intercalate ", " $ map (uncurry assign') pairs
         ]
     where
