@@ -82,9 +82,27 @@ emptyTypeValue (Slice _) _ _ _ = "new Array()"
 emptyTypeValue (Struct struct) i s index =
   concat
     ["{};\n"
-    , structPrint struct (i + 1) s index]
+    , structPrint struct (i + 1) s index ]
 
--- Need to do
+tempVar :: Integer -> Integer -> String
+tempVar i indent = code (concat [ "GO_LITE_TEMP_" , code i 0 ]) indent
+
+--
+temparize :: [Identifier] -> [Expression] -> Integer -> Integer -> String
+temparize [] _ _ _ = ""
+temparize (ident:idents) (expr:exprs) i indent= concat [
+                spacePrint indent
+                , temparizeOne ident expr i
+                , temparize idents exprs (i + 1) ]
+
+temparizeOne :: Identifier -> Expression -> Integer -> String
+temparizeOne ident expr i = concat [
+              "var "
+              , tempVar i 0
+              , " = GO_LITE_COPY("
+              , code expr 0
+              , ");\n" ]
+
 instance Codeable Program where
   code (Program package alls) _ = concat
     [ goLiteAppend
@@ -143,7 +161,7 @@ instance Codeable Variable where
       , code var i
       , " = "
       , emptyTypeValue t i (code var i) 0
-      , "\n"
+      , ";\n"
       , code (Variable vars (Just t) []) i
       ]
   code (Variable (var:[]) _ (expr:exprs)) i =
@@ -151,18 +169,18 @@ instance Codeable Variable where
       [spacePrint i
       , "let "
       , code var i
-      , " = "
+      , " = GO_LITE_COPY("
       , code expr i
-      , ";\n"
+      , ");\n"
       ]
   code (Variable (var:vars) t (expr:exprs)) i =
     concat
       [ spacePrint i
       , "let "
       , code var i
-      , " = "
+      , " = GO_LITE_COPY("
       , code expr i
-      , "\n"
+      , ");\n"
       , code (Variable vars t exprs) i
       ]
 
@@ -314,11 +332,12 @@ instance Codeable SimpleStmt where
     let pairs = zip ids exps in
       let arrays = filter isIdArray ids in concat
         [ concatMap (`boundsCheck` indent) arrays
+        , temparize ids exps indent
         , intercalate ", " $ map (uncurry assign') pairs
         ]
     where
       assign' i e = concat
-        [ codeLHS i indent
+        [ tempVar i indent
         , " = "
         , code e indent
         ]
