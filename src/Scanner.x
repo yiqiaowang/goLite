@@ -173,7 +173,7 @@ tokens :-
 {
 -- Handle runes
 handleRune :: [Char] -> Char
-handleRune (x:y:z) = 'y'
+handleRune (x:y:z) = y
 
 -- Append 0 to the end of a string
 appendZero :: String -> String
