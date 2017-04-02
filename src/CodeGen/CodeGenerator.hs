@@ -67,7 +67,7 @@ emptyTypeValue (Alias "bool") _ _ _ _ = "false"
 emptyTypeValue (Alias "int") _ _ _ _ = "0"
 emptyTypeValue (Alias "float64") _ _ _ _ = "0.0"
 emptyTypeValue (Alias "rune") _ _ _ _ = "\'\\0\'"
-emptyTypeValue (Alias str) _ _ _ _ = concat[str, "()"]
+emptyTypeValue (Alias str) _ _ _ _ = concat [str, "()"]
 emptyTypeValue (Array t num) i s index h = concat
                          ["new Array("
                          , code num 0 h
@@ -178,7 +178,7 @@ instance Codeable TopLevel where
 
 instance Codeable Variable where
   code (Variable [] _ []) _ h = ""
-  code (Variable (var:[]) (Just t) []) i h =
+  code (Variable [var] (Just t) []) i h =
     concat
       [spacePrint i
       , "let "
@@ -197,7 +197,7 @@ instance Codeable Variable where
       , ";\n"
       , code (Variable vars (Just t) []) i h
       ]
-  code (Variable (var:[]) _ (expr:exprs)) i h =
+  code (Variable [var] _ (expr:exprs)) i h =
     concat
       [spacePrint i
       , "let "
