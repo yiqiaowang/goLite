@@ -436,7 +436,9 @@ instance Codeable IfStmt where
   code (IfStmt stmt expr stList (IfStmtCont Nothing)) i  h=
     concat
       [ "{\n"
+      , spacePrint (i + 1)
       , code stmt (i + 1) h
+      , ";\n"
       , spacePrint (i + 1)
       ,  "if ("
       , code expr 0 h
@@ -450,7 +452,9 @@ instance Codeable IfStmt where
   code (IfStmt stmt expr stList (IfStmtCont (Just (Right elseStmt)))) i h =
     concat
       [ "{\n"
+      , spacePrint (i + 1)
       , code stmt (i + 1) h
+      , ";\n"
       , spacePrint (i + 1)
       ,  "if ("
       , code expr 0 h
