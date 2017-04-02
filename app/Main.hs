@@ -6,6 +6,7 @@ import qualified Parser
 import qualified Pretty.Pretty as Pretty
 import qualified Pretty.TypedPretty as TypedPretty
 import qualified CodeGen.CodeGenerator as Generator
+import qualified CodeGen.Prefix as Prefix
 
 import System.Console.ArgParser
 import System.FilePath
@@ -75,7 +76,7 @@ processFile options = do
 
           -- if not typecheck flag, generate code
           unless (typeCheck options) $
-            writeFile jsFile $ Generator.codeProgram program 0 history
+            writeFile jsFile $ Generator.codeProgram (Prefix.prefix program) 0 history
 
         Left (GoLite.TypeCheckerError (err, symtbl)) ->
           errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)

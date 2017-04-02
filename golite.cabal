@@ -21,6 +21,7 @@ library
                      , CodeGen.Codeable
                      , CodeGen.Native.Comparison
                      , CodeGen.Native.Array
+                     , CodeGen.Prefix
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , array
