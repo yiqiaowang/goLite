@@ -62,12 +62,12 @@ structPrint (struct:structs) i s index h = concat
 -- the prefix (ex: "pt.x[1]"), and the index number for
 -- multi-dimensional arrays
 emptyTypeValue :: Type -> Integer -> String -> Integer -> History -> String
-emptyTypeValue (Alias "u_string") _ _ _ _ = "\"\""
-emptyTypeValue (Alias "u_bool") _ _ _ _ = "false"
-emptyTypeValue (Alias "u_int") _ _ _ _ = "0"
-emptyTypeValue (Alias "u_float64") _ _ _ _ = "0.0"
-emptyTypeValue (Alias "u_rune") _ _ _ _ = "0"
-emptyTypeValue (Alias str) _ _ _ _ = concat [str, "()"]
+emptyTypeValue (Alias "string") _ _ _ _ = "\"\""
+emptyTypeValue (Alias "bool") _ _ _ _ = "false"
+emptyTypeValue (Alias "int") _ _ _ _ = "0"
+emptyTypeValue (Alias "float64") _ _ _ _ = "0.0"
+emptyTypeValue (Alias "rune") _ _ _ _ = "0"
+emptyTypeValue (Alias str) _ _ _ _ = concat ["u_", str, "()"]
 emptyTypeValue (Array t num) i s index h = concat
                          ["new Array("
                          , code num 0 h
@@ -152,14 +152,14 @@ instance Codeable All where
   code (TopDec dec) _ h = concat [code dec 0 h, "\n"]
   code (Function name params _ stmts) _ h =
     case name of
-      "u_main" -> concat
+      "main" -> concat
             [ "function "
             , code name 0 h
             , "("
             , commaSepList params 0 h
             , ") {\n"
             , codeList stmts 1 (nextContext h)
-            , "}\nu_main();\n\n"
+            , "}\nmain();\n\n"
             ]
       _ -> concat
             [ "function "
@@ -222,7 +222,7 @@ instance Codeable TypeName where
   code (TypeName (Alias s1) (Alias s2)) i h =
     concat
       [spacePrint i
-      , "let "
+      , "let u_"
       , code (Alias s1) i h
       , " = function() {\n"
       , spacePrint (i + 1)
@@ -234,7 +234,7 @@ instance Codeable TypeName where
   code (TypeName (Alias s) (Array _ num)) i h =
     concat
       [spacePrint i
-      , "let "
+      , "let u_"
       , code (Alias s) i h
       , " = function() {\n"
       , spacePrint (i + 1)
@@ -246,7 +246,7 @@ instance Codeable TypeName where
   code (TypeName (Alias s) (Slice _)) i h =
     concat
       [spacePrint i
-      , "let "
+      , "let u_"
       , code (Alias s) i h
       , " = function() {\n"
       , spacePrint (i + 1)
@@ -256,7 +256,7 @@ instance Codeable TypeName where
   code (TypeName (Alias s) (Struct struct)) i h =
     concat
       [spacePrint i
-      , "let "
+      , "let u_"
       , code (Alias s) i h
       , " = function() {\n"
       , spacePrint (i + 1)
@@ -270,7 +270,7 @@ instance Codeable TypeName where
 
 -- UNUSED!!!!!!!!!!!
 instance Codeable Type where
-  code (Alias s) _ _ = s
+  code (Alias s) _ _ = "u_" ++ s
   code (Array t expr) _ h = concat ["new Array(", code expr 0 h, ")"]
   code (Slice t) _ _ = "new Array()"
   code (Struct list) _ _= "{}"
@@ -406,9 +406,9 @@ boundsCheck (IdArray name indices) ident h =
   where
     check' name depth exps =
       if depth == 0
-        then "GO_LITE_BOUNDS_CHECK(" ++ name ++ ", " ++ code (head exps) 0 h ++ ");"
+        then "GO_LITE_BOUNDS_CHECK(u_" ++ name ++ ", " ++ code (head exps) 0 h ++ ");"
         else
-          "GO_LITE_BOUNDS_CHECK(" ++ name ++ concatMap (wrapSquare . (\e -> code e ident h)) (take depth exps) ++ ", " ++ code (exps !! depth) 0 h ++ ");\n"
+          "GO_LITE_BOUNDS_CHECK(u_" ++ name ++ concatMap (wrapSquare . (\e -> code e ident h)) (take depth exps) ++ ", " ++ code (exps !! depth) 0 h ++ ");\n"
 
 instance Codeable IfStmt where
   code (IfStmt EmptyStmt expr stList (IfStmtCont Nothing)) i h =
@@ -508,8 +508,10 @@ instance Codeable Clause where
     concat [spacePrint i, "default:\n", codeList stList (i + 1) h]
 
 -- TODO use for ids on left hand side of assignments
-codeLHS (IdOrType s) _ _= s
-codeLHS (IdArray s xs) i h = concat [s, wrapSquareList (map (\x -> code x 0 h) xs) i h]
+codeLHS (IdOrType "true") _ _= "true"
+codeLHS (IdOrType "false") _ _= "false"
+codeLHS (IdOrType s) _ _= "u_" ++ s
+codeLHS (IdArray s xs) i h = concat ["u_", s, wrapSquareList (map (\x -> code x 0 h) xs) i h]
 codeLHS (IdField xs) i h = intercalate "." $ map (\x -> code x i h) xs
 
 alternateAssign :: [Identifier] -> [Expression] -> Integer -> History -> String

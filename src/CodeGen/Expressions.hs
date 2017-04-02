@@ -103,13 +103,15 @@ instance Codeable Literal where
   code (Raw s) _ _ = s
 
 instance Codeable Identifier where
-  code (IdOrType s) i _ = s
+  code (IdOrType "true") _ _ = "true"
+  code (IdOrType "false") _ _ = "false"
+  code (IdOrType s) _ _ = "u_" ++ s
   code (IdArray s xs) i h = code' s $ reverse xs
     where
       code' s [x] =
-        "GO_LITE_READ_INDEX(" ++ s ++ ", " ++ code x i h ++ ")"
+        "GO_LITE_READ_INDEX(u_" ++ s ++ ", " ++ code x i h ++ ")"
       code' s (x : xs') =
-        "GO_LITE_READ_INDEX(" ++ code' s xs' ++ " ," ++ code x i h ++ ")"
+        "GO_LITE_READ_INDEX(u_" ++ code' s xs' ++ " ," ++ code x i h ++ ")"
   code (IdField xs) i h = intercalate "." $ map (\x -> code x i h) xs
 
 --
