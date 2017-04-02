@@ -2,11 +2,21 @@
 // This also tests printing of all printable types.
 package test
 
+type Point struct {
+	x, y int
+}
+
+type Circle struct {
+	center Point
+	radius int
+}
+
 func main(){
 	var x int
 	var y float64
 	var z string
 	var foo rune
+	var circle Circle
 
 	println("The following should print '0'.")
 	println(x)
@@ -16,6 +26,14 @@ func main(){
 	println(z)
 	println("The following should print '0'.")
 	println(foo)
+	
+	println("The following should print '0'.")
+	println(circle.center.x)
+	println("The following should print '0'.")
+	println(circle.center.y)
+	println("The following should print '0'.")
+	println(circle.radius)
+
 
 	var a = 10
 	var b = 10.1
