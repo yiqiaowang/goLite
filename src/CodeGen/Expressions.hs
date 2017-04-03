@@ -37,7 +37,7 @@ instance Codeable Expression where
 
 instance Codeable FunctionCall where
   code (FunctionCall ident exprList) i h =
-    concat [code ident i h, "(", commaSepList (map (`copyWrap` h) exprList) 0 h, ")"]
+    concat [code ("u_" ++ ident) i h, "(", commaSepList (map (`copyWrap` h) exprList) 0 h, ")"]
 
 -- Need to do
 instance Codeable UnaryOp where

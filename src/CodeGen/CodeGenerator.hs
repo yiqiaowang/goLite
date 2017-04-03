@@ -230,6 +230,16 @@ instance Codeable TypeName where
       , emptyTypeValue (Alias s2) i (code (Alias s1) i h) 0 h
       , ";\n"
       , spacePrint i
+      , "}\n"
+      , spacePrint i
+      , "let "
+      , code (Alias s1) i h
+      , " = function(a) {\n"
+      , spacePrint (i + 1)
+      , "return "
+      , code (Alias s1) i h
+      , "(a);\n"
+      , spacePrint i
       , "}\n"]
   code (TypeName (Alias s) (Array _ num)) i h =
     concat
@@ -242,7 +252,8 @@ instance Codeable TypeName where
       , code num i h
       , ");\n"
       , spacePrint i
-      , "}\n"]
+      , "}\n"
+      ]
   code (TypeName (Alias s) (Slice _)) i h =
     concat
       [spacePrint i
