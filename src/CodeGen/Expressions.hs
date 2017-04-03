@@ -36,8 +36,15 @@ instance Codeable Expression where
     concat ["GO_LITE_APPEND(", code ident i h, ", ", code expr i h, ")"]
 
 instance Codeable FunctionCall where
-  code (FunctionCall ident exprList) i h =
-    concat [code ("u_" ++ ident) i h, "(", commaSepList (map (`copyWrap` h) exprList) 0 h, ")"]
+  -- code f@(FunctionCall ident [expr]) i h =
+  --   case getType (IdOrType ident) h of
+  --     Alias "int" -> "GO_LITE_INT_CAST(" ++ code expr i h ++ ")"
+  --     Alias "float64" -> "GO_LITE_FLOAT64_CAST(" ++ code expr i h ++ ")"
+  --     Alias "rune" -> "GO_LITE_RUNE_CAST(" ++ code expr i h ++ ")"
+  --     Alias "bool" -> "GO_LITE_BOOL_CAST(" ++ code expr i h ++ ")"
+  --     _ -> code f i h
+  code (FunctionCall ident exprs) i h =
+    concat [code ident i h, "(", commaSepList (map (`copyWrap` h) exprs) 0 h, ")"]
 
 -- Need to do
 instance Codeable UnaryOp where
