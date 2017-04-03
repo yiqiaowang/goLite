@@ -12,6 +12,7 @@ import Language
 import SymbolTable
 import CodeGen.Native.Comparison
 import CodeGen.Native.Array
+import CodeGen.Native.Cast
 import CodeGen.Expressions
 import CodeGen.Codeable
 import Data.Ix
@@ -127,6 +128,10 @@ codeProgram (Program package alls) _ h = concat
   , goLiteNotEquals
   , goLiteBoundsCheck
   , goLiteIntDiv
+  , goLiteBoolCast
+  , goLiteIntCast
+  , goLiteFloat64Cast
+  , goLiteRuneCast
   , codeAlls alls 0 0 h
   ]
 

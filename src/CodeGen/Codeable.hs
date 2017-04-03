@@ -13,8 +13,8 @@ class Codeable a where
   codeList cs i h = concatMap (\c -> code c i h) cs
 
 getType :: TypeCheckable t => t -> History -> Type
-getType t (ctxt : _) =
-  case typeCheck (SymbolTable ctxt [] []) t of
+getType t ctxts =
+  case typeCheck (SymbolTable (head ctxts) [] []) t of
     Right (Just type', _) -> type'
     Right (Nothing, _) -> error "no type info"
     Left e -> error $ show e
