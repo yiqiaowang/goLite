@@ -101,23 +101,6 @@ emptyTypeValue (Struct struct) i s index h =
 tempVar :: Integer -> Integer -> History -> String
 tempVar i indent hist = code (concat [ "GO_LITE_TEMP_" , code i 0 hist]) indent hist
 
---
-temparize :: [Identifier] -> [Expression] -> Integer -> Integer -> History -> String
-temparize [] _ _ _ _ = ""
-temparize (ident:idents) (expr:exprs) i indent hist = concat [
-                spacePrint (case i of 
-                                0 -> 0
-                                _ -> indent)
-                , temparizeOne ident expr i hist
-                , temparize idents exprs (i + 1) indent hist ]
-
-temparizeOne :: Identifier -> Expression -> Integer -> History -> String
-temparizeOne ident expr i hist = concat [
-              "var "
-              , tempVar i 0 hist
-              , " = GO_LITE_COPY("
-              , code expr 0 hist
-              , ");\n" ]
 
 codeProgram :: Program -> Integer -> [History] -> String
 codeProgram (Program package alls) _ h = concat
@@ -385,30 +368,23 @@ instance Codeable SimpleStmt where
       then boundsCheck ident i h ++ opeqCode
       else opeqCode
   code (Assign ids exps) indent h =
-    let pairs = zip ids (range (0, (toInteger (length exps)))) in
+    let pairs = zip ids (range (0, toInteger (length exps))) in
       let arrays = filter isIdArray ids in concat
         [ concatMap (\array -> boundsCheck array indent h) arrays
-        , temparize ids exps 0 indent h
-        , spacePrint indent
-        , intercalate ", " $ map (uncurry assign') pairs
-        ]
-    where
-      assign' i e = concat
-        [ codeLHS i indent h
-        , " = "
-        , tempVar e 0 h
+        , "["
+        , intercalate ", " $ map (\i -> code i indent h) ids
+        , "] = ["
+        , intercalate ", " $ map (\e -> "GO_LITE_COPY(" ++ code e indent h ++ ")") exps
+        , "]"
         ]
   code (ShortVarDec ids exps) indent h =
-    let pairs = zip ids (range (0, (toInteger (length exps)))) in concat
-          [ temparize ids exps 0 indent h
-          , spacePrint indent
-          , "let " ++ intercalate ", " (map (uncurry svd') pairs) ]
-    where
-      svd' i e = concat
-        [ codeLHS i indent h
-        , " = "
-        , tempVar e 0 h
-        ]
+    let pairs = zip ids (range (0, toInteger (length exps))) in concat
+      [ "["
+      , intercalate ", " $ map (\i -> code i indent h) ids
+      , "] = ["
+      , intercalate ", " $ map (\e -> "GO_LITE_COPY(" ++ code e indent h ++ ")") exps
+      , "]"
+      ]
   code EmptyStmt _ _ = ""
 
 --
