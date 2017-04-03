@@ -44,7 +44,12 @@ instance Codeable FunctionCall where
   --     Alias "bool" -> "GO_LITE_BOOL_CAST(" ++ code expr i h ++ ")"
   --     _ -> code f i h
   code (FunctionCall ident exprs) i h =
-    concat [code ident i h, "(", commaSepList (map (`copyWrap` h) exprs) 0 h, ")"]
+    concat [code (case ident of
+                      "int" -> "int"
+                      "bool" -> "bool"
+                      "rune" -> "rune"
+                      "float64" -> "float64"
+                      _ -> "u_" ++ ident) i h, "(", commaSepList (map (`copyWrap` h) exprs) 0 h, ")"]
 
 -- Need to do
 instance Codeable UnaryOp where
