@@ -150,7 +150,7 @@ instance Codeable All where
             , "}\nmain();\n\n"
             ]
       _ -> concat
-            [ "function "
+            [ "function u_"
             , code name 0 h
             , "("
             , commaSepList params 0 h
@@ -209,24 +209,24 @@ instance Codeable Variable where
 instance Codeable TypeName where
   code (TypeName (Alias s1) (Alias s2)) i h =
     concat
-      [spacePrint i
-      , "let "
-      , code (Alias s1) i h
-      , " = function() {\n"
-      , spacePrint (i + 1)
-      , "return "
-      , emptyTypeValue (Alias s2) i (code (Alias s1) i h) 0 h
-      , ";\n"
-      , spacePrint i
-      , "}\n"
-      , spacePrint i
+      [ spacePrint i
       , "let "
       , code (Alias s1) i h
       , " = function(a) {\n"
       , spacePrint (i + 1)
-      , "return "
-      , code (Alias s1) i h
+      , "if (a != null) return "
+      , (case s2 of 
+              "int" -> "int"
+              "bool" -> "bool"
+              "float64" -> "float64"
+              "rune" -> "rune"
+              "string" -> ""
+              _ -> code (Alias s2) i h)
       , "(a);\n"
+      , spacePrint (i + 1)
+      , "else return "
+      , emptyTypeValue (Alias s2) i (code (Alias s1) i h) 0 h
+      , ";\n"
       , spacePrint i
       , "}\n"]
   code (TypeName (Alias s) (Array _ num)) i h =
