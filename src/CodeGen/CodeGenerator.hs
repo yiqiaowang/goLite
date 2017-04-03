@@ -222,7 +222,7 @@ instance Codeable TypeName where
   code (TypeName (Alias s1) (Alias s2)) i h =
     concat
       [spacePrint i
-      , "let u_"
+      , "let "
       , code (Alias s1) i h
       , " = function() {\n"
       , spacePrint (i + 1)
@@ -234,7 +234,7 @@ instance Codeable TypeName where
   code (TypeName (Alias s) (Array _ num)) i h =
     concat
       [spacePrint i
-      , "let u_"
+      , "let "
       , code (Alias s) i h
       , " = function() {\n"
       , spacePrint (i + 1)
@@ -246,7 +246,7 @@ instance Codeable TypeName where
   code (TypeName (Alias s) (Slice _)) i h =
     concat
       [spacePrint i
-      , "let u_"
+      , "let "
       , code (Alias s) i h
       , " = function() {\n"
       , spacePrint (i + 1)
@@ -256,7 +256,7 @@ instance Codeable TypeName where
   code (TypeName (Alias s) (Struct struct)) i h =
     concat
       [spacePrint i
-      , "let u_"
+      , "let "
       , code (Alias s) i h
       , " = function() {\n"
       , spacePrint (i + 1)
