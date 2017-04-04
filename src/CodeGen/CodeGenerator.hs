@@ -150,20 +150,20 @@ instance Codeable All where
             [ "function "
             , code name 0 h
             , "("
-            , commaSepList params 0 h
+            , commaSepList params 0 ctxt
             , ") {\n"
-            , codeList stmts 1 (nextContext h)
+            , codeList stmts 1 ctxt
             , "}\nmain();\n\n"
-            ]
+            ] where ctxt = if length h <= 1 then h else (nextContext h)
       _ -> concat
             [ "function u_"
             , code name 0 h
             , "("
-            , commaSepList params 0 h
+            , commaSepList params 0 ctxt
             , ") {\n"
-            , codeList stmts 1 (nextContext h)
+            , codeList stmts 1 ctxt
             , "}\n\n"
-            ]
+            ] where ctxt = if length h <= 1 then h else (nextContext h)
 
 instance Codeable TopLevel where
   code (VarDec var) i h = code var i h
