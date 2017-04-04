@@ -38,11 +38,6 @@ nextContext :: History -> History
 nextContext [] = undefined
 nextContext (_ : t) = t
 
-
-
-nextContext' :: History -> Int -> History
-nextContext' h n = drop n h
-
 --
 commaSepList :: TypedPretty a => [a] -> Integer -> History -> String
 commaSepList string i h = intercalate ", " (map (\p -> typedPretty p i h) string)
