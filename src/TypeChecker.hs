@@ -339,47 +339,6 @@ instance TypeCheckable Stmt where
           Right (f,ps) -> Right (Nothing, ps)
           Left err -> Left (SymbolTableError err, symtbl''')
 
---   typeCheck symtbl (For maybe_ss maybe_expr maybe_ss' stmts) =
---     case typeCheck (newFrame symtbl) maybe_ss of
---       Right (_, symtbl') ->
---         case typeCheckElemOf symtbl' maybe_expr [(Alias "bool")] of
---           Right (_, symtbl'') ->
---             case typeCheck symtbl'' maybe_ss' of
---               Right (_, symtbl''') ->
---                 case typeCheckListNewFrame symtbl''' stmts of
---                   Right (_, symtbl'''') ->
---                     case popFrame' symtbl'''' of
---                       Right (f, ps) -> Right (Nothing, ps)
---                       Left err -> Left (SymbolTableError err, symtbl'''')
---                   Left err -> Left err
---               Left err -> Left err
---           Left err -> Left err
---       Left err -> Left err
---   typeCheck symtbl (Infinite stmts) = typeCheckListNewFrame symtbl stmts
---   typeCheck symtbl (While expr stmts) =
---     case typeCheckElemOf symtbl expr [(Alias "bool")] of
---       Right (_, symtbl') -> typeCheckListNewFrame symtbl' stmts
---       Left err -> Left err
---   typeCheck symtbl (Switch ss maybe_expr clauses) =
---     case typeCheck (newFrame symtbl) ss of
---       Right (_, symtbl') ->
---         case typeCheck symtbl' maybe_expr of
---           Right (Nothing, symtbl'') ->
---             case typeCheckClauses symtbl'' clauses (Alias "bool") of
---               Right (_, symtbl''') ->
---                 case popFrame symtbl''' of
---                   Right (f, ps) -> Right (Nothing, ps)
---                   Left err -> Left (SymbolTableError err, symtbl''')
---               Left err -> Left err
---           Right (Just t, symtbl'') ->
---             case typeCheckClauses symtbl'' clauses t of
---               Right (_, symtbl''') ->
---                 case popFrame symtbl''' of
---                   Right (f, ps) -> Right (Nothing, ps)
---                   Left err -> Left (SymbolTableError err, symtbl''')
---               Left err -> Left err
---           Left err -> Left err
---       Left err -> Left err
 typeCheckClauses
   :: SymbolTable
   -> [Clause]
@@ -454,7 +413,7 @@ instance TypeCheckable Identifier where
       Right (Entry CategoryAlias _) -> Right (Just (Alias i), symtbl)
       Right (Entry _ t) -> Right (t, symtbl)
       Left err -> Left (SymbolTableError err, symtbl)
-  typeCheck symtbl (IdArray i _) =
+  typeCheck symtbl (IdArray i e) =
     case lookupIdentifier symtbl (IdOrType i) of
       Right (Entry CategoryType t) -> Right (t, symtbl)
       Right (Entry CategoryVariable t) -> typeCheck symtbl t
@@ -464,10 +423,6 @@ instance TypeCheckable Identifier where
     case structHelper symtbl is of
       Right t -> Right (Just t, symtbl)
       Left err -> Left (err, symtbl)
-    -- case lookupIdentifier symtbl (last is) of
-    --   Right (Entry CategoryType t) -> Right (t, symtbl)
-    --   Right (Entry CategoryVariable t) -> typeCheck symtbl t
-    --   Left err -> Left (SymbolTableError err, symtbl)
 
 -- Get struct internals
 getStructInternal :: SymbolTable
@@ -490,8 +445,6 @@ structHelper'
   -> [Identifier]
   -> Either TypeCheckError Type
 structHelper' symtbl internal [i] = structFieldHelper internal i
--- structHelper' symtbl internal [i, j] =
---   structFieldHelper internal j
 structHelper' symtbl internal (i:is) =
   case internal of
     k ->
@@ -627,7 +580,19 @@ getBaseType symtbl s =
                Just (Alias s) -> getBaseType symtbl (IdOrType s)
                Just (Array (Alias s) _) -> getBaseType symtbl (IdOrType s)
                Just (Slice (Alias s)) -> getBaseType symtbl (IdOrType s)
+               Just (Array a _) -> case getBaseType' a of
+                                     Just t -> Right (Just t, symtbl)
+               Just (Slice s) -> case getBaseType' s of
+                                   Just t -> Right (Just t, symtbl)
     Left err -> Left (SymbolTableError err, symtbl)
+
+getBaseType'
+  :: Type
+  -> Maybe Type
+getBaseType' (Array a _) = getBaseType' a
+getBaseType' (Slice s) = getBaseType' s
+getBaseType' a@(Alias s) = Just a
+getBaseType' _ = Nothing
 
 isStruct :: Maybe Type -> Bool
 isStruct (Just (Struct _)) = True
@@ -864,17 +829,19 @@ instance TypeCheckable Expression where
 
 
  
-  -- typeCheck symtbl (Append a@(IdArray s e) expr) =
-  --   case peelBack symtbl a of
-  --     Right (t, symtbl') ->
-  --       case getBaseType symtbl' t
-  --       case typeCheck symtbl' expr of
-  --                             Right (t2, symtbl'') -> 
-  --                               case assertTypeEqual t1 t2 of
-  --                                 True -> Right (t1, symtbl''')
-  --                                 False ->
-  --                                   Left (TypeMismatchError (Just t) (Just t2), symtbl''')
-    
+  typeCheck symtbl (Append a@(IdArray s e) expr) =
+    case typeCheck symtbl (IdOrType s) of
+      Right (Just t, symtbl') ->
+        case peelBack (length e) t of
+          t@(Just k) ->
+            case typeCheck symtbl' expr of
+              Right (t2, symtbl'') ->
+                if assertTypeEqual (peelBack 1 k) t2
+                then Right (t, symtbl'')
+                else Left (TypeMismatchError t t2, symtbl')
+              Left err -> Left err
+      Left err -> Left err
+
   typeCheck symtbl (Unary a expr) = do
     (t, symtbl') <- typeCheck symtbl expr
     unaryCheck (unaryList a) t symtbl'
@@ -888,14 +855,12 @@ instance TypeCheckable Expression where
 
 
 
--- Check peel back one layer of nested array or struct
--- peelBack :: SymbolTable -> Identifier -> Either (TypeCheckError,SymbolTable) (Maybe Type, SymbolTable)
--- peelBack symtbl (IdArray s _) = case lookupIdentifier symtbl (IdOrType s) of
---                                 Right e -> case dataType e of
---                                              Just (Slice s) -> Right (Just s, symtbl)
---                                              _ -> Left (ArraySliceAccessError, symtbl)
---                                 Left err -> Left (SymbolTableError err, symtbl)
-
+-- Check peel back x layer of nested array or struct
+peelBack :: Int -> Type -> Maybe Type 
+peelBack 0 t = Just t
+peelBack x (Array t _) = peelBack (x-1) t
+peelBack x (Slice t) = peelBack (x-1) t
+peelBack _ _ = Nothing
 
 
 
