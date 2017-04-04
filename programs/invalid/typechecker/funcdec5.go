@@ -1,3 +1,6 @@
+// Slices aren't comparable, thus structs containing slices
+// aren't comparable, thus structs containing structs containing
+// slices aren't comparable
 package func_dclr
 
 type pt struct {
@@ -10,7 +13,6 @@ type pt struct {
 
 type a pt
 
-
 func f_slice() a {
   var x a
   x.x = "my"
@@ -20,14 +22,13 @@ func f_slice() a {
 
   var n []int
   n = append(n, 6)
-
   x.f.v = n
 
   var y a
   y.x = "hi"
 
   if (x == y) {
-  	return y
+	return y
   }
   return x
 }
