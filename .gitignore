@@ -1,4 +1,5 @@
 *.js
+*.pptype.go
 *.hi
 *.o
 *.swp
