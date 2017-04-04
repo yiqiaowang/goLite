@@ -49,37 +49,31 @@ processFile :: GoLiteOptions -> IO ()
 processFile options = do
   text <- readFile goLiteFile
   case GoLite.parse goLiteFile text of
-    Right program -> do
-      writeFile prettyFile $ Pretty.pretty program 0
+    Right program -> case GoLite.typeCheck program of
+      Right (_, SymbolTable _ history c) -> do
+        -- output type checking success message
+        putStrLn "OK"
 
-      -- Dump symboltable
-      when (dumpSymbolTable options) $
-        case GoLite.typeCheck program of
-          Right (_, SymbolTable.SymbolTable s h c) ->
-            putStrLn $ draw $ reverse $ fmap (toList) c
-          Left (GoLite.TypeCheckerError (_, SymbolTable.SymbolTable s h c)) ->
-            errorWithoutStackTrace $ draw $ reverse $ fmap (toList) c
+        -- Dump symboltable
+        when (dumpSymbolTable options) $
+          putStrLn $ draw $ reverse $ fmap (toList) c
 
-      -- Dump ast
-      when (dumpAST options) $
-        putStrLn $ Pr.ppShow program
+        -- Dump ast
+        when (dumpAST options) $
+          putStrLn $ Pr.ppShow program
 
-      -- Otherwise, generate files
-      case GoLite.typeCheck program of
-        Right (_, SymbolTable _ history _) -> do
-          -- output type checking success message
-          putStrLn "OK"
+        -- output pretty file with types
+        when (prettyPrintType options) $
+          writeFile ppTypeFile $ TypedPretty.prettyPrintProgram program 0 history
 
-          -- output pretty file with types
-          when (prettyPrintType options) $
-            writeFile ppTypeFile $ TypedPretty.prettyPrintProgram program 0 history
+        -- if not typecheck flag, generate code
+        unless (typeCheck options) $
+          writeFile jsFile $ Generator.codeProgram program 0 history
 
-          -- if not typecheck flag, generate code
-          unless (typeCheck options) $
-            writeFile jsFile $ Generator.codeProgram program 0 history
-
-        Left (GoLite.TypeCheckerError (err, symtbl)) ->
-          errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
+      Left (GoLite.TypeCheckerError (err, SymbolTable.SymbolTable _ _ c)) ->
+        if dumpSymbolTable options
+          then errorWithoutStackTrace $ draw $ reverse $ fmap (toList) c
+          else errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
 
     Left parseError -> errorWithoutStackTrace $ Pr.ppShow parseError
 
