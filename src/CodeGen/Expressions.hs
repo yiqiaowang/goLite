@@ -123,7 +123,7 @@ instance Codeable Identifier where
       code' s [x] =
         "GO_LITE_READ_INDEX(u_" ++ s ++ ", " ++ code x i h ++ ")"
       code' s (x : xs') =
-        "GO_LITE_READ_INDEX(u_" ++ code' s xs' ++ " ," ++ code x i h ++ ")"
+        "GO_LITE_READ_INDEX(" ++ code' s xs' ++ " ," ++ code x i h ++ ")"
   code (IdField xs) i h = intercalate "." $ map (\x -> code x i h) xs
 
 --

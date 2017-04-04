@@ -4,6 +4,7 @@ module CodeGen.Native.Array where
 goLiteCopy :: String
 goLiteCopy = unlines
   [ "function GO_LITE_COPY(obj) {"
+  , "  if (obj.isSlice) return obj;"
   , "  return JSON.parse(JSON.stringify(obj));"
   , "}"
   ]

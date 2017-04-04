@@ -92,7 +92,13 @@ emptyTypeValue (Array t num) i s index h = concat
                          , ";\n"
                          , spacePrint i
                          , "}"]
-emptyTypeValue (Slice _) _ _ _ _ = "new Array()"
+emptyTypeValue (Slice _) i s _ h = concat
+  [
+  "new Array();\n"
+  , spacePrint i
+  , code s 0 h
+  , ".isSlice = true"
+  ]
 emptyTypeValue (Struct struct) i s index h =
   concat
     ["{};\n"
@@ -191,17 +197,17 @@ instance Codeable Variable where
       [spacePrint i
       , "let "
       , code var i h
-      , " = GO_LITE_COPY("
-      , code expr i h
-      , ");\n"
+      , " = "
+      , copyWrap expr h
+      , ";\n"
       ]
   code (Variable (var:vars) t (expr:exprs)) i h =
     concat
       [ spacePrint i
       , "let "
       , code var i h
-      , " = GO_LITE_COPY("
-      , code expr i h
+      , " = "
+      , copyWrap expr h
       , ");\n"
       , code (Variable vars t exprs) i h
       ]
@@ -371,18 +377,19 @@ instance Codeable SimpleStmt where
     let pairs = zip ids (range (0, toInteger (length exps))) in
       let arrays = filter isIdArray ids in concat
         [ concatMap (\array -> boundsCheck array indent h) arrays
+        , spacePrint indent
         , "["
-        , intercalate ", " $ map (\i -> code i indent h) ids
+        , intercalate ", " $ map (\i -> codeLHS i indent h) ids
         , "] = ["
-        , intercalate ", " $ map (\e -> "GO_LITE_COPY(" ++ code e indent h ++ ")") exps
+        , intercalate ", " $ map (\e -> copyWrap e h) exps
         , "]"
         ]
   code (ShortVarDec ids exps) indent h =
     let pairs = zip ids (range (0, toInteger (length exps))) in concat
       [ "["
-      , intercalate ", " $ map (\i -> code i indent h) ids
+      , intercalate ", " $ map (\i -> codeLHS i indent h) ids
       , "] = ["
-      , intercalate ", " $ map (\e -> "GO_LITE_COPY(" ++ code e indent h ++ ")") exps
+      , intercalate ", " $ map (\e -> copyWrap e h) exps
       , "]"
       ]
   code EmptyStmt _ _ = ""
@@ -398,7 +405,7 @@ boundsCheck (IdArray name indices) ident h =
   where
     check' name depth exps =
       if depth == 0
-        then "GO_LITE_BOUNDS_CHECK(u_" ++ name ++ ", " ++ code (head exps) 0 h ++ ");"
+        then "GO_LITE_BOUNDS_CHECK(u_" ++ name ++ ", " ++ code (head exps) 0 h ++ ");\n"
         else
           "GO_LITE_BOUNDS_CHECK(u_" ++ name ++ concatMap (wrapSquare . (\e -> code e ident h)) (take depth exps) ++ ", " ++ code (exps !! depth) 0 h ++ ");\n"
 

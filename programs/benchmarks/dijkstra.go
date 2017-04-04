@@ -48,10 +48,13 @@ func dijkstra(graph [][]int, nodes, source int) []int {
 
   var vertices []int;
   var distances []int;
+  var closest int;
+  var i = 0;
+  var temp int;
 
   max := getMax(graph, nodes);
 
-  for i := 0; i < nodes; i++ {
+  for i = 0; i < nodes; i++ {
     distances = append(distances, max);
     vertices = append(vertices, i);
   }
@@ -60,8 +63,7 @@ func dijkstra(graph [][]int, nodes, source int) []int {
   var verticesSize = nodes;
 
   for verticesSize > 0 {
-    var closest int;
-    for i := 0; i < nodes; i++ {
+    for i = 0; i < nodes; i++ {
       if vertices[i] < 0 {
         continue;
       } else {
@@ -70,7 +72,7 @@ func dijkstra(graph [][]int, nodes, source int) []int {
       }
     }
 
-    for i := 0; i < nodes; i++ {
+    for i = 0; i < nodes; i++ {
       if vertices[i] < 0 {
         continue;
       }
@@ -81,21 +83,21 @@ func dijkstra(graph [][]int, nodes, source int) []int {
     vertices = setMinusOne(vertices, nodes, closest);
     verticesSize--;
 
-    for i := 0; i < nodes; i++ {
+    for i = 0; i < nodes; i++ {
       if graph[i][closest] < 0 {
         continue;
       } else if vertices[i] < 0 {
         continue;
       }
 
-      temp := distances[closest] + graph[i][closest];
+      temp = distances[closest] + graph[i][closest];
       if temp < distances[i] {
         distances[i] = temp;
       }
     }
   }
 
-  for i := 0; i < nodes; i++ {
+  for i = 0; i < nodes; i++ {
     if distances[i] == max {
       distances[i] = -1;
     }
@@ -104,12 +106,12 @@ func dijkstra(graph [][]int, nodes, source int) []int {
   return distances;
 }
 
-func addEdge(vertex1, vertex2, length int, graph [][]int) {
+func addEdge(vertex1, vertex2, length int, graph [][]int) [][]int {
 
   graph[vertex1][vertex2] = length;
   graph[vertex2][vertex1] = length;
 
-  return;
+  return graph;
 }
 
 // Test the algorithm to see if it works with a sample graph
