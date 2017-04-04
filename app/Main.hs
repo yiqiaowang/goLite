@@ -42,7 +42,7 @@ goLiteOptionsParser = GoLiteOptions
 --
 main :: IO ()
 main = do
-  interface <- mkApp goLiteOptionsParser
+  let interface = (mkDefaultApp goLiteOptionsParser "golite") { getAppVersion = Just "1.0.0" }
   runApp interface processFile
 
 processFile :: GoLiteOptions -> IO ()
@@ -56,7 +56,7 @@ processFile options = do
 
         -- Dump symboltable
         when (dumpSymbolTable options) $
-          putStrLn $ draw $ reverse $ fmap (toList) c
+          putStrLn $ draw $ reverse $ fmap toList c
 
         -- Dump ast
         when (dumpAST options) $
@@ -72,7 +72,7 @@ processFile options = do
 
       Left (GoLite.TypeCheckerError (err, SymbolTable.SymbolTable _ _ c)) ->
         if dumpSymbolTable options
-          then errorWithoutStackTrace $ draw $ reverse $ fmap (toList) c
+          then errorWithoutStackTrace $ draw $ reverse $ fmap toList c
           else errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
 
     Left parseError -> errorWithoutStackTrace $ Pr.ppShow parseError
