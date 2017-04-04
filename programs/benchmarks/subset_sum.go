@@ -76,7 +76,7 @@ func main() {
 
 	var size int = 28
 
-	var target int = 5711
+	var target int = 850
 
 	println("Target: ", target, " reachable: ", subset_sum(values, size, target))
 }
