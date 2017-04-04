@@ -14,12 +14,12 @@ spec :: [(String, String)] -> Spec
 spec validTypeChecker =
   describe "Pretty" $
     forM_ validTypeChecker $ \(file, text) ->
-      it ("correctly pretty prints : " ++ file) $
+      it ("correctly pretty prints with type annotations: " ++ file) $
         case GoLite.parse file text of
           Right program -> case GoLite.typeCheck program of
             Right (_, SymbolTable _ history _) ->
               case GoLite.parse file $ TypedPretty.prettyPrintProgram program 0 history of
                 Right program' -> program `shouldBe` program'
-                Left parseError -> error "Pretty Print Error"
+                Left parseError -> error "Typed Pretty Print Error"
             Left typeError -> error "Type Checker Error"
-          Left parseError -> error "Pretty Print Error"
+          Left parseError -> error "Parse Error"
