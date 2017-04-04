@@ -24,7 +24,7 @@ data TypeCheckError
   | InvalidInitStatement
   | NoNewIdentifierError
   | AppendNotSliceError
-  | ElementsNotComparableError { cType :: Maybe Type }
+  | ElementsNotComparableError { nonComparableType :: Maybe Type }
   | DefinitionNotFoundError
   | FuncCallArgNumError { expectedArgs :: [Type]
                        ,  receivedArgs :: [Expression]}
@@ -39,6 +39,7 @@ data TypeCheckError
   | VariableAsTypeError { variableAsTypeError :: String}
   | VariableDecError { invalidVarDecType :: Maybe Type}
   | DebugError
+  | ArraySliceAccessError
   | StructAccessError
   deriving (Eq, Show)
 
@@ -856,10 +857,24 @@ instance TypeCheckable Expression where
                     Left (TypeMismatchError (Just t) (Just t2), symtbl''')
               Right (Nothing, symtbl'') ->
                 Left (TypeMismatchError (Just t) Nothing, symtbl'')
-          Right (Nothing, symtbl'') -> Left (DebugError, symtbl'')
+          Right (Nothing, symtbl'') -> Left (AppendNotSliceError, symtbl'')
           Left err -> Left err
       Right (_, symtbl') -> Left (AppendNotSliceError, symtbl')
       Left (err) -> Left (err)
+
+
+ 
+  -- typeCheck symtbl (Append a@(IdArray s e) expr) =
+  --   case peelBack symtbl a of
+  --     Right (t, symtbl') ->
+  --       case getBaseType symtbl' t
+  --       case typeCheck symtbl' expr of
+  --                             Right (t2, symtbl'') -> 
+  --                               case assertTypeEqual t1 t2 of
+  --                                 True -> Right (t1, symtbl''')
+  --                                 False ->
+  --                                   Left (TypeMismatchError (Just t) (Just t2), symtbl''')
+    
   typeCheck symtbl (Unary a expr) = do
     (t, symtbl') <- typeCheck symtbl expr
     unaryCheck (unaryList a) t symtbl'
@@ -870,6 +885,19 @@ instance TypeCheckable Expression where
       then binaryCheck (binaryList a) (opToCategory a) t symtbl''
       else Left (TypeMismatchError t t2, symtbl'')
   typeCheck symtbl (ExprFuncCall funcCall) = typeCheck symtbl funcCall
+
+
+
+-- Check peel back one layer of nested array or struct
+-- peelBack :: SymbolTable -> Identifier -> Either (TypeCheckError,SymbolTable) (Maybe Type, SymbolTable)
+-- peelBack symtbl (IdArray s _) = case lookupIdentifier symtbl (IdOrType s) of
+--                                 Right e -> case dataType e of
+--                                              Just (Slice s) -> Right (Just s, symtbl)
+--                                              _ -> Left (ArraySliceAccessError, symtbl)
+--                                 Left err -> Left (SymbolTableError err, symtbl)
+
+
+
 
 -- Check if a unary expression is correctly typed
 unaryList :: UnaryOp -> [Type]
@@ -1047,6 +1075,7 @@ comparableCheck t1 symtbl =
         Left (err) -> Left (err)
     (Array s1 _) -> comparableCheck s1 symtbl
     (Struct s1) -> structListCheck s1 symtbl
+    t -> Left (ElementsNotComparableError $ Just t, symtbl)
 
 structListCheck
   :: [([Identifier], Type)]
