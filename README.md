@@ -11,6 +11,9 @@ Team Members:
 
 --
 ## MileStones - Please read for notes regarding Milestones
+### Milestone 4
+* By default, the compiler will do nothing. For functionality, runtime flags may be used. Run ```./run.sh foo.go -h``` to print the help message. There, you will find the flags for additional functions such as typechecking and code generation. IMPORTANT, when passing flags, make sure to include the flags after the input file path. Multiple flags can be used as follows: ```./run.sh foo.go -r -c``` (this writes generated code to a file called foo.js, and pretty prints foo.go to foo.pretty.go). When an error occurs, the program exits immediately.
+
 ### Milestone 3
 * We have included 3 benchmark programs. This is due to the fact that we have already submitted ```dijkstra.go``` in a previous milestone. As of this milestone, ```subset_sum.go``` and ```knapsack.go``` are new programs. We feel like ```dijkstra.go``` is more impressive than either of the other two, however, just in case we are not allowed to submit ```dijkstra.go```, there are still two other benchmark programs.
 
