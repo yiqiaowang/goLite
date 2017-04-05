@@ -99,5 +99,5 @@ func main() {
 	weights = append(weights, 17)
 	weights = append(weights, 19)
 
-	knapsack(values, weights, 20, 400)
+	knapsack(values, weights, 20, 10000)
 }
