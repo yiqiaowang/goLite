@@ -33,6 +33,7 @@ type SymMap = Map Identifier Entry
 
 data Entry = Entry
   { typeCategory :: TypeCategory
+  , overWriteable :: Bool
   , dataType :: Maybe Type
   } deriving (Eq, Show)
 
@@ -50,16 +51,16 @@ newMap = Map.empty :: SymMap
 initMap :: SymMap
 initMap =
   fromList
-    [ (IdOrType "true", Entry CategoryVariable $ Just (Alias "bool"))
-    , (IdOrType "false", Entry CategoryVariable $ Just (Alias "bool"))
-    , (IdOrType "int", Entry CategoryType $ Just (Alias "int"))
-    , (IdOrType "float64", Entry CategoryType $ Just (Alias "float64"))
-    , (IdOrType "rune", Entry CategoryType $ Just (Alias "rune"))
-    , (IdOrType "bool", Entry CategoryType $ Just (Alias "bool"))
-    , (IdOrType "string", Entry CategoryType $ Just (Alias "string"))
-    , (IdOrType "print", Entry CategoryVariable $ Just (BuiltIn))
-    , (IdOrType "println", Entry CategoryVariable $ Just (BuiltIn))
-    , (IdOrType "append", Entry CategoryVariable $ Just (BuiltIn))
+    [ (IdOrType "true", Entry CategoryVariable True $ Just (Alias "bool"))
+    , (IdOrType "false", Entry CategoryVariable True $ Just (Alias "bool"))
+    , (IdOrType "int", Entry CategoryType True $ Just (Alias "int"))
+    , (IdOrType "float64", Entry CategoryType True $ Just (Alias "float64"))
+    , (IdOrType "rune", Entry CategoryType True $ Just (Alias "rune"))
+    , (IdOrType "bool", Entry CategoryType True $ Just (Alias "bool"))
+    , (IdOrType "string", Entry CategoryType True $ Just (Alias "string"))
+    , (IdOrType "print", Entry CategoryVariable False $ Just (BuiltIn))
+    , (IdOrType "println", Entry CategoryVariable False $ Just (BuiltIn))
+    , (IdOrType "append", Entry CategoryVariable False $ Just (BuiltIn))
     ]
 
 -- Check if an idname is in the symbol table
@@ -122,7 +123,10 @@ addEntry s@(SymbolTable ss h c) i e =
   case popFrame s of
     Right (f, symtbl) ->
       if hasKey f i
-        then Left (DuplicateIdentifier i)
+        then case lookupIdentifier s i of
+               Right (Entry _ re _) -> if not re
+                                       then Left (DuplicateIdentifier i)
+                                       else Right (SymbolTable ((addSym i e $ head ss) : (tail ss)) h c)
         else Right (SymbolTable ((addSym i e $ head ss) : (tail ss)) h c)
     Left err -> Left err
 

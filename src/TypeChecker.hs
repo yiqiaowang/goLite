@@ -131,7 +131,7 @@ instance TypeCheckable All where
     case addEntry
            symtbl
            (IdOrType iden)
-           (Entry CategoryVariable $
+           (Entry CategoryVariable False $
             Just (Func (functionParamHelper params) ret)) of
       Right symtbl' ->
         case typeCheckList (newFrameFunc symtbl') params of
@@ -265,7 +265,7 @@ symbolTableFuncParam :: SymbolTable
                      -> Either SymbolTableError SymbolTable
 symbolTableFuncParam symtbl [] _ = Right symtbl
 symbolTableFuncParam symtbl (i:is) t =
-  case addEntry symtbl i (Entry CategoryVariable $ Just t) of
+  case addEntry symtbl i (Entry CategoryVariable False $ Just t) of
     Left err -> Left err
     Right symtbl -> symbolTableFuncParam symtbl is t
 
@@ -403,21 +403,21 @@ instance TypeCheckable TypeName where
     case addEntry
            symtbl
            (IdOrType typename)
-           (Entry CategoryAlias $ Just typeval) of
+           (Entry CategoryAlias False $ Just typeval) of
       Right symtbl' -> Right (Nothing, symtbl')
       Left err -> Left (SymbolTableError err, symtbl)
 
 instance TypeCheckable Identifier where
   typeCheck symtbl (IdOrType i) =
     case lookupIdentifier symtbl (IdOrType i) of
-      Right (Entry CategoryAlias _) -> Right (Just (Alias i), symtbl)
-      Right (Entry _ t) -> Right (t, symtbl)
+      Right (Entry CategoryAlias _ _) -> Right (Just (Alias i), symtbl)
+      Right (Entry _ _ t) -> Right (t, symtbl)
       Left err -> Left (SymbolTableError err, symtbl)
   typeCheck symtbl (IdArray i e) =
     case lookupIdentifier symtbl (IdOrType i) of
-      Right (Entry CategoryType t) -> Right (t, symtbl)
-      Right (Entry CategoryVariable t) -> typeCheck symtbl t
-      Right (Entry CategoryAlias t) -> Right (t, symtbl)
+      Right (Entry CategoryType _ t) -> Right (t, symtbl)
+      Right (Entry CategoryVariable _ t) -> typeCheck symtbl t
+      Right (Entry CategoryAlias _ t) -> Right (t, symtbl)
       Left err -> Left (SymbolTableError err, symtbl)
   typeCheck symtbl (IdField is) =
     case structHelper symtbl is of
@@ -431,12 +431,12 @@ getStructInternal :: SymbolTable
 getStructInternal symtbl i =
   case lookupIdentifier symtbl i of
     Left err -> Left (SymbolTableError err)
-    Right (Entry CategoryVariable (Just (Alias k))) ->
+    Right (Entry CategoryVariable _ (Just (Alias k))) ->
       getStructInternal symtbl (IdOrType k)
-    Right (Entry CategoryVariable (Just (Struct k))) -> Right k
-    Right (Entry CategoryAlias (Just (Alias k))) ->
+    Right (Entry CategoryVariable _ (Just (Struct k))) -> Right k
+    Right (Entry CategoryAlias _ (Just (Alias k))) ->
       getStructInternal symtbl (IdOrType k)
-    Right (Entry CategoryAlias (Just (Struct k))) -> Right k
+    Right (Entry CategoryAlias _ (Just (Struct k))) -> Right k
     Right _ -> Left StructAccessError
 
 structHelper'
@@ -512,13 +512,13 @@ instance TypeCheckable Variable where
   typeCheck symtbl (Variable (i:is) maybe_type []) =
     case maybe_type of
       Nothing ->
-        case addEntry symtbl i (Entry CategoryVariable maybe_type) of
+        case addEntry symtbl i (Entry CategoryVariable False maybe_type) of
           Right symtbl' -> typeCheck symtbl' (Variable is maybe_type [])
           Left err -> Left (SymbolTableError err, symtbl)
       Just t ->
         case varDecHelper symtbl maybe_type of
           Nothing ->
-            case addEntry symtbl i (Entry CategoryVariable maybe_type) of
+            case addEntry symtbl i (Entry CategoryVariable False maybe_type) of
               Right symtbl' -> typeCheck symtbl' (Variable is maybe_type [])
               Left err -> Left (SymbolTableError err, symtbl)
           Just err -> Left (err, symtbl)
@@ -534,7 +534,7 @@ instance TypeCheckable Variable where
               Nothing ->
                 case assertTypeEqual t maybe_type of
                   True ->
-                    case addEntry symtbl'' i (Entry CategoryVariable maybe_type) of
+                    case addEntry symtbl'' i (Entry CategoryVariable False maybe_type) of
                       Right symtbl''' ->
                         typeCheck symtbl''' (Variable is maybe_type es)
                       Left err -> Left (SymbolTableError err, symtbl'')
@@ -545,7 +545,7 @@ instance TypeCheckable Variable where
       Nothing ->
         case typeCheck symtbl e of
           Right (t, symtbl') ->
-            case addEntry symtbl' i (Entry CategoryVariable t) of
+            case addEntry symtbl' i (Entry CategoryVariable False t) of
               Right symtbl'' -> typeCheck symtbl'' (Variable is maybe_type es)
               Left err -> Left (SymbolTableError err, symtbl')
           Left err -> Left err
@@ -556,10 +556,10 @@ varDecHelper symtbl (Just (Alias s)) =
   case lookupIdentifier symtbl (IdOrType s) of
     Right e ->
       case e of
-        Entry _ Nothing -> Just (UndefinedTypeError s)
-        Entry CategoryVariable _ -> Just (VariableAsTypeError s)
-        Entry CategoryAlias t -> Nothing
-        Entry CategoryType t -> Nothing
+        Entry _ _ Nothing -> Just (UndefinedTypeError s)
+        Entry CategoryVariable _ _ -> Just (VariableAsTypeError s)
+        Entry CategoryAlias _ t -> Nothing
+        Entry CategoryType _ t -> Nothing
     Left err -> Just (SymbolTableError err)
 varDecHelper symtbl (Just (Array t _)) = varDecHelper symtbl (Just t)
 varDecHelper symtbl (Just (Slice t)) = varDecHelper symtbl (Just t)
@@ -573,7 +573,7 @@ getBaseType
   -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
 getBaseType symtbl s =
   case lookupIdentifier symtbl s of
-    Right (Entry c t) ->
+    Right (Entry c _ t) ->
       if (c == CategoryType) || isStruct t
         then Right (t, symtbl)
         else case t of
@@ -727,21 +727,21 @@ typeAssignable symtbl t1 t2 =
 instance TypeCheckable FunctionCall where
   typeCheck symtbl (FunctionCall funcName exprs) =
     case lookupIdentifier symtbl (IdOrType funcName) of
-      Right (Entry CategoryType (Just (t))) ->
+      Right (Entry CategoryType _ (Just (t))) ->
         if length exprs /= 1
           then Left (EmptyCastError, symtbl)
           else typeCheckCast symtbl t (head exprs)
-      Right (Entry CategoryAlias (Just (t))) ->
+      Right (Entry CategoryAlias _ (Just (t))) ->
         if length exprs /= 1
           then Left (EmptyCastError, symtbl)
           else typeCheckCast symtbl (Alias funcName) (head exprs)
-      Right (Entry CategoryVariable (Just (Func ts ret))) ->
+      Right (Entry CategoryVariable _ (Just (Func ts ret))) ->
         if length ts == length exprs
           then case functionCallHelper symtbl ts exprs of
                  Nothing -> Right (ret, symtbl)
                  Just err -> Left err
           else Left (FuncCallArgNumError ts exprs, symtbl)
-      Right (Entry _ Nothing) -> Left (DefinitionNotFoundError, symtbl)
+      Right (Entry _ _ Nothing) -> Left (DefinitionNotFoundError, symtbl)
       Left err -> Left (SymbolTableError err, symtbl)
 
 -- Type Checks a cast. make sure the cast can be made.

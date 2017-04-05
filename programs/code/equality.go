@@ -75,10 +75,17 @@ func bool_cmp() {
 	println(false == false)
 }
 
+func array_cmp(){
+	var x, y [5]int
+	println("Expect the following to be true:")
+	println(x == y)
+}
+
 func main() {
 	struct_cmp()
 	str_cmp()
 	num_cmp()
 	bool_cmp()
+	array_cmp()
 }
 	

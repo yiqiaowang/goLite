@@ -103,7 +103,7 @@ processFile options = do
       Left parseError -> errorWithoutStackTrace $ Pr.ppShow parseError
   
   -- dumpsymtab
-  when (typeCheck options) $
+  when (dumpSymbolTable options) $
     case GoLite.parse goLiteFile text of
       Right program ->
         case GoLite.typeCheck program of
