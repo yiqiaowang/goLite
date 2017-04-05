@@ -23,6 +23,8 @@ data GoLiteOptions = GoLiteOptions
   , dumpSymbolTable :: Bool
   , dumpAST :: Bool
   , prettyPrintType :: Bool
+  , prettyPrint :: Bool
+  , codeGen :: Bool
   } deriving (Show)
 
 
@@ -39,6 +41,12 @@ goLiteOptionsParser = GoLiteOptions
     "Dumps the ast on completed parse"
   `andBy` boolFlag "pptype" `Descr`
     "Pretty prints the program with the type of each expression"
+  `andBy` boolFlag "regularpp" `Descr`
+    "Pretty prints the program"
+  `andBy` boolFlag "codegen" `Descr`
+    "Generates input code in target language."
+
+
 --
 main :: IO ()
 main = do
@@ -48,34 +56,78 @@ main = do
 processFile :: GoLiteOptions -> IO ()
 processFile options = do
   text <- readFile goLiteFile
-  case GoLite.parse goLiteFile text of
-    Right program -> case GoLite.typeCheck program of
-      Right (_, SymbolTable _ history c) -> do
-        -- output type checking success message
+
+
+
+  -- output pretty file
+  when (prettyPrint options) $
+    case GoLite.parse goLiteFile text of
+      Right program -> do
         putStrLn "OK"
+        writeFile prettyFile $ Pretty.pretty program 0
+      Left parseError -> do
+        putStrLn "FAIL"
+        errorWithoutStackTrace $ Pr.ppShow parseError
 
-        -- Dump symboltable
-        when (dumpSymbolTable options) $
-          putStrLn $ draw $ reverse $ fmap toList c
+  -- dump ast
+  when (dumpAST options) $
+    case GoLite.parse goLiteFile text of
+      Right program -> do
+        putStrLn "OK"
+        putStrLn $ Pr.ppShow program 
+      Left parseError -> do
+        putStrLn "FAIL"
+        errorWithoutStackTrace $ Pr.ppShow parseError
 
-        -- Dump ast
-        when (dumpAST options) $
-          putStrLn $ Pr.ppShow program
+  -- output pretty file with types
+  when (prettyPrintType options) $
+    case GoLite.parse goLiteFile text of
+      Right program ->
+        case GoLite.typeCheck program of
+          Right (_, SymbolTable _ history _) -> do
+            putStrLn "OK"
+            writeFile ppTypeFile $ TypedPretty.prettyPrintProgram program 0 history
+          Left (GoLite.TypeCheckerError (err,_)) ->
+            errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
+      Left parseError -> errorWithoutStackTrace $ Pr.ppShow parseError
 
-        -- output pretty file with types
-        when (prettyPrintType options) $
-          writeFile ppTypeFile $ TypedPretty.prettyPrintProgram program 0 history
+  -- TypeCheck program
+  when (typeCheck options) $
+    case GoLite.parse goLiteFile text of
+      Right program ->
+        case GoLite.typeCheck program of
+          Right (_, SymbolTable _ history _) -> 
+            putStrLn "OK"
+          Left (GoLite.TypeCheckerError (err,_)) ->
+            errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
+      Left parseError -> errorWithoutStackTrace $ Pr.ppShow parseError
+  
+  -- dumpsymtab
+  when (typeCheck options) $
+    case GoLite.parse goLiteFile text of
+      Right program ->
+        case GoLite.typeCheck program of
+          Right (_, SymbolTable _ _ c) -> do
+            putStrLn "OK"
+            putStrLn $ draw $ reverse $ fmap toList c
+          Left (GoLite.TypeCheckerError (err, SymbolTable.SymbolTable _ _ c)) -> do
+            putStrLn "FAIL"
+            errorWithoutStackTrace $ draw $ reverse $ fmap toList c
+      Left parseError -> errorWithoutStackTrace $ Pr.ppShow parseError
 
-        -- if not typecheck flag, generate code
-        unless (typeCheck options) $
-          writeFile jsFile $ Generator.codeProgram program 0 history
 
-      Left (GoLite.TypeCheckerError (err, SymbolTable.SymbolTable _ _ c)) ->
-        if dumpSymbolTable options
-          then errorWithoutStackTrace $ draw $ reverse $ fmap toList c
-          else errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
+  -- code gen
+  when (codeGen options) $
+    case GoLite.parse goLiteFile text of
+      Right program ->
+        case GoLite.typeCheck program of
+          Right (_, SymbolTable _ h _) -> do
+            putStrLn "OK"
+            writeFile jsFile $ Generator.codeProgram program 0 h
+          Left (GoLite.TypeCheckerError (err, _)) ->
+            errorWithoutStackTrace ("FAIL\n" ++ Pr.ppShow err)
+      Left parseError -> errorWithoutStackTrace $ Pr.ppShow parseError
 
-    Left parseError -> errorWithoutStackTrace $ Pr.ppShow parseError
 
   where
     goLiteFile = filename options

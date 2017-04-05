@@ -9,7 +9,7 @@ go_lite_file="$1"
 stack exec golite-exe -- $args
 
 # replace goLite file with .js extension
-js_file="${go_lite_file%.go}.js"
+# js_file="${go_lite_file%.go}.js"
 
 # execute generated code with system npm
-node $js_file
+# node $js_file
