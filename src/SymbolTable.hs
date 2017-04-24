@@ -120,6 +120,9 @@ addEntry :: SymbolTable
          -> Entry
          -> Either SymbolTableError SymbolTable
 addEntry s@(SymbolTable ss h c) i e =
+  if isBlank i
+    then Right s
+    else
   case popFrame s of
     Right (f, symtbl) ->
       if hasKey f i
@@ -129,6 +132,14 @@ addEntry s@(SymbolTable ss h c) i e =
                                        else Right (SymbolTable ((addSym i e $ head ss) : (tail ss)) h c)
         else Right (SymbolTable ((addSym i e $ head ss) : (tail ss)) h c)
     Left err -> Left err
+
+
+isBlank :: Identifier -> Bool
+isBlank (IdOrType "_") = True
+isBlank (IdArray "_" _) = True
+isBlank _ = False
+
+
 
 -- Lookup an entry in the symbol table
 lookupIdentifier :: SymbolTable -> Identifier -> Either SymbolTableError Entry

@@ -6,7 +6,7 @@ args="$@"
 go_lite_file="$1"
 
 # execute compiler
-stack exec golite-exe -- $args
+stack exec golite-exe -- $args -c
 
 # replace goLite file with .js extension
 # js_file="${go_lite_file%.go}.js"

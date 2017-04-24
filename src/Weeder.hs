@@ -27,6 +27,7 @@ data WeederError
 data Context
   = CFunction
   | CLoop
+  | CSwitch
   deriving (Eq)
 
 --
@@ -80,7 +81,7 @@ isTerminating (Infinite xs) =
 isTerminating (Switch _ _ cs) =
   if not $ hasDefault cs
     then Just [MissingReturn]
-    else isTerminatingClauseList cs -- isTerminating (StmtBlock (Block xs)) = isTerminatingList xs
+    else isTerminatingClauseList cs 
 isTerminating (Block xs) = isTerminatingList xs
 isTerminating _ = Just [MissingReturn]
 
@@ -134,7 +135,7 @@ instance Weedable Stmt where
     where
       isDefault (Case _ _) = False
       isDefault (Default _) = True
-      ctxt' = CLoop:ctxt
+      ctxt' = ctxt
   weedCtxt ctxt (Infinite stmts) = weedListCtxt (CLoop : ctxt) stmts
   weedCtxt ctxt (While _ stmts) = weedCtxt ctxt (Infinite stmts)
   weedCtxt ctxt (For _ maybe_expr post stmts) =
@@ -169,9 +170,9 @@ instance Weedable Stmt where
 instance Weedable SimpleStmt
   -- This may need to be changed
                                  where
-  weedCtxt ctxt (ShortVarDec _ _) =
+  weedCtxt ctxt s@(ShortVarDec a b) =
     if CFunction `elem` ctxt
-      then Nothing
+      then Nothing 
       else Just [InvalidSVD]
   weedCtxt ctxt _ = Nothing
   --

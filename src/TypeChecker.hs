@@ -38,9 +38,11 @@ data TypeCheckError
   | UndefinedTypeError { undefinedType :: String}
   | VariableAsTypeError { variableAsTypeError :: String}
   | VariableDecError { invalidVarDecType :: Maybe Type}
+  | IllegalBlankIdentifier
   | DebugError
   | ArraySliceAccessError
   | StructAccessError
+  | TypeCategoryError
   deriving (Eq, Show)
 
 -- This typeclass takes something from Lanugage and a SymbolTable and returns either a
@@ -400,12 +402,15 @@ instance TypeCheckable IfStmtCont where
 
 instance TypeCheckable TypeName where
   typeCheck symtbl (TypeName (Alias typename) typeval) =
-    case addEntry
-           symtbl
-           (IdOrType typename)
-           (Entry CategoryAlias False $ Just typeval) of
-      Right symtbl' -> Right (Nothing, symtbl')
-      Left err -> Left (SymbolTableError err, symtbl)
+    case typeCheck symtbl typeval of
+      Right _ -> 
+        case addEntry
+            symtbl
+            (IdOrType typename)
+            (Entry CategoryAlias False $ Just typeval) of
+        Right symtbl' -> Right (Nothing, symtbl')
+        Left err -> Left (SymbolTableError err, symtbl)
+      Left err -> Left err
 
 instance TypeCheckable Identifier where
   typeCheck symtbl (IdOrType i) =
@@ -525,23 +530,22 @@ instance TypeCheckable Variable where
   typeCheck symtbl (Variable (i:is) maybe_type (e:es)) =
     case maybe_type of
       (Just _) ->
-        case typeCheck symtbl e of
-          Right (t, symtbl'')
-            -- case typeCheck symtbl' maybe_type of
-              -- Right (t', symtbl'') ->
-           ->
-            case varDecHelper symtbl'' maybe_type of
-              Nothing ->
-                case assertTypeEqual t maybe_type of
-                  True ->
-                    case addEntry symtbl'' i (Entry CategoryVariable False maybe_type) of
-                      Right symtbl''' ->
-                        typeCheck symtbl''' (Variable is maybe_type es)
-                      Left err -> Left (SymbolTableError err, symtbl'')
-                  False -> Left (TypeMismatchError maybe_type t, symtbl'')
-              Just err -> Left (err, symtbl'')
-              -- Left err -> Left err
+        case rightSideHelper symtbl e of
+          Right (t, symtbl'') ->
+                    case varDecHelper symtbl'' maybe_type of
+                        Nothing ->
+                            case assertTypeEqual t maybe_type of
+                            True ->
+                                case addEntry symtbl'' i (Entry CategoryVariable False maybe_type) of
+                                Right symtbl''' ->
+                                    typeCheck symtbl''' (Variable is maybe_type es)
+                                Left err -> Left (SymbolTableError err, symtbl'')
+                            False -> Left (TypeMismatchError maybe_type t, symtbl'')
+                        Just err -> Left (err, symtbl'')
           Left err -> Left err
+
+
+  
       Nothing ->
         case typeCheck symtbl e of
           Right (t, symtbl') ->
@@ -549,6 +553,13 @@ instance TypeCheckable Variable where
               Right symtbl'' -> typeCheck symtbl'' (Variable is maybe_type es)
               Left err -> Left (SymbolTableError err, symtbl')
           Left err -> Left err
+
+rightSideHelper :: SymbolTable -> Expression -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+rightSideHelper s (Id i) = case lookupIdentifier s i of
+                             Right e -> case typeCategory e of
+                                         CategoryType -> Left (TypeCategoryError, s)
+                                         _ -> typeCheck s i
+rightSideHelper s e = typeCheck s e
 
 -- Gets checks if the type being assigned to a variable is valid
 varDecHelper :: SymbolTable -> Maybe Type -> Maybe TypeCheckError
@@ -602,10 +613,21 @@ isStruct _ = False
 instance TypeCheckable Type
   -- Or should this return typeChek symtbl (IdOrType s)?
                                                          where
-  typeCheck symtbl (Alias s) = Right (Just (Alias s), symtbl)
+  typeCheck symtbl (Alias s) = typeCheck symtbl (IdOrType s)
   typeCheck symtbl (Array t i) = typeCheck symtbl t
   typeCheck symtbl (Slice t) = typeCheck symtbl t
+  typeCheck symtbl (Struct i) = Right (Nothing, symtbl)
 
+
+structTypeCheckHelper :: SymbolTable -> [([Identifier], Type)] -> Either (TypeCheckError, SymbolTable) (Maybe Type, SymbolTable)
+structTypeCheckHelper s [] = Right (Nothing, s)
+structTypeCheckHelper symtbl ((is,t):xs) =
+  case typeCheckList symtbl is of
+    Right (_, symtbl') ->
+      case typeCheck symtbl' t of
+        Right (_,symtbl'') -> structTypeCheckHelper symtbl'' xs
+        Left err -> Left err
+    Left err -> Left err
 --
 instance TypeCheckable SimpleStmt where
   typeCheck symtbl (StmtFuncCall funcCall) = typeCheck symtbl funcCall
@@ -669,11 +691,15 @@ svdAssignHelper symtbl (iden:idens) (expr:exprs) =
     Right (f, ps) ->
       case hasKey f iden of
         False ->
-          case typeCheck symtbl expr of
-            Right (t, symtbl') ->
-              case typeCheck symtbl' (Variable [iden] t [expr]) of
-                Right (_, symtbl'') -> svdAssignHelper symtbl'' idens exprs
-                Left (err, _) -> Left err
+          case iden of
+            IdOrType "_" -> Left IllegalBlankIdentifier
+            IdArray "_" _ -> Left IllegalBlankIdentifier
+            _ ->
+                case typeCheck symtbl expr of
+                    Right (t, symtbl') ->
+                      case typeCheck symtbl' (Variable [iden] t [expr]) of
+                        Right (_, symtbl'') -> svdAssignHelper symtbl'' idens exprs
+                        Left (err, _) -> Left err
         True ->
           case typeCheck symtbl iden of
             Right (t, symtbl') ->
