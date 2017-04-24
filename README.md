@@ -11,6 +11,9 @@ Team Members:
 
 --
 ## MileStones - Please read for notes regarding Milestones
+### pineapple_release
+* The default behaviour of the compiler is to generate code. This can be changed in the run.sh script by changing the flag from ```-c``` to something else. The available options are available by setting the flag as ```-h```.
+
 ### Milestone 4
 * By default, the compiler will do nothing. For functionality, runtime flags may be used. Run ```./run.sh foo.go -h``` to print the help message. There, you will find the flags for additional functions such as typechecking and code generation. IMPORTANT, when passing flags, make sure to include the flags after the input file path. Multiple flags can be used as follows: ```./run.sh foo.go -r -c``` (this pretty prints foo.go to foo.pretty.go [-r] and then generates target code and writes it to foo.js [-c]). When an error occurs, the program exits immediately.
 * The generated code uses language features available since ES6. ie. only newer JavaScript implementations are supported.
